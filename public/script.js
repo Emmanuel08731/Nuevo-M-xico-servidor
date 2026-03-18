@@ -1,12 +1,13 @@
 /**
- * SISTEMA INTEGRAL NUEVO MÉXICO RP
- * Core Versión 2026 - Control Emmanuel
+ * SISTEMA INTEGRADO DE NUEVO MÉXICO RP
+ * Core Version 2026.1 - Desarrollo Emmanuel
  */
 
-// 1. Loader & Animaciones de Scroll
+// 1. Manejo del Loader y Animaciones de Entrada
 window.addEventListener('load', () => {
     setTimeout(() => {
-        document.getElementById('loader').style.display = 'none';
+        document.getElementById('loader').style.opacity = '0';
+        setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
         checkReveal();
     }, 1000);
 });
@@ -14,114 +15,126 @@ window.addEventListener('load', () => {
 function checkReveal() {
     const reveals = document.querySelectorAll('.reveal');
     reveals.forEach(el => {
-        const windowHeight = window.innerHeight;
-        const revealTop = el.getBoundingClientRect().top;
-        if (revealTop < windowHeight - 100) {
-            el.classList.add('active');
-        }
+        const top = el.getBoundingClientRect().top;
+        if(top < window.innerHeight - 100) el.classList.add('active');
     });
 }
 window.addEventListener('scroll', checkReveal);
 
-// 2. Control de Interfaz (Modales y Tabs)
-function toggleModal(show) {
-    document.getElementById('modal').style.display = show ? 'flex' : 'none';
+// 2. Sistema de Notificaciones Toast
+function notify(msg) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-function switchAuth(type) {
+// 3. Control de Modales y Vistas
+function showModal() { document.getElementById('mainModal').style.display = 'flex'; }
+function closeModal() { document.getElementById('mainModal').style.display = 'none'; }
+
+function toggleAuth(type) {
     const isL = type === 'L';
-    document.getElementById('loginForm').style.display = isL ? 'block' : 'none';
-    document.getElementById('regForm').style.display = isL ? 'none' : 'block';
-    document.getElementById('tabL').classList.toggle('active', isL);
-    document.getElementById('tabR').classList.toggle('active', !isL);
+    document.getElementById('fLogin').style.display = isL ? 'block' : 'none';
+    document.getElementById('fReg').style.display = isL ? 'none' : 'block';
+    document.getElementById('btnL').classList.toggle('active', isL);
+    document.getElementById('btnR').classList.toggle('active', !isL);
 }
 
-// 3. Mecánica de Copiado
-function copyIP() {
-    const ip = "MC.NUEVOMEXICO.PRO";
-    navigator.clipboard.writeText(ip).then(() => {
-        const text = document.getElementById('ip-text');
-        text.innerText = "¡IP COPIADA!";
-        text.style.color = "#00b894";
-        setTimeout(() => {
-            text.innerText = ip;
-            text.style.color = "";
-        }, 2000);
-    });
-}
-
-// 4. Lógica de Login (Con Rango Emmanuel)
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
+// 4. Lógica de Login y Rango Emmanuel
+document.getElementById('fLogin').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const data = {
-        user: document.getElementById('lUser').value,
-        pass: document.getElementById('lPass').value
-    };
-
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch('/api/login', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
+        body: JSON.stringify({ user: document.getElementById('lUser').value, pass: document.getElementById('lPass').value })
     });
-    const result = await res.json();
-
-    if(result.success) {
-        document.getElementById('auth-view').style.display = 'none';
+    const data = await res.json();
+    
+    if (data.success) {
+        notify("¡Acceso concedido ciudadano!");
+        document.getElementById('auth-box').style.display = 'none';
+        document.getElementById('user-box').style.display = 'block';
         
-        if(result.user.es_admin) {
-            // MOSTRAR PANEL ADMIN
-            document.getElementById('admin-view').style.display = 'block';
-            const tbody = document.getElementById('admin-tbody');
-            tbody.innerHTML = result.admin.map(u => `
+        // Cargar Información Ciudadana
+        document.getElementById('dni-nombre').innerText = data.userData.nombre_rp;
+        document.getElementById('dni-mc').innerText = data.userData.usuario_mc;
+        document.getElementById('dni-nacion').innerText = data.userData.nacionalidad;
+
+        // ¿Es Emmanuel?
+        if (data.userData.es_admin) {
+            document.getElementById('user-rank').innerText = "FUNDADOR / STAFF";
+            document.getElementById('user-rank').style.background = "#fff3cd";
+            document.getElementById('user-rank').style.color = "#856404";
+            document.getElementById('btn-to-admin').style.display = 'block';
+            
+            // Llenar tabla admin
+            const tbody = document.getElementById('admin-table-body');
+            tbody.innerHTML = data.adminData.map(u => `
                 <tr>
                     <td><b>${u.usuario_mc}</b></td>
                     <td>${u.nombre_rp}</td>
+                    <td>${u.es_admin ? '⭐ STAFF' : 'Civil'}</td>
                     <td>
-                        ${!u.es_admin ? `<button onclick="adminAction(${u.id}, 'promote')" style="color:green; border:none; background:none; cursor:pointer; font-weight:800">PROM</button>` : '⭐'}
-                        <button onclick="adminAction(${u.id}, 'delete')" style="color:red; border:none; background:none; cursor:pointer; font-weight:800; margin-left:10px">DEL</button>
+                        ${!u.es_admin ? `<button class="btn-act-prom" onclick="adminOp(${u.id}, 'promote')">PROM</button>` : ''}
+                        <button class="btn-act-del" onclick="adminOp(${u.id}, 'delete')">ELIMINAR</button>
                     </td>
                 </tr>
             `).join('');
-        } else {
-            // MOSTRAR DNI CIUDADANO
-            document.getElementById('user-view').style.display = 'block';
-            document.getElementById('dni-rp').innerText = result.user.nombre_rp;
-            document.getElementById('dni-mc').innerText = result.user.usuario_mc;
-            document.getElementById('dni-na').innerText = result.user.nacionalidad;
         }
     } else {
-        alert(result.msg);
+        notify(data.msg);
     }
 });
 
-// 5. Lógica de Registro
-document.getElementById('regForm').addEventListener('submit', async (e) => {
+// 5. Navegación Interna (DNI <-> PANEL)
+function openAdminPanel() {
+    document.getElementById('user-box').style.display = 'none';
+    document.getElementById('admin-box').style.display = 'block';
+}
+
+function backToDNI() {
+    document.getElementById('admin-box').style.display = 'none';
+    document.getElementById('user-box').style.display = 'block';
+}
+
+// 6. Registro de Personaje
+document.getElementById('fReg').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const data = {
+    const payload = {
         user: document.getElementById('rUser').value,
-        rpname: document.getElementById('rName').value,
-        bday: document.getElementById('rBirth').value,
+        rp: document.getElementById('rName').value,
+        bday: document.getElementById('rBday').value,
         nation: document.getElementById('rNation').value,
         pass: document.getElementById('rPass').value
     };
-
-    const res = await fetch('/api/auth/register', {
+    const res = await fetch('/api/register', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
+        body: JSON.stringify(payload)
     });
-    const result = await res.json();
-    if(result.success) { alert("¡Registro exitoso! Ya puedes entrar."); location.reload(); }
-    else { alert(result.msg); }
+    const d = await res.json();
+    if (d.success) {
+        notify("¡Bienvenido a Nuevo México!");
+        location.reload();
+    } else {
+        notify(d.msg);
+    }
 });
 
-// 6. Acciones de Emmanuel
-async function adminAction(id, type) {
-    if(!confirm("¿Seguro de realizar esta acción?")) return;
+// 7. Acciones Administrativas
+async function adminOp(id, action) {
+    if(!confirm("¿Estás seguro de realizar esta acción irreversible?")) return;
     await fetch('/api/admin/action', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ targetId: id, action: type })
+        body: JSON.stringify({ targetId: id, actionType: action })
     });
     location.reload();
+}
+
+// 8. Utilidades
+function copyIP() {
+    navigator.clipboard.writeText("MC.NUEVOMEXICO.PRO");
+    notify("¡IP copiada al portapapeles!");
 }
