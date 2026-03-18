@@ -1,129 +1,111 @@
 /**
- * SISTEMA DE INTERACCIÓN NUEVO MÉXICO RP
- * Desarrollado para Emmanuel0606
+ * SISTEMA INTEGRADO DE NUEVO MÉXICO RP
+ * Core: 2026 Stable
  */
 
-// 1. Animaciones de Revelado al Scroll
-function reveal() {
-    const reveals = document.querySelectorAll(".reveal");
-    for (let i = 0; i < reveals.length; i++) {
-        let windowHeight = window.innerHeight;
-        let elementTop = reveals[i].getBoundingClientRect().top;
-        let elementVisible = 100;
-        if (elementTop < windowHeight - elementVisible) {
-            reveals[i].classList.add("active");
-        }
-    }
-}
-window.addEventListener("scroll", reveal);
-window.onload = reveal; // Activar al cargar
+// 1. Funciones de Navegación del Modal
+function openModal() { document.getElementById('mainModal').style.display = 'flex'; }
+function closeModal() { document.getElementById('mainModal').style.display = 'none'; }
 
-// 2. Copiar IP al portapapeles
+function toggleAuth(type) {
+    const isL = type === 'L';
+    document.getElementById('fLogin').style.display = isL ? 'block' : 'none';
+    document.getElementById('fReg').style.display = isL ? 'none' : 'block';
+    document.getElementById('tabL').classList.toggle('active', isL);
+    document.getElementById('tabR').classList.toggle('active', !isL);
+}
+
+// 2. Función Copiar IP con feedback
 function copyIP() {
-    const ip = "MC.NUEVOMEXICO.PRO";
-    navigator.clipboard.writeText(ip).then(() => {
-        const text = document.getElementById("copyText");
-        const box = document.getElementById("ipBox");
-        text.innerText = "¡COPIADA CON ÉXITO!";
-        box.style.borderColor = "#2ecc71";
-        setTimeout(() => {
-            text.innerText = "Click para copiar";
-            box.style.borderColor = "#eee";
-        }, 2000);
-    });
+    navigator.clipboard.writeText("MC.NUEVOMEXICO.PRO");
+    const sub = document.querySelector('.ip-sub');
+    sub.innerText = "¡COPIADA CON ÉXITO!";
+    sub.style.color = "#2ecc71";
+    setTimeout(() => {
+        sub.innerText = "CLICK PARA COPIAR IP";
+        sub.style.color = "#aaa";
+    }, 2000);
 }
 
-// 3. Manejo de Modal y Tabs
-function openModal() { document.getElementById("modal").style.display = "flex"; }
-function closeModal() { document.getElementById("modal").style.display = "none"; }
-
-function switchTab(type) {
-    const isL = type === 'login';
-    document.getElementById("formLogin").style.display = isL ? "block" : "none";
-    document.getElementById("formReg").style.display = isL ? "none" : "block";
-    document.getElementById("tabL").classList.toggle("active", isL);
-    document.getElementById("tabR").classList.toggle("active", !isL);
-}
-
-// 4. Mecánica de Registro (AJAX)
-document.getElementById("formReg").addEventListener("submit", async (e) => {
+// 3. Envío de Formularios (AJAX)
+document.getElementById('fReg').addEventListener('submit', async (e) => {
     e.preventDefault();
     const data = {
-        user_mc: document.getElementById("rUser").value,
-        name_rp: document.getElementById("rName").value,
-        birth: document.getElementById("rBirth").value,
-        nation: document.getElementById("rNation").value,
-        pass: document.getElementById("rPass").value
+        u_mc: document.getElementById('rU').value,
+        n_rp: document.getElementById('rN').value,
+        bday: document.getElementById('rD').value,
+        nation: document.getElementById('rNa').value,
+        pass: document.getElementById('rP').value
     };
 
-    const res = await fetch('/api/register', {
+    const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data)
     });
     const result = await res.json();
-    alert(result.message);
+    alert(result.msg);
     if(result.success) location.reload();
 });
 
-// 5. Mecánica de Login y Panel de Admin
-document.getElementById("formLogin").addEventListener("submit", async (e) => {
+// 4. Mecánica de Login y Construcción de Paneles
+document.getElementById('fLogin').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const data = {
-        user_mc: document.getElementById("lUser").value,
-        pass: document.getElementById("lPass").value
-    };
-
-    const res = await fetch('/api/login', {
+    const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
+        body: JSON.stringify({ u_mc: document.getElementById('lU').value, pass: document.getElementById('lP').value })
     });
-    const result = await res.json();
+    const data = await res.json();
 
-    if(result.success) {
-        document.getElementById("formLogin").style.display = "none";
-        document.getElementById("formReg").style.display = "none";
-        document.querySelector(".modal-header").style.display = "none";
+    if(data.success) {
+        document.getElementById('view-auth').style.display = 'none';
         
-        const panel = document.getElementById("adminPanel");
-        panel.style.display = "block";
-
-        if(result.user.es_admin) {
-            const list = document.getElementById("userList");
-            list.innerHTML = `<h4>Usuarios Registrados:</h4>` + result.adminData.map(u => `
-                <div class="user-row">
-                    <span>${u.usuario_mc} (${u.nombre_rp})</span>
-                    <div class="actions">
-                        <button onclick="promote(${u.id})">⭐</button>
-                        <button onclick="deleteU(${u.id})" style="color:red">🗑️</button>
-                    </div>
-                </div>
+        if(data.userData.es_admin) {
+            // CONSTRUIR PANEL ADMIN EMMANUEL
+            document.getElementById('view-admin').style.display = 'block';
+            document.getElementById('admin-count').innerText = data.adminData.length;
+            const table = document.getElementById('admin-rows');
+            table.innerHTML = data.adminData.map(user => `
+                <tr>
+                    <td><b>${user.usuario_mc}</b></td>
+                    <td>${user.nombre_rp}</td>
+                    <td>
+                        ${!user.es_admin ? `<button class="btn-up" onclick="promoteUser(${user.id})">PROMOVER</button>` : '⭐'}
+                        <button class="btn-del" onclick="deleteUser(${user.id})">ELIMINAR</button>
+                    </td>
+                </tr>
             `).join('');
         } else {
-            document.getElementById("userList").innerHTML = `<h3>Bienvenido ${result.user.nombre_rp}</h3>`;
+            // CONSTRUIR DNI CIUDADANO
+            document.getElementById('view-user').style.display = 'block';
+            document.getElementById('dni-rpname').innerText = data.userData.nombre_rp;
+            document.getElementById('dni-id').innerText = "#" + data.userData.id.toString().padStart(3, '0');
+            document.getElementById('dni-mc').innerText = data.userData.usuario_mc;
+            document.getElementById('dni-nation').innerText = data.userData.nacionalidad;
         }
     } else {
-        alert(result.msg);
+        alert(data.msg);
     }
 });
 
-async function promote(id) {
-    await fetch('/api/promote', {
+// 5. Acciones Administrativas
+async function promoteUser(id) {
+    if(!confirm("¿Seguro que quieres ascender a este usuario a ADMIN?")) return;
+    await fetch('/api/admin/promote', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ targetId: id })
+        body: JSON.stringify({id})
     });
-    alert("Usuario promovido a Admin");
     location.reload();
 }
 
-async function deleteU(id) {
-    if(!confirm("¿Borrar usuario?")) return;
-    await fetch('/api/delete-user', {
+async function deleteUser(id) {
+    if(!confirm("¿ELIMINAR PERMANENTEMENTE A ESTE CIUDADANO?")) return;
+    await fetch('/api/admin/delete', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ targetId: id })
+        body: JSON.stringify({id})
     });
     location.reload();
 }
