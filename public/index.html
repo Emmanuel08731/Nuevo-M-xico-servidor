@@ -3,128 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuevo México RP | Servidor Oficial de Minecraft</title>
+    <title>Nuevo México RP | Portal Oficial</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo">Nuevo México <span>RP</span></div>
-            <ul class="nav-links">
-                <li><a href="#hero">Inicio</a></li>
-                <li><a href="#sistemas">Sistemas</a></li>
-                <li><a href="#facciones">Facciones</a></li>
-                <li><button class="btn-auth" onclick="openModal()">ACCEDER</button></li>
-            </ul>
+    <nav class="main-nav">
+        <div class="logo">Nuevo México <span>RP</span></div>
+        <div class="nav-right">
+            <span class="status-dot"></span> Servidor Online
+            <button class="btn-entry" onclick="openModal()">GESTIONAR IDENTIDAD</button>
         </div>
     </nav>
 
-    <header id="hero" class="hero">
-        <div class="hero-bg"></div>
+    <main class="hero">
+        <div class="hero-overlay"></div>
         <div class="hero-content">
-            <div class="reveal">
-                <span class="online-tag">🟢 SERVIDOR DISPONIBLE</span>
-                <h1>LA MEJOR EXPERIENCIA DE <span>ROL</span></h1>
-                <p>Únete a miles de jugadores en el servidor más realista de México. Trabajos, mafias, policía y una vida real en Minecraft.</p>
-                <div class="hero-actions">
-                    <button class="btn-primary" onclick="openModal()">EMPEZAR MI HISTORIA</button>
-                    <div class="ip-box" id="ipBox" onclick="copyIP()">
-                        <span>IP: MC.NUEVOMEXICO.PRO</span>
-                        <small id="copyText">Click para copiar</small>
+            <h4 class="fade-in">MÁS QUE UN SERVIDOR, UNA VIDA</h4>
+            <h1 class="fade-in">Escribe tu <span>Historia.</span></h1>
+            <p class="fade-in">La simulación de vida más realista de Minecraft en español. Crea tu personaje, consigue un empleo y vive el sueño mexicano.</p>
+            <div class="ip-display" onclick="copyIP()">
+                <div class="ip-text">MC.NUEVOMEXICO.PRO</div>
+                <div class="ip-sub">CLICK PARA COPIAR IP</div>
+            </div>
+        </div>
+    </main>
+
+    <div id="mainModal" class="modal-bg">
+        <div class="modal-card">
+            <button class="btn-close" onclick="closeModal()">×</button>
+            
+            <div id="view-auth">
+                <div class="auth-tabs">
+                    <button id="tabL" class="active" onclick="toggleAuth('L')">INGRESAR</button>
+                    <button id="tabR" onclick="toggleAuth('R')">REGISTRARSE</button>
+                </div>
+
+                <form id="fLogin" class="auth-form">
+                    <div class="input-group">
+                        <label>Usuario de Minecraft</label>
+                        <input type="text" id="lU" placeholder="Tu nickname de MC" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="lP" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn-submit">ENTRAR AL SISTEMA</button>
+                </form>
+
+                <form id="fReg" class="auth-form" style="display:none">
+                    <input type="text" id="rU" placeholder="Nick de Minecraft" required>
+                    <input type="text" id="rN" placeholder="Nombre RP (Ej: Pedro Infante)" required>
+                    <div class="input-group">
+                        <label>Fecha de Nacimiento</label>
+                        <input type="date" id="rD" required>
+                    </div>
+                    <input type="text" id="rNa" placeholder="Nacionalidad del personaje" required>
+                    <input type="password" id="rP" placeholder="Crea una contraseña" required>
+                    <button type="submit" class="btn-submit emerald">CREAR CIUDADANO</button>
+                </form>
+            </div>
+
+            <div id="view-user" class="dashboard-view" style="display:none">
+                <div class="dni-container">
+                    <div class="dni-header">ESTADO PLURINACIONAL DE NUEVO MÉXICO</div>
+                    <div class="dni-body">
+                        <div class="dni-avatar">👤</div>
+                        <div class="dni-data">
+                            <h2 id="dni-rpname">Nombre Ciudadano</h2>
+                            <p><b>ID DE REGISTRO:</b> <span id="dni-id">#000</span></p>
+                            <p><b>USUARIO MC:</b> <span id="dni-mc">---</span></p>
+                            <p><b>NACIONALIDAD:</b> <span id="dni-nation">---</span></p>
+                            <div class="dni-seal">DOCUMENTO OFICIAL</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </header>
-
-    <section id="sistemas" class="section">
-        <div class="container">
-            <h2 class="section-title reveal">Sistemas <span>Únicos</span></h2>
-            <div class="grid">
-                <div class="card reveal">
-                    <div class="card-icon">🏨</div>
-                    <h3>Propiedades</h3>
-                    <p>Compra casas, departamentos y locales comerciales para tu negocio.</p>
-                </div>
-                <div class="card reveal">
-                    <div class="card-icon">💼</div>
-                    <h3>Economía</h3>
-                    <p>Sistema bancario con tarjetas, préstamos y lavado de dinero.</p>
-                </div>
-                <div class="card reveal">
-                    <div class="card-icon">👮</div>
-                    <h3>Justicia</h3>
-                    <p>Policía Federal, jueces, cárceles de máxima seguridad y leyes reales.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="facciones" class="section gray">
-        <div class="container">
-            <h2 class="section-title reveal">Facciones <span>Legales e Ilegales</span></h2>
-            <div class="fac-grid">
-                <div class="fac-card reveal">
-                    <h3>S.E.D.E.N.A</h3>
-                    <p>Protege la soberanía nacional y lucha contra el crimen organizado.</p>
-                </div>
-                <div class="fac-card reveal">
-                    <h3>CARTEL NM</h3>
-                    <p>Controla las rutas, el tráfico y expande tu imperio criminal.</p>
-                </div>
-                <div class="fac-card reveal">
-                    <h3>PARAMÉDICOS</h3>
-                    <p>Salva vidas en las calles y atiende emergencias críticas.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeModal()">&times;</span>
-            <div class="modal-header">
-                <button id="tabL" class="tab-btn active" onclick="switchTab('login')">Entrar</button>
-                <button id="tabR" class="tab-btn" onclick="switchTab('reg')">Registro</button>
+                <button class="btn-logout" onclick="location.reload()">CERRAR SESIÓN</button>
             </div>
 
-            <form id="formLogin" class="auth-form">
-                <h3>Identificación Ciudadana</h3>
-                <div class="input-group">
-                    <label>Usuario de Minecraft</label>
-                    <input type="text" id="lUser" required placeholder="Tu Nickname">
+            <div id="view-admin" class="dashboard-view" style="display:none">
+                <div class="admin-header">
+                    <h2>PANEL DE CONTROL <span>EMMANUEL</span></h2>
+                    <div class="admin-stats">Total Registros: <span id="admin-count">0</span></div>
                 </div>
-                <div class="input-group">
-                    <label>Contraseña</label>
-                    <input type="password" id="lPass" required placeholder="••••••••">
+                <div class="admin-table-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Nombre RP</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-rows">
+                            </tbody>
+                    </table>
                 </div>
-                <button type="submit" class="btn-submit">INGRESAR AL PANEL</button>
-            </form>
-
-            <form id="formReg" class="auth-form" style="display:none;">
-                <h3>Registro de Personaje</h3>
-                <input type="text" id="rUser" placeholder="Usuario MC" required>
-                <input type="text" id="rName" placeholder="Nombre de tu Personaje RP" required>
-                <div class="input-group">
-                    <label>Nacimiento</label>
-                    <input type="date" id="rBirth" required>
-                </div>
-                <input type="text" id="rNation" placeholder="Nacionalidad del personaje" required>
-                <input type="password" id="rPass" placeholder="Contraseña segura" required>
-                <button type="submit" class="btn-submit green">CREAR CIUDADANO</button>
-            </form>
-
-            <div id="adminPanel" style="display:none;" class="admin-panel">
-                <h3 style="color:#2ecc71">Panel Administrativo</h3>
-                <div id="userList" class="user-list"></div>
+                <button class="btn-logout" onclick="location.reload()">CERRAR SESIÓN</button>
             </div>
+
         </div>
     </div>
 
     <footer class="footer">
-        <p>&copy; 2026 Nuevo México RP. Dirigido por <b>Emmanuel</b></p>
+        <p>&copy; 2026 Nuevo México RP | Creado y Dirigido por <b>Emmanuel0606</b></p>
     </footer>
 
     <script src="script.js"></script>
