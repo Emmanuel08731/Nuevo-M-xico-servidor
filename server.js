@@ -5,19 +5,19 @@ const path = require('path');
 
 const app = express();
 
-// Configuración de la conexión con PostgreSQL (Render)
+// Configuración de conexión con PostgreSQL en Render
 const pool = new Pool({
   connectionString: 'postgresql://minecraft_db_pojg_user:dM593YPdzsJ6NujnEY8ywpgQYE9mUqEL@dpg-d6sv3gnfte5s73fgdok0-a/minecraft_db_pojg',
   ssl: { rejectUnauthorized: false }
 });
 
 /**
- * INICIALIZACIÓN DE EMERGENCIA Y SEGURIDAD
- * Este bloque repara la base de datos si falta alguna columna
+ * MOTOR DE INICIALIZACIÓN DE DATOS
+ * Crea las tablas y asegura que Emmanuel sea el Owner Supremo
  */
-async function bootUp() {
+async function bootstrap() {
     try {
-        console.log(">> Validando integridad de la base de datos...");
+        console.log(">> Iniciando protocolos de seguridad de Nuevo México...");
         await pool.query(`
             CREATE TABLE IF NOT EXISTS usuarios (
                 id SERIAL PRIMARY KEY,
@@ -31,81 +31,78 @@ async function bootUp() {
             );
         `);
 
-        // Verificación de columnas para evitar errores de Render
+        // Parche de seguridad para columnas faltantes
         await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS es_admin BOOLEAN DEFAULT FALSE;`);
-        await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
 
-        // Crear la cuenta Maestra de Emmanuel si no existe
-        const masterPass = await bcrypt.hash('emma2013', 10);
+        // CUENTA MAESTRA: Actualizada con la clave emma06E
+        const masterHash = await bcrypt.hash('emma06E', 10);
         await pool.query(`
             INSERT INTO usuarios (usuario_mc, nombre_rp, fecha_nacimiento, nacionalidad, password, es_admin)
             VALUES ('emmanuel0606', 'Emmanuel Fundador', '2000-01-01', 'México', $1, TRUE)
-            ON CONFLICT (usuario_mc) DO UPDATE SET es_admin = TRUE;
-        `, [masterPass]);
+            ON CONFLICT (usuario_mc) DO UPDATE SET password = $1, es_admin = TRUE;
+        `, [masterHash]);
 
-        console.log("✅ Servidor Nuevo México: Base de datos vinculada con éxito.");
+        console.log("✅ Sistema Emmanuel Protegido con clave: emma06E");
     } catch (err) {
-        console.error("❌ Error Crítico:", err.message);
+        console.error("❌ Error de Sistema:", err.message);
     }
 }
-bootUp();
+bootstrap();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// --- RUTAS DE LA API ---
+// --- ENDPOINTS DE LA API ---
 
-// 1. Registro de Ciudadanos
+// Login Inteligente
+app.post('/api/auth/login', async (req, res) => {
+    const { user, pass } = req.body;
+    try {
+        const result = await pool.query('SELECT * FROM usuarios WHERE usuario_mc = $1', [user]);
+        if (result.rows.length === 0) return res.json({ success: false, msg: "El ciudadano no existe." });
+
+        const userData = result.rows[0];
+        const isMatch = await bcrypt.compare(pass, userData.password);
+
+        if (isMatch) {
+            let adminData = null;
+            if (userData.es_admin) {
+                const all = await pool.query('SELECT id, usuario_mc, nombre_rp, nacionalidad, es_admin FROM usuarios ORDER BY id DESC');
+                adminData = all.rows;
+            }
+            res.json({ success: true, user: userData, admin: adminData });
+        } else {
+            res.json({ success: false, msg: "Contraseña incorrecta." });
+        }
+    } catch (e) { res.status(500).json({ success: false }); }
+});
+
+// Registro de Ciudadanos
 app.post('/api/auth/register', async (req, res) => {
-    const { u_mc, n_rp, bday, nation, pass } = req.body;
+    const { user, rpname, bday, nation, pass } = req.body;
     try {
         const hash = await bcrypt.hash(pass, 10);
         await pool.query(
             'INSERT INTO usuarios (usuario_mc, nombre_rp, fecha_nacimiento, nacionalidad, password) VALUES ($1,$2,$3,$4,$5)',
-            [u_mc, n_rp, bday, nation, hash]
+            [user, rpname, bday, nation, hash]
         );
-        res.json({ success: true, msg: "¡Bienvenido a la capital!" });
+        res.json({ success: true });
     } catch (e) {
-        res.json({ success: false, msg: "El nombre de usuario ya está registrado." });
+        res.json({ success: false, msg: "Error: El usuario ya está en uso." });
     }
 });
 
-// 2. Login con Discriminación de Rango
-app.post('/api/auth/login', async (req, res) => {
-    const { u_mc, pass } = req.body;
-    try {
-        const result = await pool.query('SELECT * FROM usuarios WHERE usuario_mc = $1', [u_mc]);
-        if (result.rows.length === 0) return res.json({ success: false, msg: "Usuario inexistente." });
-
-        const user = result.rows[0];
-        const match = await bcrypt.compare(pass, user.password);
-
-        if (match) {
-            let dataAdmin = null;
-            // Solo si es Emmanuel (admin), enviamos la lista de todos los usuarios
-            if (user.es_admin) {
-                const list = await pool.query('SELECT id, usuario_mc, nombre_rp, nacionalidad, es_admin FROM usuarios ORDER BY id DESC');
-                dataAdmin = list.rows;
-            }
-            res.json({ success: true, userData: user, adminData: dataAdmin });
-        } else {
-            res.json({ success: false, msg: "Contraseña incorrecta." });
-        }
-    } catch (e) { res.status(500).send("Error"); }
-});
-
-// 3. Operaciones de Administrador
-app.post('/api/admin/promote', async (req, res) => {
-    await pool.query('UPDATE usuarios SET es_admin = TRUE WHERE id = $1', [req.body.id]);
-    res.json({ success: true });
-});
-
-app.post('/api/admin/delete', async (req, res) => {
-    if(req.body.id == 1) return res.json({ success: false }); // Anti-suicidio de cuenta maestra
-    await pool.query('DELETE FROM usuarios WHERE id = $1', [req.body.id]);
+// Panel Admin: Acciones
+app.post('/api/admin/action', async (req, res) => {
+    const { targetId, action } = req.body;
+    if (action === 'delete' && targetId != 1) {
+        await pool.query('DELETE FROM usuarios WHERE id = $1', [targetId]);
+    } else if (action === 'promote') {
+        await pool.query('UPDATE usuarios SET es_admin = TRUE WHERE id = $1', [targetId]);
+    }
     res.json({ success: true });
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Web operando en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Portal Nuevo México Activo en ${PORT}`));
