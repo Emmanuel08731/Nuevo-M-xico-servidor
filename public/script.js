@@ -1,131 +1,174 @@
 /**
- * SISTEMA TITANIUM NUEVO MÉXICO
- * Versión Emmanuel 2026.4
+ * PORTAL NUEVO MÉXICO RP v2026
+ * Desarrollado por Emmanuel0606
  */
 
-// 1. Loader y Animación de Scroll
+// --- 1. GESTIÓN DE CARGA Y SESIÓN PERSISTENTE ---
 window.addEventListener('load', () => {
+    const preloader = document.getElementById('loader');
+    
+    // Simular carga de sistema
     setTimeout(() => {
-        document.getElementById('loader').style.opacity = '0';
-        setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
-        checkReveal();
+        preloader.style.opacity = '0';
+        setTimeout(() => preloader.style.display = 'none', 500);
+
+        // PERSISTENCIA: Revisar si el usuario ya estaba logueado
+        const session = localStorage.getItem('nm_session');
+        if (session) {
+            const data = JSON.parse(session);
+            applySessionData(data);
+            showNotification("SESIÓN RESTAURADA", `Bienvenido de nuevo, ${data.userData.n_rp}.`, "🔐");
+        }
     }, 1200);
 });
 
-function checkReveal() {
-    const reveals = document.querySelectorAll('.observe');
-    reveals.forEach(el => {
-        const top = el.getBoundingClientRect().top;
-        if(top < window.innerHeight - 80) el.classList.add('show');
-    });
-}
-window.addEventListener('scroll', checkReveal);
-
-// 2. Sistema de Alertas Inteligentes
-function showAlert(type) {
-    const el = document.getElementById(`alert-${type}`);
-    el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 3500);
+// --- 2. NOTIFICACIONES PERSONALIZADAS ---
+function showNotification(title, msg, icon = "⚠️") {
+    const bar = document.getElementById('notif-bar');
+    document.getElementById('nt').innerText = title;
+    document.getElementById('nm').innerText = msg;
+    document.getElementById('ni').innerText = icon;
+    
+    bar.classList.add('active');
+    setTimeout(() => bar.classList.remove('active'), 4000);
 }
 
-// 3. Control de Ventanas
-function openModal() { document.getElementById('modal').style.display = 'flex'; }
-function closeModal() { document.getElementById('modal').style.display = 'none'; }
+// --- 3. CONTROL DE MODALES Y VISTAS ---
+function openPortal() { document.getElementById('modal-portal').style.display = 'flex'; }
+function closePortal() { document.getElementById('modal-portal').style.display = 'none'; }
 
-function switchAuth(t) {
-    const isL = t === 'L';
-    document.getElementById('formLogin').style.display = isL ? 'block' : 'none';
-    document.getElementById('formReg').style.display = isL ? 'none' : 'block';
-    document.getElementById('t-l').classList.toggle('active', isL);
-    document.getElementById('t-r').classList.toggle('active', !isL);
+function setTab(type) {
+    const isLogin = type === 'L';
+    document.getElementById('form-login').style.display = isLogin ? 'block' : 'none';
+    document.getElementById('form-register').style.display = isLogin ? 'none' : 'block';
+    document.getElementById('t-l').classList.toggle('active', isLogin);
+    document.getElementById('t-r').classList.toggle('active', !isLogin);
 }
 
-// 4. Mecánica de Login
-document.getElementById('formLogin').addEventListener('submit', async (e) => {
+// --- 4. LOGICA DE AUTENTICACIÓN ---
+document.getElementById('form-login').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const user = document.getElementById('li-u').value;
+    const pass = document.getElementById('li-p').value;
+
     const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ user: document.getElementById('l-u').value, pass: document.getElementById('l-p').value })
+        body: JSON.stringify({ user, pass })
     });
     const d = await res.json();
-    
-    if (d.success) {
-        document.getElementById('view-auth').style.display = 'none';
-        document.getElementById('view-profile').style.display = 'block';
-        
-        // Cargar DNI
-        document.getElementById('p-rp').innerText = d.user.nombre_rp;
-        document.getElementById('p-mc').innerText = d.user.usuario_mc;
-        document.getElementById('p-na').innerText = d.user.nacionalidad;
 
-        if (d.user.es_admin) {
-            document.getElementById('p-rank').innerText = "STAFF SUPREMO";
-            document.getElementById('admin-trigger').style.display = 'block';
-            
-            // Renderizar Lista Admin
-            const rows = document.getElementById('admin-rows');
-            rows.innerHTML = d.adminList.map(u => `
+    if (d.success) {
+        // GUARDAR SESIÓN EN EL NAVEGADOR
+        localStorage.setItem('nm_session', JSON.stringify(d));
+        applySessionData(d);
+        showNotification("ACCESO EXITOSO", "Tu identidad ha sido verificada.", "✅");
+    } else {
+        // MANEJO DE ERROR (Si no existe o datos mal)
+        showNotification("ERROR DE ACCESO", d.msg, "❌");
+    }
+});
+
+// APLICAR DATOS DE SESIÓN A LA UI
+function applySessionData(data) {
+    document.getElementById('view-auth').style.display = 'none';
+    document.getElementById('view-profile').style.display = 'block';
+    document.getElementById('btn-login-trigger').innerText = "MI PERFIL";
+    
+    document.getElementById('dni-rp-name').innerText = data.userData.n_rp;
+    document.getElementById('dni-mc-nick').innerText = data.userData.u_mc;
+    document.getElementById('dni-nation').innerText = data.userData.nac;
+
+    if (data.userData.adm) {
+        document.getElementById('dni-rank').innerText = "FUNDADOR / STAFF";
+        document.getElementById('admin-tools').style.display = 'block';
+        
+        // Cargar lista en la tabla
+        if (data.fullList) {
+            const table = document.getElementById('admin-table-rows');
+            table.innerHTML = data.fullList.map(u => `
                 <tr>
-                    <td><b>${u.usuario_mc}</b> <br> <small>${u.nombre_rp}</small></td>
+                    <td><b>${u.usuario_mc}</b></td>
+                    <td>${u.nombre_rp}</td>
                     <td>
-                        <button class="btn-del" onclick="adminOp(${u.id}, 'del')">BORRAR</button>
+                        <button class="btn-del-user" onclick="deleteCitizen(${u.id})">BORRAR</button>
                     </td>
                 </tr>
             `).join('');
         }
-    } else {
-        if(d.errorType === 'NOT_FOUND') showAlert('notfound');
-        else alert("Contraseña incorrecta");
-    }
-});
-
-// 5. Gestión Administrativa con Reinicio
-async function adminOp(id, action) {
-    if(!confirm("¿Confirmar eliminación permanente?")) return;
-    
-    const res = await fetch('/api/admin/action', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({id, action})
-    });
-    const data = await res.json();
-
-    if(data.deleted) {
-        showAlert('deleted');
-        // REINICIO AUTOMÁTICO TRAS 2 SEGUNDOS
-        setTimeout(() => location.reload(), 2000);
     }
 }
 
-// 6. Registro
-document.getElementById('formReg').addEventListener('submit', async (e) => {
+// --- 5. GESTIÓN ADMINISTRATIVA (BORRADO REAL) ---
+async function deleteCitizen(id) {
+    if (!confirm("¿ESTÁS SEGURO? Esta acción eliminará al ciudadano de la BASE DE DATOS de forma permanente.")) return;
+
+    const res = await fetch('/api/admin/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ targetId: id })
+    });
+    const d = await res.json();
+
+    if (d.success) {
+        showNotification("SISTEMA", "Ciudadano eliminado. Sincronizando...", "🗑️");
+        
+        // REINICIO AUTOMÁTICO TRAS ELIMINAR PARA LIMPIAR LA VISTA
+        setTimeout(() => {
+            // Actualizar la sesión local quitando al usuario para que al recargar ya no aparezca
+            const session = JSON.parse(localStorage.getItem('nm_session'));
+            session.fullList = session.fullList.filter(u => u.id !== id);
+            localStorage.setItem('nm_session', JSON.stringify(session));
+            location.reload();
+        }, 1500);
+    } else {
+        showNotification("FALLO", d.msg, "❌");
+    }
+}
+
+// --- 6. REGISTRO ---
+document.getElementById('form-register').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const payload = {
+        u: document.getElementById('re-u').value,
+        n: document.getElementById('re-n').value,
+        d: document.getElementById('re-d').value,
+        na: document.getElementById('re-na').value,
+        p: document.getElementById('re-p').value
+    };
+
     const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            u: document.getElementById('r-u').value,
-            n: document.getElementById('r-n').value,
-            d: document.getElementById('r-d').value,
-            na: document.getElementById('r-na').value,
-            p: document.getElementById('r-p').value
-        })
+        body: JSON.stringify(payload)
     });
     const d = await res.json();
-    if(d.success) { alert("¡Cuenta creada!"); location.reload(); }
+
+    if (d.success) {
+        showNotification("BIENVENIDO", "Tu registro ha sido completado.", "🏢");
+        setTimeout(() => location.reload(), 2000);
+    } else {
+        showNotification("ERROR", d.msg, "❌");
+    }
 });
 
-function showAdminPanel() {
-    document.getElementById('view-profile').style.display = 'none';
-    document.getElementById('view-admin').style.display = 'block';
-}
-function hideAdminPanel() {
-    document.getElementById('view-admin').style.display = 'none';
-    document.getElementById('view-profile').style.display = 'block';
+// --- 7. UTILIDADES ---
+function logout() {
+    localStorage.removeItem('nm_session');
+    location.reload();
 }
 
-function copyIP() {
+function toggleAdminPanel() {
+    const prof = document.getElementById('view-profile');
+    const adm = document.getElementById('view-admin');
+    if (prof.style.display === 'none') {
+        prof.style.display = 'block'; adm.style.display = 'none';
+    } else {
+        prof.style.display = 'none'; adm.style.display = 'block';
+    }
+}
+
+function copyIp() {
     navigator.clipboard.writeText("MC.NUEVOMEXICO.PRO");
-    alert("IP Copiada");
+    showNotification("PORTAPAPELES", "IP copiada: MC.NUEVOMEXICO.PRO", "📋");
 }
