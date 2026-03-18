@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft RP - Servidor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="info-section">
+            <h1>Bienvenido a <span class="highlight">MineRP</span></h1>
+            <p>Sumérgete en una experiencia única de Roleplay. Crea tu historia, consigue un trabajo y vive en nuestra ciudad.</p>
+            <ul>
+                <li>🟢 IP: mc.tuservidor.com</li>
+                <li>Discord: discord.gg/tuservidor</li>
+                <li>Versión: 1.20.1</li>
+            </ul>
+        </div>
+
+        <div class="auth-section">
+            <div class="form-container">
+                <div class="tabs">
+                    <button id="btn-login" onclick="toggleForm('login')">Iniciar Sesión</button>
+                    <button id="btn-register" onclick="toggleForm('register')">Registrarse</button>
+                </div>
+
+                <form id="login-form" action="/login" method="POST">
+                    <input type="text" name="usuario_mc" placeholder="Usuario de Minecraft" required>
+                    <input type="password" name="password" placeholder="Contraseña" required>
+                    <button type="submit" class="btn-main">Entrar</button>
+                </form>
+
+                <form id="register-form" action="/registro" method="POST" style="display: none;">
+                    <input type="text" name="usuario_mc" placeholder="Usuario de Minecraft" required>
+                    <input type="text" name="nombre_rp" placeholder="Nombre del Personaje RP" required>
+                    <input type="date" name="fecha_nacimiento" required title="Fecha de Nacimiento">
+                    <input type="text" name="nacionalidad" placeholder="Nacionalidad" required>
+                    <input type="password" name="password" placeholder="Contraseña" required>
+                    <button type="submit" class="btn-main">Crear Cuenta</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleForm(type) {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            if (type === 'login') {
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+            } else {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
