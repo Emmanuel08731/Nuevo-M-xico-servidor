@@ -2,139 +2,112 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Nuevo México RP | Official Elite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo México RP | Portal 2026</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div id="loader" class="loader-overlay">
-        <div class="loader-diamond"></div>
-        <p>CONECTANDO CON EL SERVIDOR...</p>
-    </div>
-
-    <div id="alert-notfound" class="floating-alert error">
-        <div class="alert-icon">⚠️</div>
-        <div class="alert-text">
-            <b>ACCESO DENEGADO</b>
-            <p>El ciudadano no está registrado en la base de datos.</p>
+    <div id="notif-bar" class="system-notification">
+        <div class="notif-icon" id="ni">⚠️</div>
+        <div class="notif-body">
+            <b id="nt">AVISO DEL SISTEMA</b>
+            <p id="nm">Mensaje detallado aquí.</p>
         </div>
     </div>
 
-    <div id="alert-deleted" class="floating-alert success">
-        <div class="alert-icon">🗑️</div>
-        <div class="alert-text">
-            <b>CIUDADANO ELIMINADO</b>
-            <p>Reiniciando sistema de archivos...</p>
-        </div>
+    <div id="loader" class="preloader">
+        <div class="emerald-ring"></div>
+        <span>SINCRONIZANDO...</span>
     </div>
 
-    <nav class="glass-nav">
-        <div class="nav-logo">NUEVO MÉXICO <span>RP</span></div>
-        <div class="nav-menu">
-            <a href="#inicio">Inicio</a>
-            <a href="#info">Servidor</a>
-            <button class="btn-emerald" onclick="openModal()">ENTRAR</button>
+    <nav class="main-nav">
+        <div class="nav-brand">NUEVO MÉXICO <span>RP</span></div>
+        <div class="nav-actions">
+            <button class="btn-portal" id="btn-login-trigger" onclick="openPortal()">ACCESO CIUDADANO</button>
         </div>
     </nav>
 
-    <header id="inicio" class="hero">
-        <div class="hero-content observe">
-            <span class="badge-new">EDICIÓN 2026</span>
-            <h1>TU VIDA, <span>TUS REGLAS.</span></h1>
-            <p>Únete a la comunidad de Roleplay más avanzada. Economía real, trabajos únicos y política ciudadana.</p>
-            <div class="ip-container" onclick="copyIP()">
-                <div class="ip-label">DIRECCIÓN DE ACCESO</div>
-                <div class="ip-value">MC.NUEVOMEXICO.PRO</div>
+    <main class="landing">
+        <section class="hero-box reveal">
+            <div class="status-pill">🟢 SERVIDOR ONLINE</div>
+            <h1>BIENVENIDO A TU <span>NUEVA VIDA</span></h1>
+            <p>La simulación de rol más avanzada de Minecraft está esperándote. Crea tu camino.</p>
+            <div class="server-ip" onclick="copyIp()">
+                <code>MC.NUEVOMEXICO.PRO</code>
+                <small>HAZ CLIC PARA COPIAR IP</small>
             </div>
-        </div>
-    </header>
+        </section>
+    </main>
 
-    <section id="info" class="features section-padding">
-        <div class="feat-card observe">
-            <div class="feat-icon">🏛️</div>
-            <h3>Gobierno Activo</h3>
-            <p>Leyes votadas por la comunidad y un sistema judicial real.</p>
-        </div>
-        <div class="feat-card observe">
-            <div class="feat-icon">🚔</div>
-            <h3>Seguridad</h3>
-            <p>Cuerpo de policía con divisiones tácticas y de inteligencia.</p>
-        </div>
-        <div class="feat-card observe">
-            <div class="feat-icon">⚒️</div>
-            <h3>Economía</h3>
-            <p>Crea tu empresa, contrata empleados y domina el mercado.</p>
-        </div>
-    </section>
+    <div id="modal-portal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="btn-close-modal" onclick="closePortal()">×</button>
 
-    <div id="modal" class="modal-overlay">
-        <div class="modal-card">
-            <button class="btn-close" onclick="closeModal()">×</button>
-            
             <div id="view-auth">
-                <div class="tabs">
-                    <button id="t-l" class="active" onclick="switchAuth('L')">LOGIN</button>
-                    <button id="t-r" onclick="switchAuth('R')">REGISTRO</button>
+                <div class="auth-tabs">
+                    <button id="t-l" class="active" onclick="setTab('L')">INGRESAR</button>
+                    <button id="t-r" onclick="setTab('R')">UNIRSE</button>
                 </div>
-                <form id="formLogin" class="form-style">
-                    <input type="text" id="l-u" placeholder="Usuario MC" required>
-                    <input type="password" id="l-p" placeholder="Contraseña" required>
-                    <button type="submit" class="btn-submit">SINCRONIZAR IDENTIDAD</button>
+                <form id="form-login" class="auth-form animate-in">
+                    <input type="text" id="li-u" placeholder="Usuario de Minecraft" required>
+                    <input type="password" id="li-p" placeholder="Contraseña" required>
+                    <button type="submit" class="btn-submit">ENTRAR AL SISTEMA</button>
                 </form>
-                <form id="formReg" class="form-style" style="display:none">
-                    <input type="text" id="r-u" placeholder="Nombre de Usuario MC" required>
-                    <input type="text" id="r-n" placeholder="Nombre Completo RP" required>
-                    <input type="date" id="r-d" required>
-                    <input type="text" id="r-na" placeholder="Nacionalidad" required>
-                    <input type="password" id="r-p" placeholder="Contraseña de Seguridad" required>
-                    <button type="submit" class="btn-submit emerald">SOLICITAR CIUDADANÍA</button>
+                <form id="form-register" class="auth-form animate-in" style="display:none">
+                    <input type="text" id="re-u" placeholder="Nombre en Minecraft" required>
+                    <input type="text" id="re-n" placeholder="Nombre Real RP (Ej: Juan Perez)" required>
+                    <input type="date" id="re-d" required title="Fecha de Nacimiento">
+                    <input type="text" id="re-na" placeholder="Nacionalidad" required>
+                    <input type="password" id="re-p" placeholder="Crea una Contraseña" required>
+                    <button type="submit" class="btn-submit btn-green">REGISTRARSE</button>
                 </form>
             </div>
 
             <div id="view-profile" style="display:none">
-                <div class="dni-card">
-                    <div class="dni-header">IDENTIFICACIÓN FEDERAL</div>
-                    <div class="dni-content">
-                        <div class="avatar-box">👤</div>
-                        <div class="data-box">
-                            <h2 id="p-rp">Nombre RP</h2>
-                            <p><b>MC:</b> <span id="p-mc">--</span></p>
-                            <p><b>ORIGEN:</b> <span id="p-na">--</span></p>
-                            <div class="rank-badge" id="p-rank">CIUDADANO</div>
+                <div class="dni-container">
+                    <div class="dni-card-header">IDENTIFICACIÓN FEDERAL</div>
+                    <div class="dni-card-body">
+                        <div class="dni-photo">👤</div>
+                        <div class="dni-info">
+                            <h2 id="dni-rp-name">--</h2>
+                            <p><b>MC:</b> <span id="dni-mc-nick">--</span></p>
+                            <p><b>ORIGEN:</b> <span id="dni-nation">--</span></p>
+                            <div class="rank-tag" id="dni-rank">CIUDADANO</div>
                         </div>
                     </div>
                 </div>
-                
-                <div id="admin-trigger" style="display:none">
-                    <button class="btn-panel-master" onclick="showAdminPanel()">CONSOLA DE FUNDADOR ⭐</button>
+                <div id="admin-tools" style="display:none">
+                    <button class="btn-master-panel" onclick="toggleAdminPanel()">PANEL DE FUNDADOR ⭐</button>
                 </div>
-
-                <button class="btn-out" onclick="location.reload()">DESCONECTAR</button>
+                <button class="btn-logout" onclick="logout()">CERRAR SESIÓN</button>
             </div>
 
             <div id="view-admin" style="display:none">
-                <div class="admin-header">
-                    <h3>GESTIÓN DE <span>POBLACIÓN</span></h3>
-                    <button class="btn-back" onclick="hideAdminPanel()">ATRÁS</button>
+                <div class="admin-panel-header">
+                    <h3>CONTROL DE <span>CIUDADANOS</span></h3>
+                    <button class="btn-back-profile" onclick="toggleAdminPanel()">← VOLVER</button>
                 </div>
-                <div class="table-scroll">
-                    <table class="admin-table">
+                <div class="admin-table-wrapper">
+                    <table class="citizens-table">
                         <thead>
                             <tr>
-                                <th>CIUDADANO</th>
-                                <th>ACCIONES</th>
+                                <th>Usuario MC</th>
+                                <th>Nombre RP</th>
+                                <th>Acción</th>
                             </tr>
                         </thead>
-                        <tbody id="admin-rows"></tbody>
+                        <tbody id="admin-table-rows">
+                            </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer class="footer">
-        <p>&copy; 2026 Nuevo México RP | Dirigido por <b>Emmanuel0606</b></p>
+    <footer class="main-footer">
+        <p>&copy; 2026 Nuevo México RP | Creado por <b>Emmanuel0606</b></p>
     </footer>
 
     <script src="script.js"></script>
