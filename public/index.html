@@ -3,56 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft RP - Servidor</title>
+    <title>Nuevo México RP | Servidor Minecraft</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <div class="info-section">
-            <h1>Bienvenido a <span class="highlight">MineRP</span></h1>
-            <p>Sumérgete en una experiencia única de Roleplay. Crea tu historia, consigue un trabajo y vive en nuestra ciudad.</p>
-            <ul>
-                <li>🟢 IP: mc.tuservidor.com</li>
-                <li>Discord: discord.gg/tuservidor</li>
-                <li>Versión: 1.20.1</li>
-            </ul>
-        </div>
+    <div class="main-wrapper">
+        <div class="glass-container">
+            <div class="side-info">
+                <div class="logo">🇲🇽</div>
+                <h1>NUEVO MÉXICO <span>RP</span></h1>
+                <p class="description">Únete a la comunidad más grande de Roleplay en español. Realismo puro, economía dinámica y una historia que tú escribes.</p>
+                <div class="server-status">
+                    <div class="status-badge">🟢 ONLINE</div>
+                    <p>IP: <code>mc.nuevomexico.pro</code></p>
+                </div>
+            </div>
 
-        <div class="auth-section">
-            <div class="form-container">
-                <div class="tabs">
-                    <button id="btn-login" onclick="toggleForm('login')">Iniciar Sesión</button>
-                    <button id="btn-register" onclick="toggleForm('register')">Registrarse</button>
+            <div class="side-auth">
+                <div class="auth-tabs">
+                    <button id="t-login" class="active" onclick="showTab('login')">ENTRAR</button>
+                    <button id="t-reg" onclick="showTab('reg')">REGISTRO</button>
                 </div>
 
-                <form id="login-form" action="/login" method="POST">
+                <form id="f-login" action="/login" method="POST" class="auth-form">
+                    <h3>Iniciar Sesión</h3>
                     <input type="text" name="usuario_mc" placeholder="Usuario de Minecraft" required>
-                    <input type="password" name="password" placeholder="Contraseña" required>
-                    <button type="submit" class="btn-main">Entrar</button>
+                    <input type="password" name="password" placeholder="Tu Contraseña" required>
+                    <button type="submit" class="btn-primary">INGRESAR AL SERVER</button>
                 </form>
 
-                <form id="register-form" action="/registro" method="POST" style="display: none;">
+                <form id="f-reg" action="/registro" method="POST" class="auth-form" style="display:none;">
+                    <h3>Crea tu Personaje</h3>
                     <input type="text" name="usuario_mc" placeholder="Usuario de Minecraft" required>
-                    <input type="text" name="nombre_rp" placeholder="Nombre del Personaje RP" required>
-                    <input type="date" name="fecha_nacimiento" required title="Fecha de Nacimiento">
-                    <input type="text" name="nacionalidad" placeholder="Nacionalidad" required>
-                    <input type="password" name="password" placeholder="Contraseña" required>
-                    <button type="submit" class="btn-main">Crear Cuenta</button>
+                    <input type="text" name="nombre_rp" placeholder="Nombre de tu Personaje (Ej: Juan Perez)" required>
+                    <input type="date" name="fecha_nacimiento" required>
+                    <input type="text" name="nacionalidad" placeholder="Nacionalidad del personaje" required>
+                    <input type="password" name="password" placeholder="Crea una contraseña segura" required>
+                    <button type="submit" class="btn-success">CONFIRMAR PERSONAJE</button>
                 </form>
             </div>
         </div>
     </div>
 
     <script>
-        function toggleForm(type) {
-            const loginForm = document.getElementById('login-form');
-            const registerForm = document.getElementById('register-form');
-            if (type === 'login') {
-                loginForm.style.display = 'block';
-                registerForm.style.display = 'none';
+        function showTab(type) {
+            const login = document.getElementById('f-login'), reg = document.getElementById('f-reg');
+            const btL = document.getElementById('t-login'), btR = document.getElementById('t-reg');
+            if(type === 'login') {
+                login.style.display='block'; reg.style.display='none';
+                btL.classList.add('active'); btR.classList.remove('active');
             } else {
-                loginForm.style.display = 'none';
-                registerForm.style.display = 'block';
+                login.style.display='none'; reg.style.display='block';
+                btR.classList.add('active'); btL.classList.remove('active');
             }
         }
     </script>
