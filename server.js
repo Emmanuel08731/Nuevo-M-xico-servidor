@@ -5,15 +5,17 @@ const path = require('path');
 
 const app = express();
 
-// Configuración de la Base de Datos con SSL para Render
+// Configuración de conexión a PostgreSQL
 const pool = new Pool({
   connectionString: 'postgresql://minecraft_db_pojg_user:dM593YPdzsJ6NujnEY8ywpgQYE9mUqEL@dpg-d6sv3gnfte5s73fgdok0-a/minecraft_db_pojg',
   ssl: { rejectUnauthorized: false }
 });
 
-// Función de inicialización: Crea tablas y repara columnas faltantes
-async function inicializarSistema() {
+// Función de inicialización: Crea la estructura necesaria si no existe
+async function bootSystem() {
     try {
+        console.log("--- Iniciando Validación de Base de Datos ---");
+        // Crear tabla de ciudadanos
         await pool.query(`
             CREATE TABLE IF NOT EXISTS usuarios (
                 id SERIAL PRIMARY KEY,
@@ -26,111 +28,85 @@ async function inicializarSistema() {
                 fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
-        // Reparación de columna si el usuario ya tenía la tabla vieja
+
+        // Reparar tabla en caso de que falten columnas (Anti-Errores)
         await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS es_admin BOOLEAN DEFAULT FALSE;`);
         await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
 
-        // Cuenta del Administrador Principal
-        const passHash = await bcrypt.hash('emma2013', 10);
+        // Crear cuenta maestra de Emmanuel
+        const adminPass = await bcrypt.hash('emma2013', 10);
         await pool.query(`
             INSERT INTO usuarios (usuario_mc, nombre_rp, fecha_nacimiento, nacionalidad, password, es_admin)
-            VALUES ('emmanuel0606', 'Emmanuel Dueño', '2000-01-01', 'México', $1, TRUE)
+            VALUES ('emmanuel0606', 'Emmanuel Fundador', '2000-01-01', 'México', $1, TRUE)
             ON CONFLICT (usuario_mc) DO UPDATE SET es_admin = TRUE;
-        `, [passHash]);
-        
-        console.log("✅ Servidor: Base de datos vinculada y actualizada.");
+        `, [adminPass]);
+
+        console.log("✅ Sistema: Base de datos sincronizada correctamente.");
     } catch (err) {
-        console.error("❌ Error Crítico BD:", err.message);
+        console.error("❌ Error de inicio:", err.message);
     }
 }
-inicializarSistema();
+bootSystem();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// --- RUTAS DE LA API ---
+// --- ENDPOINTS DE LA API ---
 
-// Obtener los últimos 5 registrados para la web blanca
-app.get('/api/recientes', async (req, res) => {
+// Registro de nuevos usuarios
+app.post('/api/register', async (req, res) => {
+    const { user_mc, name_rp, birth, nation, pass } = req.body;
     try {
-        const result = await pool.query('SELECT usuario_mc, fecha_registro FROM usuarios ORDER BY fecha_registro DESC LIMIT 5');
-        res.json(result.rows);
-    } catch (e) { res.status(500).json([]); }
-});
-
-// Registro de nuevos personajes
-app.post('/api/registrar', async (req, res) => {
-    const { usuario_mc, nombre_rp, fecha_nacimiento, nacionalidad, password } = req.body;
-    try {
-        const hash = await bcrypt.hash(password, 10);
+        const hashed = await bcrypt.hash(pass, 10);
         await pool.query(
             'INSERT INTO usuarios (usuario_mc, nombre_rp, fecha_nacimiento, nacionalidad, password) VALUES ($1,$2,$3,$4,$5)',
-            [usuario_mc, nombre_rp, fecha_nacimiento, nacionalidad, hash]
+            [user_mc, name_rp, birth, nation, hashed]
         );
-        res.send(`<script>alert('¡Personaje ${nombre_rp} registrado!'); window.location='/';</script>`);
-    } catch (err) {
-        res.send(`<h2>Error: El nombre de usuario '${usuario_mc}' ya está en uso.</h2><a href="/">Volver</a>`);
+        res.json({ success: true, message: "¡Ciudadano registrado!" });
+    } catch (e) {
+        res.json({ success: false, message: "El usuario de MC ya existe en nuestra base de datos." });
     }
 });
 
-// Login y Control de Paneles (Admin/User)
-app.post('/api/auth', async (req, res) => {
-    const { usuario_mc, password } = req.body;
+// Login y obtención de datos de perfil
+app.post('/api/login', async (req, res) => {
+    const { user_mc, pass } = req.body;
     try {
-        const result = await pool.query('SELECT * FROM usuarios WHERE usuario_mc = $1', [usuario_mc]);
-        if (result.rows.length === 0) return res.send("Usuario no existe.");
+        const result = await pool.query('SELECT * FROM usuarios WHERE usuario_mc = $1', [user_mc]);
+        if (result.rows.length === 0) return res.json({ success: false, msg: "Usuario no encontrado" });
 
         const user = result.rows[0];
-        const valido = await bcrypt.compare(password, user.password);
+        const match = await bcrypt.compare(pass, user.password);
 
-        if (valido) {
+        if (match) {
+            // Si es admin, devolvemos también la lista de usuarios para el dashboard
+            let userList = [];
             if (user.es_admin) {
-                const lista = await pool.query('SELECT * FROM usuarios ORDER BY id DESC');
-                let rows = lista.rows.map(u => `
-                    <div style="background:#fff; margin:10px 0; padding:15px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; border:1px solid #eee;">
-                        <span><b>${u.usuario_mc}</b> | ${u.nombre_rp} [${u.es_admin ? 'ADMIN' : 'USER'}]</span>
-                        <div>
-                            <a href="/op/admin/${u.id}" style="color:#27ae60; text-decoration:none; margin-right:15px; font-weight:bold;">[Promover]</a>
-                            <a href="/op/borrar/${u.id}" style="color:#e74c3c; text-decoration:none; font-weight:bold;">[Eliminar]</a>
-                        </div>
-                    </div>
-                `).join('');
-                res.send(`
-                    <body style="font-family:sans-serif; background:#f0f2f5; padding:40px;">
-                        <h1 style="color:#2c3e50;">Panel Maestro: Emmanuel</h1>
-                        <hr><div style="max-width:800px;">${rows}</div>
-                        <br><a href="/" style="background:#2c3e50; color:white; padding:10px 20px; border-radius:5px; text-decoration:none;">Cerrar Sesión</a>
-                    </body>
-                `);
-            } else {
-                res.send(`
-                    <body style="font-family:sans-serif; background:#fff; display:flex; justify-content:center; align-items:center; height:100vh; text-align:center;">
-                        <div style="border:2px solid #2ecc71; padding:50px; border-radius:30px;">
-                            <h1 style="color:#2ecc71;">¡Bienvenido al Rol!</h1>
-                            <h2>${user.nombre_rp}</h2>
-                            <p><b>Origen:</b> ${user.nacionalidad} | <b>ID:</b> #${user.id}</p>
-                            <p style="color:#7f8c8d;">Recuerda seguir las normas del servidor.</p>
-                            <a href="/" style="color:#2ecc71; font-weight:bold; text-decoration:none;">SALIR</a>
-                        </div>
-                    </body>
-                `);
+                const all = await pool.query('SELECT id, usuario_mc, nombre_rp, es_admin FROM usuarios ORDER BY id DESC');
+                userList = all.rows;
             }
-        } else { res.send("Contraseña incorrecta."); }
-    } catch (e) { res.send("Error interno."); }
+            res.json({ success: true, user: user, adminData: userList });
+        } else {
+            res.json({ success: false, msg: "Contraseña incorrecta" });
+        }
+    } catch (e) { res.status(500).send("Error de servidor"); }
 });
 
-// Operaciones de Admin
-app.get('/op/admin/:id', async (req, res) => {
-    await pool.query('UPDATE usuarios SET es_admin = TRUE WHERE id = $1', [req.params.id]);
-    res.redirect('/');
+// Cambiar rango a Admin
+app.post('/api/promote', async (req, res) => {
+    const { targetId } = req.body;
+    await pool.query('UPDATE usuarios SET es_admin = TRUE WHERE id = $1', [targetId]);
+    res.json({ success: true });
 });
 
-app.get('/op/borrar/:id', async (req, res) => {
-    if(req.params.id == 1) return res.send("No puedes borrar la cuenta raíz.");
-    await pool.query('DELETE FROM usuarios WHERE id = $1', [req.params.id]);
-    res.redirect('/');
+// Eliminar usuario
+app.post('/api/delete-user', async (req, res) => {
+    const { targetId } = req.body;
+    if(targetId == 1) return res.json({ success: false });
+    await pool.query('DELETE FROM usuarios WHERE id = $1', [targetId]);
+    res.json({ success: true });
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Puerto: ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Web Server Nuevo México RP activo en puerto ${PORT}`));
