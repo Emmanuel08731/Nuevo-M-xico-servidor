@@ -3,111 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuevo México RP | El inicio de tu leyenda</title>
+    <title>Nuevo México RP | Servidor Oficial de Minecraft</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="logo">NUEVO MÉXICO <span>RP</span></div>
-        <ul class="nav-links">
-            <li><a href="#inicio">INICIO</a></li>
-            <li><a href="#info">INFORMACIÓN</a></li>
-            <li><a href="#reglas">REGLAS</a></li>
-            <li><a href="#tienda">TIENDA</a></li>
-            <li><button class="btn-login" onclick="abrirModal()">ACCEDER</button></li>
-        </ul>
+        <div class="nav-container">
+            <div class="logo">Nuevo México <span>RP</span></div>
+            <ul class="nav-links">
+                <li><a href="#hero">Inicio</a></li>
+                <li><a href="#sistemas">Sistemas</a></li>
+                <li><a href="#facciones">Facciones</a></li>
+                <li><button class="btn-auth" onclick="openModal()">ACCEDER</button></li>
+            </ul>
+        </div>
     </nav>
 
-    <header id="inicio" class="hero">
-        <div class="hero-overlay"></div>
-        <div class="hero-text">
-            <h4 class="glow">SERVIDOR DE MINECRAFT ROLEPLAY</h4>
-            <h1>ESCRIBE TU <span>HISTORIA</span></h1>
-            <p>Trabajos realistas, facciones ilegales, sistema judicial avanzado y una economía única. ¿Quién serás hoy?</p>
-            <div class="cta-buttons">
-                <button class="btn-main" onclick="abrirModal()">EMPEZAR A JUGAR</button>
-                <div class="ip-display">IP: <span>MC.NUEVOMEXICO.PRO</span></div>
+    <header id="hero" class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-content">
+            <div class="reveal">
+                <span class="online-tag">🟢 SERVIDOR DISPONIBLE</span>
+                <h1>LA MEJOR EXPERIENCIA DE <span>ROL</span></h1>
+                <p>Únete a miles de jugadores en el servidor más realista de México. Trabajos, mafias, policía y una vida real en Minecraft.</p>
+                <div class="hero-actions">
+                    <button class="btn-primary" onclick="openModal()">EMPEZAR MI HISTORIA</button>
+                    <div class="ip-box" id="ipBox" onclick="copyIP()">
+                        <span>IP: MC.NUEVOMEXICO.PRO</span>
+                        <small id="copyText">Click para copiar</small>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
 
-    <section id="info" class="section">
-        <h2 class="section-title">NUESTROS <span>SISTEMAS</span></h2>
-        <div class="grid">
-            <div class="card">
-                <div class="card-icon">💼</div>
-                <h3>ECONOMÍA REAL</h3>
-                <p>Sistema de bancos, cajeros y negocios propios. Compra casas y vehículos de lujo.</p>
-            </div>
-            <div class="card">
-                <div class="card-icon">🚔</div>
-                <h3>FUERZAS DE LEY</h3>
-                <p>Policía entrenada, sistema de juicios, cárcel federal y multas dinámicas.</p>
-            </div>
-            <div class="card">
-                <div class="card-icon">🔫</div>
-                <h3>BAJO MUNDO</h3>
-                <p>Mafias, bandas, robos a bancos y tráfico de sustancias ocultas.</p>
+    <section id="sistemas" class="section">
+        <div class="container">
+            <h2 class="section-title reveal">Sistemas <span>Únicos</span></h2>
+            <div class="grid">
+                <div class="card reveal">
+                    <div class="card-icon">🏨</div>
+                    <h3>Propiedades</h3>
+                    <p>Compra casas, departamentos y locales comerciales para tu negocio.</p>
+                </div>
+                <div class="card reveal">
+                    <div class="card-icon">💼</div>
+                    <h3>Economía</h3>
+                    <p>Sistema bancario con tarjetas, préstamos y lavado de dinero.</p>
+                </div>
+                <div class="card reveal">
+                    <div class="card-icon">👮</div>
+                    <h3>Justicia</h3>
+                    <p>Policía Federal, jueces, cárceles de máxima seguridad y leyes reales.</p>
+                </div>
             </div>
         </div>
     </section>
 
-    <section id="reglas" class="section bg-darker">
-        <h2 class="section-title">REGLAS <span>BÁSICAS</span></h2>
-        <div class="rules-container">
-            <div class="rule-item"><span>01</span> <b>Valorar Vida:</b> Tu personaje debe actuar como si solo tuviera una vida.</div>
-            <div class="rule-item"><span>02</span> <b>No PowerGaming:</b> No hagas cosas que serían imposibles en la vida real.</div>
-            <div class="rule-item"><span>03</span> <b>No MetaGaming:</b> No uses información de fuera del juego dentro del rol.</div>
+    <section id="facciones" class="section gray">
+        <div class="container">
+            <h2 class="section-title reveal">Facciones <span>Legales e Ilegales</span></h2>
+            <div class="fac-grid">
+                <div class="fac-card reveal">
+                    <h3>S.E.D.E.N.A</h3>
+                    <p>Protege la soberanía nacional y lucha contra el crimen organizado.</p>
+                </div>
+                <div class="fac-card reveal">
+                    <h3>CARTEL NM</h3>
+                    <p>Controla las rutas, el tráfico y expande tu imperio criminal.</p>
+                </div>
+                <div class="fac-card reveal">
+                    <h3>PARAMÉDICOS</h3>
+                    <p>Salva vidas en las calles y atiende emergencias críticas.</p>
+                </div>
+            </div>
         </div>
     </section>
 
-    <div id="modalAuth" class="modal">
-        <div class="modal-box">
-            <span class="close-btn" onclick="cerrarModal()">&times;</span>
-            <div class="auth-tabs">
-                <button id="tabL" class="active" onclick="showAuth('login')">INICIAR SESIÓN</button>
-                <button id="tabR" onclick="showAuth('reg')">REGISTRARSE</button>
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <div class="modal-header">
+                <button id="tabL" class="tab-btn active" onclick="switchTab('login')">Entrar</button>
+                <button id="tabR" class="tab-btn" onclick="switchTab('reg')">Registro</button>
             </div>
 
-            <form id="formLogin" action="/api/login" method="POST" class="auth-form">
+            <form id="formLogin" class="auth-form">
+                <h3>Identificación Ciudadana</h3>
                 <div class="input-group">
                     <label>Usuario de Minecraft</label>
-                    <input type="text" name="usuario_mc" placeholder="Ej: Emmanuel0606" required>
+                    <input type="text" id="lUser" required placeholder="Tu Nickname">
                 </div>
                 <div class="input-group">
                     <label>Contraseña</label>
-                    <input type="password" name="password" required>
+                    <input type="password" id="lPass" required placeholder="••••••••">
                 </div>
-                <button type="submit" class="btn-submit">ENTRAR AL SERVIDOR</button>
+                <button type="submit" class="btn-submit">INGRESAR AL PANEL</button>
             </form>
 
-            <form id="formReg" action="/api/registro" method="POST" class="auth-form" style="display:none;">
-                <input type="text" name="usuario_mc" placeholder="Usuario MC" required>
-                <input type="text" name="nombre_rp" placeholder="Nombre RP (Ej: Juan Perez)" required>
-                <input type="date" name="fecha_nacimiento" required>
-                <input type="text" name="nacionalidad" placeholder="Nacionalidad" required>
-                <input type="password" name="password" placeholder="Contraseña" required>
-                <button type="submit" class="btn-submit btn-reg">CREAR PERSONAJE</button>
+            <form id="formReg" class="auth-form" style="display:none;">
+                <h3>Registro de Personaje</h3>
+                <input type="text" id="rUser" placeholder="Usuario MC" required>
+                <input type="text" id="rName" placeholder="Nombre de tu Personaje RP" required>
+                <div class="input-group">
+                    <label>Nacimiento</label>
+                    <input type="date" id="rBirth" required>
+                </div>
+                <input type="text" id="rNation" placeholder="Nacionalidad del personaje" required>
+                <input type="password" id="rPass" placeholder="Contraseña segura" required>
+                <button type="submit" class="btn-submit green">CREAR CIUDADANO</button>
             </form>
+
+            <div id="adminPanel" style="display:none;" class="admin-panel">
+                <h3 style="color:#2ecc71">Panel Administrativo</h3>
+                <div id="userList" class="user-list"></div>
+            </div>
         </div>
     </div>
 
-    <footer>
-        <p>&copy; 2026 Nuevo México RP. Desarrollado por <span>Emmanuel</span></p>
+    <footer class="footer">
+        <p>&copy; 2026 Nuevo México RP. Dirigido por <b>Emmanuel</b></p>
     </footer>
 
-    <script>
-        function abrirModal() { document.getElementById('modalAuth').style.display='flex'; }
-        function cerrarModal() { document.getElementById('modalAuth').style.display='none'; }
-        function showAuth(type) {
-            const isL = type === 'login';
-            document.getElementById('formLogin').style.display = isL ? 'block' : 'none';
-            document.getElementById('formReg').style.display = isL ? 'none' : 'block';
-            document.getElementById('tabL').className = isL ? 'active' : '';
-            document.getElementById('tabR').className = isL ? '' : 'active';
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
