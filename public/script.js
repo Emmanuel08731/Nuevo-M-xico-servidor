@@ -1,41 +1,108 @@
 /**
- * SISTEMA INTEGRADO DE NUEVO MÉXICO RP
- * Core: 2026 Stable
+ * SISTEMA INTEGRAL NUEVO MÉXICO RP
+ * Core Versión 2026 - Control Emmanuel
  */
 
-// 1. Funciones de Navegación del Modal
-function openModal() { document.getElementById('mainModal').style.display = 'flex'; }
-function closeModal() { document.getElementById('mainModal').style.display = 'none'; }
+// 1. Loader & Animaciones de Scroll
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        document.getElementById('loader').style.display = 'none';
+        checkReveal();
+    }, 1000);
+});
 
-function toggleAuth(type) {
+function checkReveal() {
+    const reveals = document.querySelectorAll('.reveal');
+    reveals.forEach(el => {
+        const windowHeight = window.innerHeight;
+        const revealTop = el.getBoundingClientRect().top;
+        if (revealTop < windowHeight - 100) {
+            el.classList.add('active');
+        }
+    });
+}
+window.addEventListener('scroll', checkReveal);
+
+// 2. Control de Interfaz (Modales y Tabs)
+function toggleModal(show) {
+    document.getElementById('modal').style.display = show ? 'flex' : 'none';
+}
+
+function switchAuth(type) {
     const isL = type === 'L';
-    document.getElementById('fLogin').style.display = isL ? 'block' : 'none';
-    document.getElementById('fReg').style.display = isL ? 'none' : 'block';
+    document.getElementById('loginForm').style.display = isL ? 'block' : 'none';
+    document.getElementById('regForm').style.display = isL ? 'none' : 'block';
     document.getElementById('tabL').classList.toggle('active', isL);
     document.getElementById('tabR').classList.toggle('active', !isL);
 }
 
-// 2. Función Copiar IP con feedback
+// 3. Mecánica de Copiado
 function copyIP() {
-    navigator.clipboard.writeText("MC.NUEVOMEXICO.PRO");
-    const sub = document.querySelector('.ip-sub');
-    sub.innerText = "¡COPIADA CON ÉXITO!";
-    sub.style.color = "#2ecc71";
-    setTimeout(() => {
-        sub.innerText = "CLICK PARA COPIAR IP";
-        sub.style.color = "#aaa";
-    }, 2000);
+    const ip = "MC.NUEVOMEXICO.PRO";
+    navigator.clipboard.writeText(ip).then(() => {
+        const text = document.getElementById('ip-text');
+        text.innerText = "¡IP COPIADA!";
+        text.style.color = "#00b894";
+        setTimeout(() => {
+            text.innerText = ip;
+            text.style.color = "";
+        }, 2000);
+    });
 }
 
-// 3. Envío de Formularios (AJAX)
-document.getElementById('fReg').addEventListener('submit', async (e) => {
+// 4. Lógica de Login (Con Rango Emmanuel)
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const data = {
-        u_mc: document.getElementById('rU').value,
-        n_rp: document.getElementById('rN').value,
-        bday: document.getElementById('rD').value,
-        nation: document.getElementById('rNa').value,
-        pass: document.getElementById('rP').value
+        user: document.getElementById('lUser').value,
+        pass: document.getElementById('lPass').value
+    };
+
+    const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+
+    if(result.success) {
+        document.getElementById('auth-view').style.display = 'none';
+        
+        if(result.user.es_admin) {
+            // MOSTRAR PANEL ADMIN
+            document.getElementById('admin-view').style.display = 'block';
+            const tbody = document.getElementById('admin-tbody');
+            tbody.innerHTML = result.admin.map(u => `
+                <tr>
+                    <td><b>${u.usuario_mc}</b></td>
+                    <td>${u.nombre_rp}</td>
+                    <td>
+                        ${!u.es_admin ? `<button onclick="adminAction(${u.id}, 'promote')" style="color:green; border:none; background:none; cursor:pointer; font-weight:800">PROM</button>` : '⭐'}
+                        <button onclick="adminAction(${u.id}, 'delete')" style="color:red; border:none; background:none; cursor:pointer; font-weight:800; margin-left:10px">DEL</button>
+                    </td>
+                </tr>
+            `).join('');
+        } else {
+            // MOSTRAR DNI CIUDADANO
+            document.getElementById('user-view').style.display = 'block';
+            document.getElementById('dni-rp').innerText = result.user.nombre_rp;
+            document.getElementById('dni-mc').innerText = result.user.usuario_mc;
+            document.getElementById('dni-na').innerText = result.user.nacionalidad;
+        }
+    } else {
+        alert(result.msg);
+    }
+});
+
+// 5. Lógica de Registro
+document.getElementById('regForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = {
+        user: document.getElementById('rUser').value,
+        rpname: document.getElementById('rName').value,
+        bday: document.getElementById('rBirth').value,
+        nation: document.getElementById('rNation').value,
+        pass: document.getElementById('rPass').value
     };
 
     const res = await fetch('/api/auth/register', {
@@ -44,68 +111,17 @@ document.getElementById('fReg').addEventListener('submit', async (e) => {
         body: JSON.stringify(data)
     });
     const result = await res.json();
-    alert(result.msg);
-    if(result.success) location.reload();
+    if(result.success) { alert("¡Registro exitoso! Ya puedes entrar."); location.reload(); }
+    else { alert(result.msg); }
 });
 
-// 4. Mecánica de Login y Construcción de Paneles
-document.getElementById('fLogin').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const res = await fetch('/api/auth/login', {
+// 6. Acciones de Emmanuel
+async function adminAction(id, type) {
+    if(!confirm("¿Seguro de realizar esta acción?")) return;
+    await fetch('/api/admin/action', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ u_mc: document.getElementById('lU').value, pass: document.getElementById('lP').value })
-    });
-    const data = await res.json();
-
-    if(data.success) {
-        document.getElementById('view-auth').style.display = 'none';
-        
-        if(data.userData.es_admin) {
-            // CONSTRUIR PANEL ADMIN EMMANUEL
-            document.getElementById('view-admin').style.display = 'block';
-            document.getElementById('admin-count').innerText = data.adminData.length;
-            const table = document.getElementById('admin-rows');
-            table.innerHTML = data.adminData.map(user => `
-                <tr>
-                    <td><b>${user.usuario_mc}</b></td>
-                    <td>${user.nombre_rp}</td>
-                    <td>
-                        ${!user.es_admin ? `<button class="btn-up" onclick="promoteUser(${user.id})">PROMOVER</button>` : '⭐'}
-                        <button class="btn-del" onclick="deleteUser(${user.id})">ELIMINAR</button>
-                    </td>
-                </tr>
-            `).join('');
-        } else {
-            // CONSTRUIR DNI CIUDADANO
-            document.getElementById('view-user').style.display = 'block';
-            document.getElementById('dni-rpname').innerText = data.userData.nombre_rp;
-            document.getElementById('dni-id').innerText = "#" + data.userData.id.toString().padStart(3, '0');
-            document.getElementById('dni-mc').innerText = data.userData.usuario_mc;
-            document.getElementById('dni-nation').innerText = data.userData.nacionalidad;
-        }
-    } else {
-        alert(data.msg);
-    }
-});
-
-// 5. Acciones Administrativas
-async function promoteUser(id) {
-    if(!confirm("¿Seguro que quieres ascender a este usuario a ADMIN?")) return;
-    await fetch('/api/admin/promote', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({id})
-    });
-    location.reload();
-}
-
-async function deleteUser(id) {
-    if(!confirm("¿ELIMINAR PERMANENTEMENTE A ESTE CIUDADANO?")) return;
-    await fetch('/api/admin/delete', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({id})
+        body: JSON.stringify({ targetId: id, action: type })
     });
     location.reload();
 }
