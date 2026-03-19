@@ -2,101 +2,124 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Emerald Hosting | Panel de Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emerald Hosting | High Performance</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="dark-theme">
 
-    <div id="notify" class="notif-toast">
-        <div class="notif-bar"></div>
-        <div class="notif-content">
-            <b id="nt-title">SISTEMA</b>
-            <p id="nt-msg">Mensaje de hosting...</p>
+    <div id="notify" class="toast">
+        <div class="toast-content">
+            <span id="nt-icon">🚀</span>
+            <div>
+                <b id="nt-title">System</b>
+                <p id="nt-msg">Iniciando módulos...</p>
+            </div>
         </div>
     </div>
 
-    <nav class="glass-nav">
-        <div class="logo">EMERALD<span>HOST</span></div>
-        <div id="nav-user-info">
-            <button class="btn-login" onclick="openModal()">MI PANEL</button>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">EMERALD<span>HOST</span></div>
+            <ul class="nav-links">
+                <li><a href="#">Inicio</a></li>
+                <li><a href="#">Webs</a></li>
+                <li><a href="#">Bots</a></li>
+                <li><a href="#" class="btn-client" onclick="openModal()">Área Cliente</a></li>
+            </ul>
         </div>
     </nav>
 
     <header class="hero">
-        <div class="hero-inner">
-            <span class="badge">HOSTING DE ALTA DISPONIBILIDAD</span>
-            <h1>DESPLIEGA TUS <span>WEBS Y BOTS</span> EN SEGUNDOS</h1>
-            <p>Infraestructura optimizada para Node.js, Python y PHP con protección DDoS incluida.</p>
-            <div class="stats-grid">
-                <div class="stat"><b>99.9%</b><br>Uptime</div>
-                <div class="stat"><b>NVMe</b><br>Almacenamiento</div>
-                <div class="stat"><b>24/7</b><br>Soporte</div>
+        <div class="hero-content">
+            <div class="promo-tag">Disponibilidad del 99.9% Garantizada</div>
+            <h1>Hosting de <span>Bots</span> para la Nueva Generación</h1>
+            <p>Despliega tus bots de Discord y aplicaciones Node.js en nuestra infraestructura de alta velocidad con protección DDoS avanzada.</p>
+            <div class="hero-btns">
+                <button class="btn-primary" onclick="openModal()">Empezar Ahora</button>
+                <button class="btn-outline">Ver Planes</button>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="server-status">
+                <div class="status-item"><span></span> Node.js v22 Online</div>
             </div>
         </div>
     </header>
 
-    <div id="modal" class="modal-overlay">
-        <div class="modal-card">
-            <button class="btn-close" onclick="closeModal()">×</button>
+    <section class="services">
+        <div class="section-title">
+            <h2>Nuestros <span>Servicios</span></h2>
+            <p>Elige la potencia que tu proyecto necesita.</p>
+        </div>
+        <div class="grid-services">
+            <div class="card-service">
+                <div class="card-icon">🤖</div>
+                <h3>Bot Hosting</h3>
+                <p>Optimizado para Discord.js, Eris y Python. Latencia ultra baja.</p>
+                <span class="price">Desde $0.00/mes</span>
+            </div>
+            <div class="card-service">
+                <div class="card-icon">🌐</div>
+                <h3>Web Hosting</h3>
+                <p>Soporte para React, Vue y sitios estáticos con SSL gratis.</p>
+                <span class="price">Desde $0.00/mes</span>
+            </div>
+            <div class="card-service">
+                <div class="card-icon">🛡️</div>
+                <h3>Seguridad</h3>
+                <p>Protección contra ataques volumétricos incluida en todos los planes.</p>
+                <span class="price">Incluido</span>
+            </div>
+        </div>
+    </section>
 
+    <div id="modal" class="modal-blur">
+        <div class="modal-card">
+            <button class="close-x" onclick="closeModal()">×</button>
+            
             <div id="view-auth">
-                <h3>ACCESO AL <span>CLIENTE</span></h3>
+                <div class="auth-header">
+                    <h3>Bienvenido de Nuevo</h3>
+                    <p>Ingresa a tu panel de control</p>
+                </div>
                 <form id="form-login">
-                    <div class="input-group">
-                        <label>Email Corporativo</label>
-                        <input type="email" id="l-email" required placeholder="ejemplo@emerald.host">
-                    </div>
-                    <div class="input-group">
-                        <label>Contraseña</label>
-                        <input type="password" id="l-pass" required placeholder="••••••••">
-                    </div>
-                    <button type="submit" class="btn-main">ENTRAR AL DASHBOARD</button>
+                    <input type="email" id="l-email" placeholder="Correo Electrónico" required>
+                    <input type="password" id="l-pass" placeholder="Contraseña" required>
+                    <button type="submit" class="btn-auth">Iniciar Sesión</button>
                 </form>
             </div>
 
             <div id="view-dash" style="display:none">
-                <div class="dash-header">
-                    <h2 id="u-name">Bienvenido</h2>
-                    <span id="u-plan" class="plan-tag">Plan Free</span>
+                <div class="dash-user">
+                    <h2 id="u-name">Usuario</h2>
+                    <div class="badge-adm" id="adm-tag" style="display:none">STAFF</div>
                 </div>
-                <div class="services-grid">
-                    <div class="s-card">
-                        <div class="s-icon">🌐</div>
-                        <b>Web Hosting</b>
-                        <button class="btn-manage">Gestionar</button>
+                <div class="dash-grid">
+                    <div class="dash-item" onclick="pushNotify('Info','Función disponible pronto','⚙️')">
+                        <b>Mis Bots</b>
+                        <small>0 activos</small>
                     </div>
-                    <div class="s-card">
-                        <div class="s-icon">🤖</div>
-                        <b>Bot Hosting</b>
-                        <button class="btn-manage">Gestionar</button>
+                    <div class="dash-item" onclick="pushNotify('Info','Función disponible pronto','⚙️')">
+                        <b>Mis Webs</b>
+                        <small>0 activas</small>
                     </div>
                 </div>
-
                 <div id="adm-box" style="display:none">
-                    <button class="btn-admin-special" onclick="showAdmin()">CONSOLA MAESTRA (EMMANUEL) ⭐</button>
+                    <button class="btn-admin" onclick="showAdmin()">CONSOLA EMMANUEL ⭐</button>
                 </div>
-
-                <button class="btn-logout" onclick="logout()">CERRAR SESIÓN</button>
+                <button class="btn-exit" onclick="logout()">Desconectarse</button>
             </div>
 
             <div id="view-admin" style="display:none">
-                <div class="admin-top">
-                    <h3>LISTADO DE <span>CLIENTES</span></h3>
-                    <button onclick="hideAdmin()">← VOLVER</button>
-                </div>
-                <div class="table-container">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>CLIENTE</th>
-                                <th>PLAN</th>
-                                <th>ACCIÓN</th>
-                            </tr>
-                        </thead>
+                <h3>Control Global</h3>
+                <div class="table-scroll">
+                    <table class="adm-table">
                         <tbody id="client-rows"></tbody>
                     </table>
                 </div>
+                <button class="btn-back" onclick="hideAdmin()">Volver</button>
             </div>
         </div>
     </div>
