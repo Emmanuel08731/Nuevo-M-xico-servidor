@@ -13,13 +13,11 @@ const pool = new Pool({
 
 /**
  * INICIALIZACIÓN DE EMERALD HOSTING
- * Crea las tablas y el usuario administrador inicial
  */
 async function bootstrap() {
     try {
         console.log("--- [SISTEMA] Iniciando Emerald Hosting v2026 ---");
         
-        // Tabla de Usuarios
         await pool.query(`
             CREATE TABLE IF NOT EXISTS usuarios (
                 id SERIAL PRIMARY KEY,
@@ -32,7 +30,6 @@ async function bootstrap() {
             );
         `);
 
-        // Tabla de Servicios (Bots/Webs)
         await pool.query(`
             CREATE TABLE IF NOT EXISTS servicios (
                 id SERIAL PRIMARY KEY,
@@ -44,7 +41,6 @@ async function bootstrap() {
             );
         `);
 
-        // Cuenta de Emmanuel (Admin)
         const passHash = await bcrypt.hash('emma06E', 10);
         await pool.query(`
             INSERT INTO usuarios (email, nombre_cliente, password, es_admin, plan)
@@ -59,7 +55,6 @@ async function bootstrap() {
 }
 bootstrap();
 
-// Middlewares
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -69,10 +64,7 @@ app.post('/api/login', async (req, res) => {
     const { email, pass } = req.body;
     try {
         const result = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
-        
-        if (result.rows.length === 0) {
-            return res.json({ success: false, error: 'NOT_FOUND' });
-        }
+        if (result.rows.length === 0) return res.json({ success: false, error: 'NOT_FOUND' });
 
         const user = result.rows[0];
         const isMatch = await bcrypt.compare(pass, user.password);
@@ -83,66 +75,42 @@ app.post('/api/login', async (req, res) => {
                 const all = await pool.query('SELECT id, email, nombre_cliente, plan FROM usuarios ORDER BY id DESC');
                 adminList = all.rows;
             }
-
             const services = await pool.query('SELECT * FROM servicios WHERE owner_id = $1', [user.id]);
-
-            res.json({ 
-                success: true, 
-                user: {
-                    id: user.id,
-                    email: user.email,
-                    nombre: user.nombre_cliente,
-                    plan: user.plan,
-                    admin: user.es_admin
-                },
-                services: services.rows,
-                adminData: adminList
-            });
+            res.json({ success: true, user: { id: user.id, email: user.email, nombre: user.nombre_cliente, plan: user.plan, admin: user.es_admin }, services: services.rows, adminData: adminList });
         } else {
             res.json({ success: false, error: 'WRONG_PASS' });
         }
-    } catch (e) {
-        res.status(500).json({ success: false });
-    }
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
 app.post('/api/register', async (req, res) => {
     const { email, nombre, pass } = req.body;
     try {
         const hash = await bcrypt.hash(pass, 10);
-        await pool.query(
-            'INSERT INTO usuarios (email, nombre_cliente, password) VALUES ($1, $2, $3)',
-            [email, nombre, hash]
-        );
+        await pool.query('INSERT INTO usuarios (email, nombre_cliente, password) VALUES ($1, $2, $3)', [email, nombre, hash]);
         res.json({ success: true });
-    } catch (e) {
-        res.json({ success: false, error: 'ALREADY_EXISTS' });
-    }
+    } catch (e) { res.json({ success: false, error: 'ALREADY_EXISTS' }); }
 });
 
-// --- API: ADMINISTRACIÓN (EMMANUEL) ---
+// --- API: ADMINISTRACIÓN ---
 
 app.post('/api/admin/delete-user', async (req, res) => {
     const { targetId } = req.body;
     try {
-        // Protección para la cuenta de Emmanuel (ID 1)
         if (targetId == 1) return res.json({ success: false });
-
         await pool.query('DELETE FROM usuarios WHERE id = $1', [targetId]);
         res.json({ success: true });
-    } catch (e) {
-        res.json({ success: false });
-    }
+    } catch (e) { res.json({ success: false }); }
 });
 
-// --- MANEJO DE RUTAS (CORREGIDO PARA RENDER) ---
+// --- EL CAMBIO CRÍTICO ESTÁ AQUÍ ---
+// En lugar de app.get('/*', ...), usamos app.use() al final. 
+// Esto captura cualquier ruta sin causar errores de sintaxis en el router.
 
-// Esta es la parte que daba error. Usamos '/*' para que Express lo acepte.
-app.get('/*', (req, res) => {
+app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Inicio del servidor
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`🚀 [SERVER] Emerald Hosting activo en puerto ${PORT}`);
