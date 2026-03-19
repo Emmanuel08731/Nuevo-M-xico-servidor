@@ -2,113 +2,104 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuevo México RP | Portal 2026</title>
+    <title>Emerald Hosting | Panel de Control</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div id="notif-bar" class="system-notification">
-        <div class="notif-icon" id="ni">⚠️</div>
-        <div class="notif-body">
-            <b id="nt">AVISO DEL SISTEMA</b>
-            <p id="nm">Mensaje detallado aquí.</p>
+    <div id="notify" class="notif-toast">
+        <div class="notif-bar"></div>
+        <div class="notif-content">
+            <b id="nt-title">SISTEMA</b>
+            <p id="nt-msg">Mensaje de hosting...</p>
         </div>
     </div>
 
-    <div id="loader" class="preloader">
-        <div class="emerald-ring"></div>
-        <span>SINCRONIZANDO...</span>
-    </div>
-
-    <nav class="main-nav">
-        <div class="nav-brand">NUEVO MÉXICO <span>RP</span></div>
-        <div class="nav-actions">
-            <button class="btn-portal" id="btn-login-trigger" onclick="openPortal()">ACCESO CIUDADANO</button>
+    <nav class="glass-nav">
+        <div class="logo">EMERALD<span>HOST</span></div>
+        <div id="nav-user-info">
+            <button class="btn-login" onclick="openModal()">MI PANEL</button>
         </div>
     </nav>
 
-    <main class="landing">
-        <section class="hero-box reveal">
-            <div class="status-pill">🟢 SERVIDOR ONLINE</div>
-            <h1>BIENVENIDO A TU <span>NUEVA VIDA</span></h1>
-            <p>La simulación de rol más avanzada de Minecraft está esperándote. Crea tu camino.</p>
-            <div class="server-ip" onclick="copyIp()">
-                <code>MC.NUEVOMEXICO.PRO</code>
-                <small>HAZ CLIC PARA COPIAR IP</small>
+    <header class="hero">
+        <div class="hero-inner">
+            <span class="badge">HOSTING DE ALTA DISPONIBILIDAD</span>
+            <h1>DESPLIEGA TUS <span>WEBS Y BOTS</span> EN SEGUNDOS</h1>
+            <p>Infraestructura optimizada para Node.js, Python y PHP con protección DDoS incluida.</p>
+            <div class="stats-grid">
+                <div class="stat"><b>99.9%</b><br>Uptime</div>
+                <div class="stat"><b>NVMe</b><br>Almacenamiento</div>
+                <div class="stat"><b>24/7</b><br>Soporte</div>
             </div>
-        </section>
-    </main>
+        </div>
+    </header>
 
-    <div id="modal-portal" class="modal-overlay">
-        <div class="modal-content">
-            <button class="btn-close-modal" onclick="closePortal()">×</button>
+    <div id="modal" class="modal-overlay">
+        <div class="modal-card">
+            <button class="btn-close" onclick="closeModal()">×</button>
 
             <div id="view-auth">
-                <div class="auth-tabs">
-                    <button id="t-l" class="active" onclick="setTab('L')">INGRESAR</button>
-                    <button id="t-r" onclick="setTab('R')">UNIRSE</button>
-                </div>
-                <form id="form-login" class="auth-form animate-in">
-                    <input type="text" id="li-u" placeholder="Usuario de Minecraft" required>
-                    <input type="password" id="li-p" placeholder="Contraseña" required>
-                    <button type="submit" class="btn-submit">ENTRAR AL SISTEMA</button>
-                </form>
-                <form id="form-register" class="auth-form animate-in" style="display:none">
-                    <input type="text" id="re-u" placeholder="Nombre en Minecraft" required>
-                    <input type="text" id="re-n" placeholder="Nombre Real RP (Ej: Juan Perez)" required>
-                    <input type="date" id="re-d" required title="Fecha de Nacimiento">
-                    <input type="text" id="re-na" placeholder="Nacionalidad" required>
-                    <input type="password" id="re-p" placeholder="Crea una Contraseña" required>
-                    <button type="submit" class="btn-submit btn-green">REGISTRARSE</button>
+                <h3>ACCESO AL <span>CLIENTE</span></h3>
+                <form id="form-login">
+                    <div class="input-group">
+                        <label>Email Corporativo</label>
+                        <input type="email" id="l-email" required placeholder="ejemplo@emerald.host">
+                    </div>
+                    <div class="input-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="l-pass" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn-main">ENTRAR AL DASHBOARD</button>
                 </form>
             </div>
 
-            <div id="view-profile" style="display:none">
-                <div class="dni-container">
-                    <div class="dni-card-header">IDENTIFICACIÓN FEDERAL</div>
-                    <div class="dni-card-body">
-                        <div class="dni-photo">👤</div>
-                        <div class="dni-info">
-                            <h2 id="dni-rp-name">--</h2>
-                            <p><b>MC:</b> <span id="dni-mc-nick">--</span></p>
-                            <p><b>ORIGEN:</b> <span id="dni-nation">--</span></p>
-                            <div class="rank-tag" id="dni-rank">CIUDADANO</div>
-                        </div>
+            <div id="view-dash" style="display:none">
+                <div class="dash-header">
+                    <h2 id="u-name">Bienvenido</h2>
+                    <span id="u-plan" class="plan-tag">Plan Free</span>
+                </div>
+                <div class="services-grid">
+                    <div class="s-card">
+                        <div class="s-icon">🌐</div>
+                        <b>Web Hosting</b>
+                        <button class="btn-manage">Gestionar</button>
+                    </div>
+                    <div class="s-card">
+                        <div class="s-icon">🤖</div>
+                        <b>Bot Hosting</b>
+                        <button class="btn-manage">Gestionar</button>
                     </div>
                 </div>
-                <div id="admin-tools" style="display:none">
-                    <button class="btn-master-panel" onclick="toggleAdminPanel()">PANEL DE FUNDADOR ⭐</button>
+
+                <div id="adm-box" style="display:none">
+                    <button class="btn-admin-special" onclick="showAdmin()">CONSOLA MAESTRA (EMMANUEL) ⭐</button>
                 </div>
+
                 <button class="btn-logout" onclick="logout()">CERRAR SESIÓN</button>
             </div>
 
             <div id="view-admin" style="display:none">
-                <div class="admin-panel-header">
-                    <h3>CONTROL DE <span>CIUDADANOS</span></h3>
-                    <button class="btn-back-profile" onclick="toggleAdminPanel()">← VOLVER</button>
+                <div class="admin-top">
+                    <h3>LISTADO DE <span>CLIENTES</span></h3>
+                    <button onclick="hideAdmin()">← VOLVER</button>
                 </div>
-                <div class="admin-table-wrapper">
-                    <table class="citizens-table">
+                <div class="table-container">
+                    <table class="admin-table">
                         <thead>
                             <tr>
-                                <th>Usuario MC</th>
-                                <th>Nombre RP</th>
-                                <th>Acción</th>
+                                <th>CLIENTE</th>
+                                <th>PLAN</th>
+                                <th>ACCIÓN</th>
                             </tr>
                         </thead>
-                        <tbody id="admin-table-rows">
-                            </tbody>
+                        <tbody id="client-rows"></tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-
-    <footer class="main-footer">
-        <p>&copy; 2026 Nuevo México RP | Creado por <b>Emmanuel0606</b></p>
-    </footer>
 
     <script src="script.js"></script>
 </body>
