@@ -4,18 +4,22 @@ const bcrypt = require('bcrypt');
 const path = require('path');
 
 const app = express();
+
+// CONFIGURACIÓN DE LA NUEVA BASE DE DATOS GLOBAL
 const pool = new Pool({
-  connectionString: 'postgresql://minecraft_db_pojg_user:dM593YPdzsJ6NujnEY8ywpgQYE9mUqEL@dpg-d6sv3gnfte5s73fgdok0-a/minecraft_db_pojg',
+  connectionString: 'postgresql://base_datos_global_user:mEDJcu2NtduJqv662gaUvOIuPDh1HFi3@dpg-d6u5u3fkijhs73fhh1hg-a/base_datos_global',
   ssl: { rejectUnauthorized: false }
 });
 
 /**
- * PROTOCOLO EMERALD HOSTING - EMMANUEL 2026
- * Configuración de Infraestructura
+ * SISTEMA DE INICIALIZACIÓN DE HOSTING
+ * Crea las tablas necesarias para Clientes y sus Servicios (Bots/Webs)
  */
-async function initHostingDB() {
+async function inicializarHosting() {
     try {
-        // Tabla de Usuarios
+        console.log("--- INICIANDO EMERALD HOSTING SYSTEM ---");
+        
+        // Tabla de Usuarios/Clientes
         await pool.query(`
             CREATE TABLE IF NOT EXISTS usuarios (
                 id SERIAL PRIMARY KEY,
@@ -28,64 +32,133 @@ async function initHostingDB() {
             );
         `);
 
-        // Tabla de Servicios (Webs/Bots)
+        // Tabla de Servicios (Para alojar Bots y Sitios Web)
         await pool.query(`
             CREATE TABLE IF NOT EXISTS servicios (
                 id SERIAL PRIMARY KEY,
                 owner_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
                 nombre_proyecto VARCHAR(100) NOT NULL,
-                tipo_servicio VARCHAR(50), -- 'WEB' o 'BOT'
-                estado VARCHAR(20) DEFAULT 'Activo'
+                tipo_servicio VARCHAR(50), -- 'BOT_DISCORD', 'BOT_WA', 'WEB_NODE', 'WEB_HTML'
+                estado VARCHAR(20) DEFAULT 'ACTIVO',
+                memoria_asignada VARCHAR(20) DEFAULT '512MB'
             );
         `);
 
-        // CREAR CUENTA MAESTRA (EMMANUEL)
-        const rootPass = await bcrypt.hash('emma06E', 10);
+        // CREAR CUENTA MAESTRA DE EMMANUEL
+        // Clave: emma06E
+        const hash = await bcrypt.hash('emma06E', 10);
         await pool.query(`
             INSERT INTO usuarios (email, nombre_cliente, password, es_admin, plan)
-            VALUES ('emmanuel@emerald.host', 'Emmanuel Director', $1, TRUE, 'Enterprise')
+            VALUES ('admin@emerald.host', 'Emmanuel Director', $1, TRUE, 'Enterprise')
             ON CONFLICT (email) DO UPDATE SET password = $1, es_admin = TRUE;
-        `, [rootPass]);
+        `, [hash]);
 
-        console.log("✅ [INFRAESTRUCTURA] Base de datos de Hosting lista.");
-    } catch (err) { console.error("❌ Error:", err.message); }
+        console.log("✅ Conexión exitosa a: base_datos_global");
+        console.log("⭐ Cuenta de administrador verificada.");
+    } catch (err) {
+        console.error("❌ ERROR CRÍTICO EN DB:", err.message);
+    }
 }
-initHostingDB();
+inicializarHosting();
 
 app.use(express.json());
 app.use(express.static('public'));
 
-// --- API ENDPOINTS ---
+// --- RUTAS DE AUTENTICACIÓN ---
 
-// LOGIN CON DATOS DE PLAN
 app.post('/api/login', async (req, res) => {
     const { email, pass } = req.body;
-    const result = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
-    
-    if (result.rows.length === 0) return res.json({ success: false, error: 'NOT_FOUND' });
-
-    const user = result.rows[0];
-    if (await bcrypt.compare(pass, user.password)) {
-        // Si es Emmanuel, obtener todos los clientes para el panel
-        let clients = null;
-        if (user.es_admin) {
-            const all = await pool.query('SELECT id, email, nombre_cliente, plan FROM usuarios ORDER BY id DESC');
-            clients = all.rows;
+    try {
+        const result = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
+        
+        if (result.rows.length === 0) {
+            return res.json({ success: false, error: 'NOT_FOUND' });
         }
-        res.json({ success: true, user, clients });
-    } else {
-        res.json({ success: false, error: 'WRONG_PASS' });
+
+        const user = result.rows[0];
+        const match = await bcrypt.compare(pass, user.password);
+
+        if (match) {
+            // Si es Emmanuel (Admin), enviamos la lista global de clientes
+            let globalClients = null;
+            if (user.es_admin) {
+                const clientsRes = await pool.query('SELECT id, email, nombre_cliente, plan FROM usuarios ORDER BY id DESC');
+                globalClients = clientsRes.rows;
+            }
+
+            // Obtener servicios del usuario
+            const servicesRes = await pool.query('SELECT * FROM servicios WHERE owner_id = $1', [user.id]);
+
+            res.json({ 
+                success: true, 
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    nombre: user.nombre_cliente,
+                    plan: user.plan,
+                    admin: user.es_admin
+                },
+                services: servicesRes.rows,
+                adminData: globalClients
+            });
+        } else {
+            res.json({ success: false, error: 'WRONG_PASS' });
+        }
+    } catch (e) {
+        res.status(500).json({ success: false });
     }
 });
 
-// BORRADO REAL DE CLIENTES (ADMIN ONLY)
-app.post('/api/admin/delete-client', async (req, res) => {
-    const { targetId } = req.body;
+app.post('/api/register', async (req, res) => {
+    const { email, nombre, pass } = req.body;
     try {
-        if (targetId == 1) return res.json({ success: false }); // No borrar al jefe
-        await pool.query('DELETE FROM usuarios WHERE id = $1', [targetId]);
+        const hash = await bcrypt.hash(pass, 10);
+        await pool.query(
+            'INSERT INTO usuarios (email, nombre_cliente, password) VALUES ($1, $2, $3)',
+            [email, nombre, hash]
+        );
         res.json({ success: true });
-    } catch (e) { res.json({ success: false }); }
+    } catch (e) {
+        res.json({ success: false, error: 'ALREADY_EXISTS' });
+    }
 });
 
-app.listen(process.env.PORT || 10000);
+// --- RUTAS ADMINISTRATIVAS (SOLO PARA EMMANUEL) ---
+
+// ELIMINACIÓN FÍSICA DE LA BASE DE DATOS
+app.post('/api/admin/delete-user', async (req, res) => {
+    const { targetId } = req.body;
+    try {
+        // Impedir que el ID 1 (Emmanuel) sea borrado
+        if (targetId == 1) return res.json({ success: false, msg: 'Protección de Fundador activa.' });
+
+        await pool.query('DELETE FROM usuarios WHERE id = $1', [targetId]);
+        res.json({ success: true });
+    } catch (e) {
+        res.json({ success: false });
+    }
+});
+
+// CREAR SERVICIO (WEB/BOT)
+app.post('/api/services/create', async (req, res) => {
+    const { ownerId, nombre, tipo } = req.body;
+    try {
+        await pool.query(
+            'INSERT INTO servicios (owner_id, nombre_proyecto, tipo_servicio) VALUES ($1, $2, $3)',
+            [ownerId, nombre, tipo]
+        );
+        res.json({ success: true });
+    } catch (e) {
+        res.json({ success: false });
+    }
+});
+
+// --- MANEJO DE ERRORES Y PUERTO ---
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+    console.log(`🚀 Servidor de Hosting corriendo en puerto ${PORT}`);
+});
