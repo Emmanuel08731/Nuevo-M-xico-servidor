@@ -1,174 +1,111 @@
 /**
- * PORTAL NUEVO MÉXICO RP v2026
- * Desarrollado por Emmanuel0606
+ * EMERALD HOSTING CORE - EMMANUEL 2026
+ * Manejo de sesiones y base de datos
  */
 
-// --- 1. GESTIÓN DE CARGA Y SESIÓN PERSISTENTE ---
+// 1. CARGA INICIAL Y PERSISTENCIA
 window.addEventListener('load', () => {
-    const preloader = document.getElementById('loader');
-    
-    // Simular carga de sistema
-    setTimeout(() => {
-        preloader.style.opacity = '0';
-        setTimeout(() => preloader.style.display = 'none', 500);
-
-        // PERSISTENCIA: Revisar si el usuario ya estaba logueado
-        const session = localStorage.getItem('nm_session');
-        if (session) {
-            const data = JSON.parse(session);
-            applySessionData(data);
-            showNotification("SESIÓN RESTAURADA", `Bienvenido de nuevo, ${data.userData.n_rp}.`, "🔐");
-        }
-    }, 1200);
+    const saved = localStorage.getItem('emerald_session');
+    if (saved) {
+        renderDashboard(JSON.parse(saved));
+        pushNotify("SISTEMA", "Sesión de hosting restaurada.", "✅");
+    }
 });
 
-// --- 2. NOTIFICACIONES PERSONALIZADAS ---
-function showNotification(title, msg, icon = "⚠️") {
-    const bar = document.getElementById('notif-bar');
-    document.getElementById('nt').innerText = title;
-    document.getElementById('nm').innerText = msg;
-    document.getElementById('ni').innerText = icon;
+// 2. SISTEMA DE NOTIFICACIONES (Adiós Alerts)
+function pushNotify(title, msg, icon = "⚠️") {
+    const toast = document.getElementById('notify');
+    document.getElementById('nt-title').innerText = title;
+    document.getElementById('nt-msg').innerText = msg;
     
-    bar.classList.add('active');
-    setTimeout(() => bar.classList.remove('active'), 4000);
+    toast.classList.add('active');
+    setTimeout(() => toast.classList.remove('active'), 4000);
 }
 
-// --- 3. CONTROL DE MODALES Y VISTAS ---
-function openPortal() { document.getElementById('modal-portal').style.display = 'flex'; }
-function closePortal() { document.getElementById('modal-portal').style.display = 'none'; }
+// 3. CONTROL DE MODAL
+function openModal() { document.getElementById('modal').style.display = 'flex'; }
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
-function setTab(type) {
-    const isLogin = type === 'L';
-    document.getElementById('form-login').style.display = isLogin ? 'block' : 'none';
-    document.getElementById('form-register').style.display = isLogin ? 'none' : 'block';
-    document.getElementById('t-l').classList.toggle('active', isLogin);
-    document.getElementById('t-r').classList.toggle('active', !isLogin);
-}
-
-// --- 4. LOGICA DE AUTENTICACIÓN ---
+// 4. LOGIN CON TRATAMIENTO DE DATOS
 document.getElementById('form-login').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const user = document.getElementById('li-u').value;
-    const pass = document.getElementById('li-p').value;
+    const email = document.getElementById('l-email').value;
+    const pass = document.getElementById('l-pass').value;
 
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch('/api/login', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ user, pass })
+        body: JSON.stringify({ email, pass })
     });
     const d = await res.json();
 
     if (d.success) {
-        // GUARDAR SESIÓN EN EL NAVEGADOR
-        localStorage.setItem('nm_session', JSON.stringify(d));
-        applySessionData(d);
-        showNotification("ACCESO EXITOSO", "Tu identidad ha sido verificada.", "✅");
+        // PERSISTENCIA: Guardar sesión
+        localStorage.setItem('emerald_session', JSON.stringify(d));
+        renderDashboard(d);
+        pushNotify("ACCESO CONCEDIDO", "Bienvenido al panel de control.");
     } else {
-        // MANEJO DE ERROR (Si no existe o datos mal)
-        showNotification("ERROR DE ACCESO", d.msg, "❌");
+        if(d.error === 'NOT_FOUND') pushNotify("ERROR", "El usuario no existe en la base de datos.");
+        else pushNotify("ERROR", "Contraseña de hosting incorrecta.");
     }
 });
 
-// APLICAR DATOS DE SESIÓN A LA UI
-function applySessionData(data) {
+function renderDashboard(data) {
     document.getElementById('view-auth').style.display = 'none';
-    document.getElementById('view-profile').style.display = 'block';
-    document.getElementById('btn-login-trigger').innerText = "MI PERFIL";
+    document.getElementById('view-dash').style.display = 'block';
     
-    document.getElementById('dni-rp-name').innerText = data.userData.n_rp;
-    document.getElementById('dni-mc-nick').innerText = data.userData.u_mc;
-    document.getElementById('dni-nation').innerText = data.userData.nac;
+    document.getElementById('u-name').innerText = `Hola, ${data.user.nombre_cliente}`;
+    document.getElementById('u-plan').innerText = `Plan: ${data.user.plan}`;
 
-    if (data.userData.adm) {
-        document.getElementById('dni-rank').innerText = "FUNDADOR / STAFF";
-        document.getElementById('admin-tools').style.display = 'block';
-        
-        // Cargar lista en la tabla
-        if (data.fullList) {
-            const table = document.getElementById('admin-table-rows');
-            table.innerHTML = data.fullList.map(u => `
+    // Si es Emmanuel (Admin)
+    if (data.user.es_admin) {
+        document.getElementById('adm-box').style.display = 'block';
+        const rows = document.getElementById('client-rows');
+        if (data.clients) {
+            rows.innerHTML = data.clients.map(c => `
                 <tr>
-                    <td><b>${u.usuario_mc}</b></td>
-                    <td>${u.nombre_rp}</td>
-                    <td>
-                        <button class="btn-del-user" onclick="deleteCitizen(${u.id})">BORRAR</button>
-                    </td>
+                    <td><b>${c.nombre_cliente}</b><br><small>${c.email}</small></td>
+                    <td>${c.plan}</td>
+                    <td><button class="btn-del" onclick="deleteClient(${c.id})">BORRAR</button></td>
                 </tr>
             `).join('');
         }
     }
 }
 
-// --- 5. GESTIÓN ADMINISTRATIVA (BORRADO REAL) ---
-async function deleteCitizen(id) {
-    if (!confirm("¿ESTÁS SEGURO? Esta acción eliminará al ciudadano de la BASE DE DATOS de forma permanente.")) return;
+// 5. BORRADO REAL Y REINICIO
+async function deleteClient(id) {
+    if (!confirm("¿Eliminar cliente y sus servicios de la DB permanentemente?")) return;
 
-    const res = await fetch('/api/admin/delete', {
+    const res = await fetch('/api/admin/delete-client', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ targetId: id })
     });
-    const d = await res.json();
 
-    if (d.success) {
-        showNotification("SISTEMA", "Ciudadano eliminado. Sincronizando...", "🗑️");
+    if ( (await res.json()).success ) {
+        pushNotify("SISTEMA", "Cliente borrado. Reiniciando base de datos visual...", "🗑️");
         
-        // REINICIO AUTOMÁTICO TRAS ELIMINAR PARA LIMPIAR LA VISTA
-        setTimeout(() => {
-            // Actualizar la sesión local quitando al usuario para que al recargar ya no aparezca
-            const session = JSON.parse(localStorage.getItem('nm_session'));
-            session.fullList = session.fullList.filter(u => u.id !== id);
-            localStorage.setItem('nm_session', JSON.stringify(session));
-            location.reload();
-        }, 1500);
-    } else {
-        showNotification("FALLO", d.msg, "❌");
+        // Actualizar sesión local y recargar
+        const session = JSON.parse(localStorage.getItem('emerald_session'));
+        session.clients = session.clients.filter(c => c.id !== id);
+        localStorage.setItem('emerald_session', JSON.stringify(session));
+        
+        setTimeout(() => location.reload(), 1500);
     }
 }
 
-// --- 6. REGISTRO ---
-document.getElementById('form-register').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const payload = {
-        u: document.getElementById('re-u').value,
-        n: document.getElementById('re-n').value,
-        d: document.getElementById('re-d').value,
-        na: document.getElementById('re-na').value,
-        p: document.getElementById('re-p').value
-    };
+function showAdmin() {
+    document.getElementById('view-dash').style.display = 'none';
+    document.getElementById('view-admin').style.display = 'block';
+}
 
-    const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-    });
-    const d = await res.json();
+function hideAdmin() {
+    document.getElementById('view-admin').style.display = 'none';
+    document.getElementById('view-dash').style.display = 'block';
+}
 
-    if (d.success) {
-        showNotification("BIENVENIDO", "Tu registro ha sido completado.", "🏢");
-        setTimeout(() => location.reload(), 2000);
-    } else {
-        showNotification("ERROR", d.msg, "❌");
-    }
-});
-
-// --- 7. UTILIDADES ---
 function logout() {
-    localStorage.removeItem('nm_session');
+    localStorage.removeItem('emerald_session');
     location.reload();
-}
-
-function toggleAdminPanel() {
-    const prof = document.getElementById('view-profile');
-    const adm = document.getElementById('view-admin');
-    if (prof.style.display === 'none') {
-        prof.style.display = 'block'; adm.style.display = 'none';
-    } else {
-        prof.style.display = 'none'; adm.style.display = 'block';
-    }
-}
-
-function copyIp() {
-    navigator.clipboard.writeText("MC.NUEVOMEXICO.PRO");
-    showNotification("PORTAPAPELES", "IP copiada: MC.NUEVOMEXICO.PRO", "📋");
 }
