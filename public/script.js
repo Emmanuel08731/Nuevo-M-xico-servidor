@@ -1,111 +1,121 @@
 /**
- * EMERALD HOSTING CORE - EMMANUEL 2026
- * Manejo de sesiones y base de datos
+ * JEXACTYL CLIENT ENGINE v2.0
+ * Gestionado por Emmanuel para Emerald Hosting
  */
 
-// 1. CARGA INICIAL Y PERSISTENCIA
-window.addEventListener('load', () => {
+let state = {
+    user: null,
+    servers: [],
+    activeView: 'landing',
+    logs: []
+};
+
+// 1. PERSISTENCIA AUTOMÁTICA
+window.onload = () => {
     const saved = localStorage.getItem('emerald_session');
     if (saved) {
-        renderDashboard(JSON.parse(saved));
-        pushNotify("SISTEMA", "Sesión de hosting restaurada.", "✅");
+        state.user = JSON.parse(saved);
+        updateUI();
+        notify("SESIÓN", "Conexión restaurada con el nodo central.", "info");
     }
-});
+};
 
-// 2. SISTEMA DE NOTIFICACIONES (Adiós Alerts)
-function pushNotify(title, msg, icon = "⚠️") {
-    const toast = document.getElementById('notify');
-    document.getElementById('nt-title').innerText = title;
-    document.getElementById('nt-msg').innerText = msg;
-    
-    toast.classList.add('active');
-    setTimeout(() => toast.classList.remove('active'), 4000);
+// 2. SISTEMA DE NOTIFICACIONES (SIN ALERTS)
+function notify(title, msg, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<b>${title}</b><p>${msg}</p>`;
+    container.appendChild(toast);
+    setTimeout(() => { toast.classList.add('fade-out'); setTimeout(() => toast.remove(), 500); }, 4000);
 }
 
-// 3. CONTROL DE MODAL
-function openModal() { document.getElementById('modal').style.display = 'flex'; }
-function closeModal() { document.getElementById('modal').style.display = 'none'; }
+// 3. AUTENTICACIÓN
+async function handleAuth() {
+    const email = document.getElementById('log-email').value;
+    const password = document.getElementById('log-pass').value;
 
-// 4. LOGIN CON TRATAMIENTO DE DATOS
-document.getElementById('form-login').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('l-email').value;
-    const pass = document.getElementById('l-pass').value;
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
 
-    const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ email, pass })
-    });
-    const d = await res.json();
-
-    if (d.success) {
-        // PERSISTENCIA: Guardar sesión
-        localStorage.setItem('emerald_session', JSON.stringify(d));
-        renderDashboard(d);
-        pushNotify("ACCESO CONCEDIDO", "Bienvenido al panel de control.");
-    } else {
-        if(d.error === 'NOT_FOUND') pushNotify("ERROR", "El usuario no existe en la base de datos.");
-        else pushNotify("ERROR", "Contraseña de hosting incorrecta.");
-    }
-});
-
-function renderDashboard(data) {
-    document.getElementById('view-auth').style.display = 'none';
-    document.getElementById('view-dash').style.display = 'block';
-    
-    document.getElementById('u-name').innerText = `Hola, ${data.user.nombre_cliente}`;
-    document.getElementById('u-plan').innerText = `Plan: ${data.user.plan}`;
-
-    // Si es Emmanuel (Admin)
-    if (data.user.es_admin) {
-        document.getElementById('adm-box').style.display = 'block';
-        const rows = document.getElementById('client-rows');
-        if (data.clients) {
-            rows.innerHTML = data.clients.map(c => `
-                <tr>
-                    <td><b>${c.nombre_cliente}</b><br><small>${c.email}</small></td>
-                    <td>${c.plan}</td>
-                    <td><button class="btn-del" onclick="deleteClient(${c.id})">BORRAR</button></td>
-                </tr>
-            `).join('');
+        if (data.success) {
+            state.user = data.user;
+            state.servers = data.servers;
+            localStorage.setItem('emerald_session', JSON.stringify(data.user));
+            document.getElementById('login-overlay').style.display = 'none';
+            updateUI();
+            notify("WELCOME", "Dashboard initialized successfully.");
+        } else {
+            notify("ERROR", "Invalid email or master password.", "error");
         }
+    } catch (e) {
+        notify("FATAL", "Database connection lost.", "error");
     }
 }
 
-// 5. BORRADO REAL Y REINICIO
-async function deleteClient(id) {
-    if (!confirm("¿Eliminar cliente y sus servicios de la DB permanentemente?")) return;
+// 4. CAMBIO DE VISTAS (SPA STYLE)
+function updateUI() {
+    // Esconder todo
+    document.getElementById('view-landing').style.display = 'none';
+    document.getElementById('view-plans').style.display = 'none';
+    document.getElementById('view-console').style.display = 'none';
 
-    const res = await fetch('/api/admin/delete-client', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ targetId: id })
-    });
+    document.getElementById('user-display-name').innerText = state.user.nombre_cliente;
 
-    if ( (await res.json()).success ) {
-        pushNotify("SISTEMA", "Cliente borrado. Reiniciando base de datos visual...", "🗑️");
-        
-        // Actualizar sesión local y recargar
-        const session = JSON.parse(localStorage.getItem('emerald_session'));
-        session.clients = session.clients.filter(c => c.id !== id);
-        localStorage.setItem('emerald_session', JSON.stringify(session));
-        
-        setTimeout(() => location.reload(), 1500);
+    if (state.user.plan === 'Ninguno') {
+        document.getElementById('view-plans').style.display = 'block';
+    } else {
+        document.getElementById('view-console').style.display = 'block';
+        startConsoleSimulation();
     }
 }
 
-function showAdmin() {
-    document.getElementById('view-dash').style.display = 'none';
-    document.getElementById('view-admin').style.display = 'block';
+// 5. SIMULACIÓN DE TERMINAL REALISTA
+function startConsoleSimulation() {
+    const logBox = document.getElementById('console-logs');
+    const messages = [
+        "[DOCKER] Container emerald-v-1 starting...",
+        "[FILES] Extracting bot.zip...",
+        "[NODE] Node.js v22.2.0 initialized",
+        "[NPM] Running 'npm install'...",
+        "[DB] Connected to Global PostgreSQL",
+        "[SUCCESS] Vexol Bot v2.1 Online!"
+    ];
+
+    let i = 0;
+    const interval = setInterval(() => {
+        if (i < messages.length) {
+            const line = document.createElement('div');
+            line.className = 'log-line';
+            line.innerText = messages[i];
+            logBox.appendChild(line);
+            logBox.scrollTop = logBox.scrollHeight;
+            i++;
+        } else {
+            clearInterval(interval);
+        }
+    }, 1500);
 }
 
-function hideAdmin() {
-    document.getElementById('view-admin').style.display = 'none';
-    document.getElementById('view-dash').style.display = 'block';
+// 6. ACCIONES DE PODER
+function powerAction(action) {
+    notify("SERVER", `Action [${action.toUpperCase()}] sent to node.`, "info");
+    if (action === 'stop') {
+        document.getElementById('console-logs').innerHTML += `<div class="log-line text-red">[SYSTEM] Process terminated by user.</div>`;
+    }
 }
 
-function logout() {
-    localStorage.removeItem('emerald_session');
-    location.reload();
+function showPlansView() {
+    document.getElementById('view-landing').style.display = 'none';
+    document.getElementById('view-console').style.display = 'none';
+    document.getElementById('view-plans').style.display = 'block';
+}
+
+function openLogin() {
+    document.getElementById('login-overlay').style.display = 'flex';
 }
