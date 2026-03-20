@@ -3,149 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emerald Panel | Jexactyl 2.0</title>
+    <title>Emerald | Jexactyl Pro Panel</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 </head>
-<body class="jexactyl-theme">
+<body class="theme-deep">
 
-    <div id="toast-container"></div>
+    <div id="emerald-notify"></div>
 
-    <aside class="sidebar">
-        <div class="side-logo">
-            <i class="ri-instance-line"></i> <span>EMERALD</span>
-        </div>
-        <nav class="side-nav">
-            <div class="nav-group">MANAGEMENT</div>
-            <a href="#" class="nav-item active"><i class="ri-dashboard-3-line"></i> Dashboard</a>
-            <a href="#" class="nav-item"><i class="ri-server-line"></i> Servers</a>
-            <a href="#" class="nav-item"><i class="ri-database-2-line"></i> Databases</a>
-            
-            <div class="nav-group">ACCOUNTING</div>
-            <a href="#" class="nav-item" onclick="showPlansView()"><i class="ri-shopping-cart-line"></i> Billing</a>
-            <a href="#" class="nav-item"><i class="ri-settings-4-line"></i> Settings</a>
-        </nav>
-        <div class="side-footer" id="user-display-name">Guest User</div>
-    </aside>
-
-    <main class="content">
-        <header class="top-bar">
-            <div class="search-box">
-                <i class="ri-search-line"></i>
-                <input type="text" placeholder="Search for a server...">
+    <div id="app">
+        
+        <aside class="emerald-sidebar" id="sidebar" style="display:none">
+            <div class="side-brand">
+                <div class="logo-box"><i class="ri-flashlight-fill"></i></div>
+                <span>EMERALD</span>
             </div>
-            <div class="top-actions">
-                <button class="btn-icon"><i class="ri-notification-3-line"></i></button>
-                <button class="btn-auth-main" onclick="openLogin()">Sign In</button>
+            <nav class="side-menu">
+                <div class="menu-label">MENU</div>
+                <a href="#" class="menu-item active" onclick="navigate('dash')"><i class="ri-layout-grid-fill"></i> Dashboard</a>
+                <a href="#" class="menu-item" onclick="navigate('plans')"><i class="ri-shopping-bag-3-line"></i> Store</a>
+                <a href="#" class="menu-item" onclick="navigate('tickets')"><i class="ri-customer-service-2-line"></i> Support</a>
+                
+                <div class="menu-label">ADMIN</div>
+                <a href="#" class="menu-item"><i class="ri-settings-5-line"></i> Settings</a>
+            </nav>
+            <div class="side-profile">
+                <div class="p-info">
+                    <b id="user-name-label">User</b>
+                    <small id="user-role-label">Client</small>
+                </div>
+                <button class="btn-logout" onclick="logout()"><i class="ri-logout-box-r-line"></i></button>
             </div>
-        </header>
+        </aside>
 
-        <div id="dynamic-content">
+        <main class="emerald-main">
             
-            <section id="view-landing" class="landing-hero">
-                <h1>The Future of <span>Bot Hosting</span> is Here</h1>
-                <p>Enterprise performance, Jexactyl panel, 24/7 support. Starting at €0.00.</p>
-                <div class="hero-btns">
-                    <button class="btn-glow" onclick="openLogin()">Deploy Now</button>
-                    <button class="btn-flat" onclick="showPlansView()">View Pricing</button>
+            <section id="view-auth" class="auth-wrapper">
+                <div class="auth-container">
+                    <div class="auth-header">
+                        <h1>Join the <span>Elite</span></h1>
+                        <p>Inicia sesión o crea tu cuenta para gestionar tus bots.</p>
+                    </div>
+                    <div class="auth-tabs">
+                        <button id="tab-login" class="active" onclick="switchAuth('login')">LOGIN</button>
+                        <button id="tab-register" onclick="switchAuth('register')">REGISTER</button>
+                    </div>
+                    <div class="auth-body">
+                        <div id="box-login" class="auth-box active">
+                            <div class="input-group">
+                                <label>Email</label>
+                                <input type="email" id="l-email" placeholder="admin@emerald.host">
+                            </div>
+                            <div class="input-group">
+                                <label>Password</label>
+                                <input type="password" id="l-pass" placeholder="••••••••">
+                            </div>
+                            <button class="btn-auth" onclick="handleLogin()">ENTER PANEL</button>
+                        </div>
+                        <div id="box-register" class="auth-box">
+                            <div class="input-group">
+                                <label>Username</label>
+                                <input type="text" id="r-user" placeholder="Emmanuel">
+                            </div>
+                            <div class="input-group">
+                                <label>Email</label>
+                                <input type="email" id="r-email" placeholder="emma@mail.com">
+                            </div>
+                            <div class="input-group">
+                                <label>Password</label>
+                                <input type="password" id="r-pass" placeholder="••••••••">
+                            </div>
+                            <button class="btn-auth" onclick="handleRegister()">CREATE ACCOUNT</button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
-            <div id="login-overlay" class="overlay">
-                <div class="auth-card">
-                    <h2>Welcome Back</h2>
-                    <div class="input-field">
-                        <label>Email Address</label>
-                        <input type="email" id="log-email" placeholder="name@company.com">
-                    </div>
-                    <div class="input-field">
-                        <label>Password</label>
-                        <input type="password" id="log-pass" placeholder="••••••••">
-                    </div>
-                    <button class="btn-full" onclick="handleAuth()">Login to Dashboard</button>
-                </div>
-            </div>
-
-            <section id="view-plans" style="display:none">
-                <div class="view-header">
-                    <h2>Available <span>Plans</span></h2>
-                    <p>Select a tier to deploy your next application.</p>
+            <section id="view-plans" style="display:none" class="view-padding">
+                <div class="header-view">
+                    <h2>Deploy <span>Server</span></h2>
+                    <p>Selecciona tu plan ideal para empezar.</p>
                 </div>
                 <div class="plans-grid">
-                    <div class="plan-card">
-                        <div class="plan-header">
+                    <div class="p-card free">
+                        <div class="p-head">
                             <h3>Free Tier</h3>
-                            <p>Getting started.</p>
+                            <div class="p-price">€0.00<span>/mo</span></div>
                         </div>
-                        <div class="plan-price">€0.00<span>/mo</span></div>
-                        <ul class="plan-specs">
-                            <li><i class="ri-cpu-line"></i> 50% CPU Block</li>
-                            <li><i class="ri-ram-2-line"></i> 512 MB RAM</li>
-                            <li><i class="ri-hard-drive-2-line"></i> 1 GB NVMe Storage</li>
-                            <li><i class="ri-global-line"></i> 99.85% Uptime</li>
+                        <ul class="p-features">
+                            <li><i class="ri-check-line"></i> 50% CPU Priority</li>
+                            <li><i class="ri-check-line"></i> 512MB DDR4 RAM</li>
+                            <li><i class="ri-check-line"></i> 1GB NVMe Disk</li>
+                            <li><i class="ri-check-line"></i> Port forwarding</li>
                         </ul>
-                        <button class="btn-p" onclick="activatePlan('Gratis')">Select Plan</button>
+                        <button class="btn-deploy" onclick="deployProcess('Free')">DEPLOY NOW</button>
                     </div>
-                    </div>
+                </div>
             </section>
 
-            <section id="view-console" style="display:none">
-                <div class="console-header-main">
-                    <div class="c-info">
-                        <h2 id="current-server-name">bot-vexol</h2>
-                        <span class="c-tag">ori-host-node-1</span>
+            <section id="view-console" style="display:none" class="console-view">
+                <div class="console-top">
+                    <div class="server-title">
+                        <h2 id="disp-server-name">bot vexol</h2>
+                        <span class="node-tag">node-01.emerald.host</span>
                     </div>
-                    <div class="c-controls">
-                        <button class="c-btn start" onclick="powerAction('start')"><i class="ri-play-fill"></i> Start</button>
-                        <button class="c-btn restart" onclick="powerAction('restart')"><i class="ri-refresh-line"></i> Restart</button>
-                        <button class="c-btn stop" onclick="powerAction('stop')"><i class="ri-stop-fill"></i> Stop</button>
+                    <div class="power-btns">
+                        <button class="p-btn start" onclick="power('start')"><i class="ri-play-fill"></i> START</button>
+                        <button class="p-btn restart" onclick="power('restart')"><i class="ri-refresh-line"></i> RESTART</button>
+                        <button class="p-btn stop" onclick="power('stop')"><i class="ri-stop-fill"></i> STOP</button>
                     </div>
                 </div>
 
-                <div class="console-layout">
-                    <div class="terminal-container">
-                        <div class="terminal-logs" id="console-logs">
-                            <div class="log-line text-dim">[SYSTEM] Container initialized...</div>
-                            <div class="log-line text-yellow">[DOCKER] Pulling images...</div>
-                            <div class="log-line text-green">[READY] Bot is listening on port 30108</div>
+                <div class="console-grid">
+                    <div class="terminal-box">
+                        <div id="terminal-logs" class="logs">
+                            <div class="l-line yellow">[SYSTEM] Checking server status...</div>
+                            <div class="l-line">[SYSTEM] Mounting filesystem...</div>
+                            <div class="l-line green">[OK] Server ready for commands.</div>
                         </div>
-                        <div class="terminal-input-bar">
-                            <span>root@emerald:~$</span>
-                            <input type="text" id="cmd-input" placeholder="Enter command...">
+                        <div class="terminal-bar">
+                            <span>container:~$</span>
+                            <input type="text" id="cmd-input" placeholder="Type a command...">
                         </div>
                     </div>
-
-                    <aside class="stats-sidebar">
-                        <div class="mini-stat">
+                    <div class="stats-box">
+                        <div class="s-card">
                             <small>ADDRESS</small>
-                            <p>92.118.206.166:30108</p>
+                            <p id="disp-ip">92.118.206.166:30108</p>
                         </div>
-                        <div class="mini-stat">
-                            <small>UPTIME</small>
-                            <p class="text-green">Running</p>
+                        <div class="s-card">
+                            <small>STATUS</small>
+                            <p class="green-text">RUNNING</p>
                         </div>
-                        <div class="mini-stat">
+                        <div class="s-card">
                             <small>CPU USAGE</small>
-                            <div class="p-bar"><div class="fill" style="width: 15%"></div></div>
-                            <p>0.45% / 100%</p>
+                            <div class="bar-cont"><div class="fill" style="width: 2%"></div></div>
+                            <p>0.42% / 100%</p>
                         </div>
-                        <div class="mini-stat">
+                        <div class="s-card">
                             <small>MEMORY USAGE</small>
-                            <div class="p-bar"><div class="fill" style="width: 30%"></div></div>
-                            <p>150 MiB / 512 MiB</p>
+                            <div class="bar-cont"><div class="fill" style="width: 15%"></div></div>
+                            <p>76 MiB / 512 MiB</p>
                         </div>
-                        <div class="mini-stat">
-                            <small>DISK USAGE</small>
-                            <div class="p-bar"><div class="fill" style="width: 5%"></div></div>
-                            <p>180.07 MiB / 1 GiB</p>
-                        </div>
-                        <button class="btn-renew-main">RENEW SERVER</button>
-                    </aside>
+                        <button class="btn-renew">RENEW SERVER</button>
+                    </div>
                 </div>
             </section>
 
-        </div>
-    </main>
+        </main>
+    </div>
 
     <script src="script.js"></script>
 </body>
