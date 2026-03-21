@@ -1,55 +1,83 @@
-function toggleAuth() {
-    const login = document.getElementById('login-form');
-    const register = document.getElementById('register-form');
-    login.style.display = login.style.display === 'none' ? 'block' : 'none';
-    register.style.display = register.style.display === 'none' ? 'block' : 'none';
+// Funciones de vista
+function showRegister() {
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('register-section').style.display = 'block';
+    document.getElementById('auth-msg').innerText = "Únete a la comunidad DevRoot";
 }
 
+function showLogin() {
+    document.getElementById('register-section').style.display = 'none';
+    document.getElementById('login-section').style.display = 'block';
+    document.getElementById('auth-msg').innerText = "Bienvenido a la raíz del código";
+}
+
+function toggleMenu() {
+    document.getElementById('drop-menu').classList.toggle('active');
+}
+
+// Registro
 async function register() {
     const username = document.getElementById('reg-user').value;
     const email = document.getElementById('reg-email').value;
     const password = document.getElementById('reg-pass').value;
 
-    const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password })
-    });
-
-    const data = await response.json();
-    if(data.success) {
-        alert("¡Cuenta creada! Ahora inicia sesión.");
-        toggleAuth();
-    } else {
-        alert("Error: " + data.error);
+    try {
+        const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password })
+        });
+        const data = await response.json();
+        
+        if(data.success) {
+            alert("✅ ¡Cuenta creada con éxito!");
+            showLogin(); // Te lleva al login automáticamente
+        } else {
+            alert("Error: " + (data.error || "Datos inválidos"));
+        }
+    } catch (e) {
+        alert("Fallo de conexión con el servidor.");
     }
 }
 
+// Login
 async function login() {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-pass').value;
 
-    const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-    });
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await response.json();
 
-    const data = await response.json();
-    if(data.success) {
-        showDashboard(data.user);
-    } else {
-        alert("Acceso denegado: " + data.msg);
+        if(data.success) {
+            enterDashboard(data.user);
+        } else {
+            alert("❌ Error: " + data.msg);
+        }
+    } catch (e) {
+        alert("Fallo de conexión.");
     }
 }
 
-function showDashboard(user) {
-    document.getElementById('auth-container').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    document.getElementById('display-name').innerText = user.name;
-    document.getElementById('stat-status').innerText = user.plan || "Usuario Estándar";
+function enterDashboard(user) {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('main-dashboard').style.display = 'block';
+    document.getElementById('user-name-display').innerText = user.name;
+    document.getElementById('menu-user-full').innerText = "@" + user.name.replace(/\s/g, '').toLowerCase();
 }
 
 function logout() {
-    location.reload();
+    window.location.reload();
+}
+
+// Cerrar menú si haces clic fuera
+window.onclick = function(event) {
+    if (!event.target.closest('.profile-trigger')) {
+        const menu = document.getElementById('drop-menu');
+        if (menu.classList.contains('active')) menu.classList.remove('active');
+    }
 }
