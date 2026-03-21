@@ -3,120 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevRoot | The Developer Network</title>
+    <title>DevRoot | The Developer Ecosystem</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 </head>
 <body>
 
-    <div id="notification-toast" class="toast hidden"></div>
+    <div id="alert-system"></div>
 
-    <section id="auth-screen" class="auth-wrapper">
-        <div class="auth-container animate__animated animate__fadeInUp">
-            <div class="auth-info">
-                <div class="brand">Dev<span>Root</span></div>
-                <p id="auth-status-text">Inicia sesión para desplegar tus ideas.</p>
-            </div>
-
-            <div id="login-form" class="auth-form active">
-                <div class="input-field">
-                    <label>Credencial de Acceso</label>
-                    <input type="email" id="l-email" placeholder="dev@example.com">
-                </div>
-                <div class="input-field">
-                    <label>Llave de Seguridad</label>
-                    <input type="password" id="l-pass" placeholder="••••••••">
-                </div>
-                <button class="btn-primary" onclick="handleLogin()">Conectar al Servidor</button>
-                <p class="auth-footer">¿Nuevo en la raíz? <span onclick="switchForm('reg')">Crea un nodo</span></p>
-            </div>
-
-            <div id="register-form" class="auth-form">
-                <div class="input-field">
-                    <label>Identificador Único</label>
-                    <input type="text" id="r-user" placeholder="Ej: MasterCoder">
-                </div>
-                <div class="input-field">
-                    <label>Correo Electrónico</label>
-                    <input type="email" id="r-email" placeholder="dev@devroot.com">
-                </div>
-                <div class="input-field">
-                    <label>Contraseña Maestra</label>
-                    <input type="password" id="r-pass" placeholder="Mínimo 8 caracteres">
-                </div>
-                <button class="btn-success" onclick="handleRegister()">Inicializar Cuenta</button>
-                <p class="auth-footer">¿Ya tienes acceso? <span onclick="switchForm('log')">Ingresar</span></p>
-            </div>
+    <div id="auth-view" class="auth-page">
+        <div class="auth-bg-decor">
+            <div class="circle c1"></div>
+            <div class="circle c2"></div>
         </div>
-    </section>
-
-    <main id="dashboard" class="hidden">
-        <header class="top-nav">
-            <div class="nav-brand">Dev<span>Root</span></div>
-            <div class="search-bar">
-                <input type="text" placeholder="Buscar proyectos o devs...">
-            </div>
-            <div class="nav-profile" onclick="toggleUserMenu()">
-                <div class="user-text">
-                    <span id="user-display">Emmanuel</span>
-                    <small>Online</small>
-                </div>
-                <div class="avatar-box" id="avatar-initial">E</div>
-                
-                <div id="profile-menu" class="dropdown-menu">
-                    <div class="menu-header">
-                        <p id="menu-full-user">@emmanuel</p>
-                    </div>
-                    <ul class="menu-list">
-                        <li>Mi Perfil</li>
-                        <li>Configuración</li>
-                        <li class="logout" onclick="logout()">Desconectarse</li>
-                    </ul>
-                </div>
-            </div>
-        </header>
-
-        <div class="main-layout">
-            <aside class="sidebar">
-                <button class="btn-post" onclick="showPostModal()">+ Nueva Publicación</button>
-                <nav class="side-nav">
-                    <a href="#" class="active">Inicio</a>
-                    <a href="#">Explorar</a>
-                    <a href="#">Mensajes</a>
-                    <a href="#">Verificados</a>
-                </nav>
-            </aside>
-
-            <section class="feed-section">
-                <div id="global-feed">
-                    <div class="post animate__animated animate__fadeIn">
-                        <div class="post-header">
-                            <div class="post-avatar">S</div>
-                            <div class="post-meta">
-                                <strong>System_Root</strong>
-                                <span>Hace 2 min</span>
-                            </div>
-                        </div>
-                        <div class="post-content">
-                            ¡Bienvenido a la versión 2026 de DevRoot! El sistema está listo para recibir tu código.
-                        </div>
+        
+        <div class="auth-card animate__animated animate__zoomIn">
+            <div class="auth-left">
+                <div class="brand-big">Dev<span>Root</span></div>
+                <p>La red social donde tu código habla por ti.</p>
+                <div class="auth-illustration">
+                    <div class="code-window">
+                        <div class="dots"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+                        <pre><code><span class="k">const</span> dev = <span class="v">"Emmanuel"</span>;
+<span class="k">if</span> (status === <span class="v">'coding'</span>) {
+  DevRoot.<span class="f">connect</span>();
+}</code></pre>
                     </div>
                 </div>
-            </section>
+            </div>
 
-            <aside class="right-panel">
-                <div class="trending-box">
-                    <h3>Tendencias Dev</h3>
-                    <ul>
-                        <li>#NodeJS</li>
-                        <li>#PostgreSQL</li>
-                        <li>#RobloxStudio</li>
-                    </ul>
+            <div class="auth-right">
+                <div id="form-login" class="form-box active">
+                    <h2>Bienvenido de nuevo</h2>
+                    <p class="subtitle">Ingresa tus credenciales maestras</p>
+                    <div class="group">
+                        <label>Email Corporativo</label>
+                        <input type="email" id="log-email" placeholder="nombre@devroot.com">
+                    </div>
+                    <div class="group">
+                        <label>Password</label>
+                        <input type="password" id="log-pass" placeholder="••••••••">
+                    </div>
+                    <button class="btn-primary" onclick="processLogin()">Acceder al Nodo</button>
+                    <p class="footer-link">¿No tienes cuenta? <span onclick="toggleAuthForms('reg')">Regístrate</span></p>
+                </div>
+
+                <div id="form-reg" class="form-box">
+                    <h2>Crea tu perfil</h2>
+                    <p class="subtitle">Únete a la élite del desarrollo</p>
+                    <div class="group">
+                        <label>Username</label>
+                        <input type="text" id="reg-user" placeholder="@usuario">
+                    </div>
+                    <div class="group">
+                        <label>Email</label>
+                        <input type="email" id="reg-email" placeholder="dev@example.com">
+                    </div>
+                    <div class="group">
+                        <label>Password</label>
+                        <input type="password" id="reg-pass" placeholder="Crea una clave segura">
+                    </div>
+                    <button class="btn-success" onclick="processRegister()">Inicializar Nodo</button>
+                    <p class="footer-link">¿Ya eres dev? <span onclick="toggleAuthForms('log')">Logueate</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-view" class="hidden">
+        <nav class="main-header">
+            <div class="header-left">
+                <div class="logo">Dev<span>Root</span></div>
+                <div class="search-box">
+                    <i>🔍</i>
+                    <input type="text" placeholder="Buscar en la raíz...">
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="icon-btn">🔔<span class="badge">3</span></div>
+                <div class="icon-btn">✉️</div>
+                <div class="user-pill" onclick="toggleDropdown()">
+                    <div class="u-avatar" id="nav-avatar">E</div>
+                    <span id="nav-username">Emmanuel</span>
+                    <i>▼</i>
+                    
+                    <div id="user-menu" class="dropdown">
+                        <div class="drop-header">
+                            <strong id="drop-name">Emmanuel</strong>
+                            <span id="drop-handle">@emmanuel</span>
+                        </div>
+                        <ul class="drop-list">
+                            <li>👤 Mi Perfil</li>
+                            <li>⚙️ Ajustes de Dev</li>
+                            <li>🌟 Verificación (100 seg)</li>
+                            <li class="sep"></li>
+                            <li class="logout" onclick="killSession()">Desconectar</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="layout">
+            <aside class="left-side">
+                <div class="nav-links">
+                    <a href="#" class="active">🏠 Inicio</a>
+                    <a href="#">🔥 Tendencias</a>
+                    <a href="#">📂 Mis Proyectos</a>
+                    <a href="#">💬 Comunidades</a>
+                    <a href="#">🔖 Guardados</a>
+                </div>
+                <div class="pro-card">
+                    <h4>DevRoot Pro</h4>
+                    <p>Obtén el badge verificado y soporte prioritario.</p>
+                    <button>Saber más</button>
+                </div>
+            </aside>
+
+            <main class="feed-area">
+                <div class="create-post">
+                    <div class="post-input-row">
+                        <div class="u-avatar small">E</div>
+                        <textarea id="post-text" placeholder="¿En qué estás trabajando hoy, Emmanuel?"></textarea>
+                    </div>
+                    <div class="post-actions">
+                        <div class="tool-icons">
+                            <span>🖼️ Foto</span>
+                            <span>💻 Código</span>
+                            <span>📊 Encuesta</span>
+                        </div>
+                        <button class="btn-publish" onclick="publishPost()">Publicar</button>
+                    </div>
+                </div>
+
+                <div id="posts-feed">
+                    </div>
+            </main>
+
+            <aside class="right-side">
+                <div class="widget">
+                    <h3>¿A quién seguir?</h3>
+                    <div class="suggest-item">
+                        <div class="u-avatar xs">B</div>
+                        <div class="s-info"><strong>Bill_Gates</strong><span>@microsoft</span></div>
+                        <button>Seguir</button>
+                    </div>
+                    <div class="suggest-item">
+                        <div class="u-avatar xs">L</div>
+                        <div class="s-info"><strong>Linus_T</strong><span>@linux_creator</span></div>
+                        <button>Seguir</button>
+                    </div>
+                </div>
+
+                <div class="widget">
+                    <h3>Top Tecnologías 2026</h3>
+                    <div class="tech-tag">#NodeJS <span>12k posts</span></div>
+                    <div class="tech-tag">#PostgreSQL <span>8k posts</span></div>
+                    <div class="tech-tag">#Reactv19 <span>5k posts</span></div>
                 </div>
             </aside>
         </div>
-    </main>
+    </div>
 
     <script src="script.js"></script>
 </body>
