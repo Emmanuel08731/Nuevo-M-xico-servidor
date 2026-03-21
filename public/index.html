@@ -3,52 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevRoot | Conexión Elite</title>
+    <title>DevRoot | Creative Network</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="app">
-        <div id="auth-container" class="glass-card">
-            <h1 class="logo">DEV<span>ROOT</span></h1>
-            <p class="subtitle">Protocolo de acceso v6.0</p>
-
-            <div id="login-form">
-                <input type="email" id="login-email" placeholder="Email del Desarrollador">
-                <input type="password" id="login-pass" placeholder="Contraseña">
-                <button onclick="login()" class="btn-primary">ACCEDER</button>
-                <p class="toggle-text">¿No tienes cuenta? <span onclick="toggleAuth()">Crear Perfil</span></p>
+    <div id="auth-screen" class="full-center">
+        <div class="auth-box">
+            <div class="auth-header">
+                <h1>Dev<span>Root</span></h1>
+                <p id="auth-msg">Bienvenido a la raíz del código</p>
+            </div>
+            
+            <div id="login-section">
+                <div class="input-group">
+                    <input type="email" id="login-email" placeholder="Correo electrónico">
+                    <input type="password" id="login-pass" placeholder="Contraseña">
+                </div>
+                <button onclick="login()" class="btn-main">Entrar al Sistema</button>
+                <p class="switch">¿Nuevo aquí? <span onclick="showRegister()">Crear cuenta</span></p>
             </div>
 
-            <div id="register-form" style="display: none;">
-                <input type="text" id="reg-user" placeholder="Nombre de Usuario">
-                <input type="email" id="reg-email" placeholder="Email">
-                <input type="password" id="reg-pass" placeholder="Contraseña">
-                <button onclick="register()" class="btn-success">REGISTRARSE</button>
-                <p class="toggle-text">¿Ya eres miembro? <span onclick="toggleAuth()">Iniciar Sesión</span></p>
+            <div id="register-section" style="display: none;">
+                <div class="input-group">
+                    <input type="text" id="reg-user" placeholder="Nombre de usuario">
+                    <input type="email" id="reg-email" placeholder="Correo electrónico">
+                    <input type="password" id="reg-pass" placeholder="Contraseña">
+                </div>
+                <button onclick="register()" class="btn-main">Finalizar Registro</button>
+                <p class="switch">¿Ya tienes cuenta? <span onclick="showLogin()">Iniciar sesión</span></p>
             </div>
-        </div>
-
-        <div id="dashboard" style="display: none;">
-            <nav>
-                <h2 class="logo-small">DEV<span>ROOT</span></h2>
-                <div class="user-info">
-                    <span id="display-name"></span>
-                    <button onclick="logout()" class="btn-logout">Salir</button>
-                </div>
-            </nav>
-            <main>
-                <div class="stats-bar">
-                    <div class="stat">Seguidores: <b id="stat-followers">0</b></div>
-                    <div class="stat">Estado: <b id="stat-status">Cargando...</b></div>
-                </div>
-                <div class="feed-placeholder">
-                    <h3>Feed de Proyectos</h3>
-                    <p>Esperando despliegues de la comunidad...</p>
-                </div>
-            </main>
         </div>
     </div>
+
+    <div id="main-dashboard" style="display: none;">
+        <nav class="navbar">
+            <div class="nav-content">
+                <div class="nav-logo">Dev<span>Root</span></div>
+                <div class="nav-user">
+                    <div class="profile-trigger" onclick="toggleMenu()">
+                        <span id="user-name-display">Usuario</span>
+                        <div class="avatar-circle"></div>
+                    </div>
+                    <div id="drop-menu" class="dropdown">
+                        <p class="menu-user" id="menu-user-full">@usuario</p>
+                        <hr>
+                        <a href="#">Mi Perfil</a>
+                        <a href="#">Configuración</a>
+                        <a href="#" class="logout-link" onclick="logout()">Cerrar Sesión</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="content-layout">
+            <section class="feed">
+                <h2>Publicaciones Recientes</h2>
+                <div id="posts-container">
+                    <div class="post-card">
+                        <b>@DevRoot_Bot</b>
+                        <p>¡Bienvenido a la comunidad! Empieza publicando tu primer proyecto.</p>
+                        <small>Hace 1 minuto</small>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
