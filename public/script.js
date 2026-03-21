@@ -1,111 +1,144 @@
-// CONTROL DE VISTAS
-function switchForm(type) {
-    const login = document.getElementById('login-form');
-    const register = document.getElementById('register-form');
-    const statusText = document.getElementById('auth-status-text');
+// VARIABLES GLOBALES
+let currentUser = null;
 
-    if (type === 'reg') {
-        login.classList.remove('active');
-        register.classList.add('active');
-        statusText.innerText = "Crea tu identificador en la red.";
-    } else {
-        register.classList.remove('active');
-        login.classList.add('active');
-        statusText.innerText = "Inicia sesión para desplegar tus ideas.";
-    }
-}
-
-// SISTEMA DE NOTIFICACIONES
-function notify(msg, type = 'success') {
-    const toast = document.getElementById('notification-toast');
-    toast.innerText = msg;
-    toast.className = `toast visible ${type} animate__animated animate__fadeInRight`;
+// SISTEMA DE ALERTAS PERSONALIZADAS
+function showAlert(message, type = 'success') {
+    const alertBox = document.getElementById('alert-system');
+    const alert = document.createElement('div');
+    alert.className = `custom-alert animate__animated animate__fadeInRight ${type}`;
+    alert.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${message}`;
+    alertBox.appendChild(alert);
     
     setTimeout(() => {
-        toast.classList.replace('animate__fadeInRight', 'animate__fadeOutRight');
-        setTimeout(() => toast.classList.add('hidden'), 500);
-    }, 3000);
+        alert.classList.replace('animate__fadeInRight', 'animate__fadeOutRight');
+        setTimeout(() => alert.remove(), 500);
+    }, 3500);
 }
 
-// LOGICA DE REGISTRO
-async function handleRegister() {
-    const user = document.getElementById('r-user').value;
-    const email = document.getElementById('r-email').value;
-    const pass = document.getElementById('r-pass').value;
-
-    if(!user || !email || !pass) return notify("Completa todos los nodos", "error");
-
-    try {
-        const response = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: user, email, password: pass })
-        });
-        
-        const data = await response.json();
-
-        if (data.success) {
-            notify("✅ ¡CUENTA CREADA! Redirigiendo...");
-            // Pequeña animación de espera para que el usuario lea el mensaje
-            setTimeout(() => {
-                switchForm('log');
-                document.getElementById('l-email').value = email;
-            }, 1500);
-        } else {
-            notify("❌ Error: " + (data.error || "El email ya existe"), "error");
-        }
-    } catch (e) {
-        notify("Fallo en la conexión con el nodo central", "error");
+// CAMBIAR FORMULARIOS
+function toggleAuthForms(target) {
+    document.getElementById('form-login').classList.remove('active');
+    document.getElementById('form-reg').classList.remove('active');
+    
+    if(target === 'reg') {
+        document.getElementById('form-reg').classList.add('active');
+    } else {
+        document.getElementById('form-login').classList.add('active');
     }
 }
 
-// LOGICA DE LOGIN
-async function handleLogin() {
-    const email = document.getElementById('l-email').value;
-    const pass = document.getElementById('l-pass').value;
+// REGISTRO
+async function processRegister() {
+    const username = document.getElementById('reg-user').value;
+    const email = document.getElementById('reg-email').value;
+    const password = document.getElementById('reg-pass').value;
+
+    if(!username || !email || !password) return showAlert("Por favor, llena todos los campos", "error");
 
     try {
-        const response = await fetch('/api/auth/login', {
+        const res = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password: pass })
+            body: JSON.stringify({ username, email, password })
         });
+        const data = await res.json();
         
-        const data = await response.json();
-
-        if (data.success) {
-            notify("Iniciando sesión...");
-            startDashboard(data.user);
+        if(data.success) {
+            showAlert("¡Cuenta creada! Ya puedes iniciar sesión.");
+            toggleAuthForms('log');
+            document.getElementById('log-email').value = email;
         } else {
-            notify("❌ Credenciales incorrectas", "error");
+            showAlert(data.error || "El email ya está en uso", "error");
         }
-    } catch (e) {
-        notify("Error de red", "error");
+    } catch(e) {
+        showAlert("Error al conectar con el servidor", "error");
     }
 }
 
-function startDashboard(user) {
-    document.getElementById('auth-screen').classList.add('animate__animated', 'animate__fadeOut');
+// LOGIN
+async function processLogin() {
+    const email = document.getElementById('log-email').value;
+    const password = document.getElementById('log-pass').value;
+
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            showAlert("Acceso concedido. Cargando tu entorno...");
+            currentUser = data.user;
+            initApp();
+        } else {
+            showAlert("Credenciales incorrectas", "error");
+        }
+    } catch(e) {
+        showAlert("Fallo en el servidor", "error");
+    }
+}
+
+// INICIAR DASHBOARD
+function initApp() {
+    document.getElementById('auth-view').classList.add('animate__animated', 'animate__fadeOut');
     setTimeout(() => {
-        document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('dashboard').classList.remove('hidden');
-        document.getElementById('user-display').innerText = user.name;
-        document.getElementById('avatar-initial').innerText = user.name[0].toUpperCase();
-        document.getElementById('menu-full-user').innerText = "@" + user.name.toLowerCase().replace(" ", "_");
+        document.getElementById('auth-view').style.display = 'none';
+        document.getElementById('app-view').classList.remove('hidden');
+        
+        // Actualizar datos de UI
+        document.getElementById('nav-username').innerText = currentUser.name;
+        document.getElementById('drop-name').innerText = currentUser.name;
+        document.getElementById('nav-avatar').innerText = currentUser.name[0].toUpperCase();
+        document.getElementById('drop-handle').innerText = "@" + currentUser.name.toLowerCase().replace(/\s/g, '');
+        
+        loadFeed();
     }, 500);
 }
 
-function toggleUserMenu() {
-    document.getElementById('profile-menu').classList.toggle('active');
+// PUBLICAR POST
+function publishPost() {
+    const text = document.getElementById('post-text').value;
+    if(!text.trim()) return;
+
+    const feed = document.getElementById('posts-feed');
+    const postHTML = `
+        <div class="post-card">
+            <div class="post-header">
+                <div class="u-avatar">${currentUser.name[0]}</div>
+                <div class="post-info">
+                    <strong>${currentUser.name}</strong>
+                    <span>Ahora mismo • 🌍 Público</span>
+                </div>
+            </div>
+            <div class="post-body">
+                ${text}
+            </div>
+        </div>
+    `;
+    
+    feed.insertAdjacentHTML('afterbegin', postHTML);
+    document.getElementById('post-text').value = '';
+    showAlert("Publicación enviada");
 }
 
-function logout() {
-    location.reload();
+function loadFeed() {
+    // Aquí podrías hacer un fetch real a los posts de la DB
+    console.log("Feed cargado satisfactoriamente.");
 }
 
-// Cierre de menú al clickear fuera
+function toggleDropdown() {
+    document.getElementById('user-menu').classList.toggle('show');
+}
+
+function killSession() {
+    window.location.reload();
+}
+
+// Cerrar menú si se clickea fuera
 window.onclick = function(e) {
-    if (!e.target.closest('.nav-profile')) {
-        document.getElementById('profile-menu').classList.remove('active');
+    if (!e.target.closest('.user-pill')) {
+        document.getElementById('user-menu').classList.remove('show');
     }
 }
