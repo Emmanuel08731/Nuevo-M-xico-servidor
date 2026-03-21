@@ -3,198 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevRoot v6.0 | Emmanuel Director</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <title>DevRoot | Emmanuel Director</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-    <style>
-        /* CONFIGURACIÓN MAESTRA DE DISEÑO (700+ Renglones) */
-        :root {
-            --blue: #0066ff;
-            --black: #050505;
-            --white: #ffffff;
-            --gray-bg: #f8f9fc;
-            --text-main: #121212;
-            --border-color: #edf2f7;
-            --radius-main: 20px;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
-        
-        body { background: var(--gray-bg); color: var(--text-main); overflow-x: hidden; }
-
-        /* Estilo del Portal de Acceso (Como en tus capturas pero decorado) */
-        .auth-container {
-            height: 100vh; display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
-            padding: 20px;
-        }
-
-        .auth-card {
-            width: 100%; max-width: 1100px; height: 680px;
-            background: var(--white); border-radius: 30px; display: flex;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.08); overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.02);
-        }
-
-        /* Lado Negro (Identidad Visual) */
-        .auth-side-info {
-            flex: 1; background: var(--black); color: var(--white);
-            padding: 60px; display: flex; flex-direction: column; justify-content: space-between;
-        }
-
-        .auth-side-info h2 { font-size: 2.5rem; font-weight: 800; }
-        .auth-side-info h2 span { color: var(--blue); }
-
-        .code-mockup {
-            background: #111; border-radius: 15px; padding: 25px;
-            font-family: 'Fira Code', monospace; font-size: 0.9rem;
-            border: 1px solid #222; margin: 30px 0; color: #fff;
-        }
-        .code-mockup .token-k { color: #ff79c6; }
-        .code-mockup .token-v { color: #50fa7b; }
-
-        /* Lado Blanco (Formularios) */
-        .auth-side-form { flex: 1.2; padding: 60px; display: flex; flex-direction: column; }
-        
-        .form-tabs { display: flex; gap: 30px; margin-bottom: 45px; }
-        .tab-btn { 
-            background: none; border: none; font-size: 1.1rem; font-weight: 700;
-            color: #a0aec0; cursor: pointer; padding-bottom: 10px;
-            border-bottom: 3px solid transparent; transition: 0.3s;
-        }
-        .tab-btn.active { color: var(--blue); border-color: var(--blue); }
-
-        .input-group { margin-bottom: 25px; }
-        .input-group label { display: block; font-weight: 700; font-size: 0.9rem; margin-bottom: 10px; color: #4a5568; }
-        
-        .input-field {
-            position: relative; display: flex; align-items: center;
-        }
-        .input-field i { position: absolute; left: 18px; color: #a0aec0; }
-        .input-field input {
-            width: 100%; padding: 16px 16px 16px 50px; border-radius: 15px;
-            border: 2px solid #f1f4f8; background: #f8fafc; outline: none; transition: 0.3s;
-            font-size: 1rem;
-        }
-        .input-field input:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 4px rgba(0,102,255,0.08); }
-
-        .btn-connect {
-            width: 100%; padding: 18px; background: var(--blue); color: var(--white);
-            border: none; border-radius: 16px; font-weight: 800; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 12px;
-            transition: 0.3s; margin-top: 15px; font-size: 1.1rem;
-        }
-        .btn-connect:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0,102,255,0.25); }
-
-        /* --- DASHBOARD --- */
-        .navbar {
-            height: 80px; background: #fff; border-bottom: 1px solid var(--border-color);
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 50px; position: sticky; top: 0; z-index: 100;
-        }
-        .user-pill {
-            display: flex; align-items: center; gap: 12px; background: #f0f4f8;
-            padding: 8px 20px; border-radius: 50px; cursor: pointer; border: 1px solid transparent;
-            transition: 0.3s;
-        }
-        .user-pill:hover { border-color: var(--blue); background: #fff; }
-
-        .hidden { display: none !important; }
-
-        /* [Más de 500 renglones de CSS adicionales para completar la decoración...] */
-    </style>
 </head>
 <body>
-
-    <section id="auth-portal" class="auth-container">
-        <div class="auth-card">
-            <div class="auth-side-info">
-                <div>
-                    <h2>Dev<span>Root</span></h2>
-                    <p>La red social donde tu código habla por ti.</p>
-                </div>
-                
-                <div class="code-mockup">
-                    <p><span class="token-k">const</span> project = <span class="token-v">"DevRoot"</span>;</p>
-                    <p><span class="token-k">function</span> <span style="color:#bd93f9">init</span>() {</p>
-                    <p>&nbsp;&nbsp;console.<span style="color:#50fa7b">log</span>(<span class="token-v">"Conectando a Render..."</span>);</p>
-                    <p>}</p>
-                </div>
-
-                <div style="display: flex; gap: 20px;">
-                    <div><strong>+2.4k</strong><br><small>Despliegues</small></div>
-                    <div><strong>99.9%</strong><br><small>Uptime</small></div>
+    <div id="auth-portal" class="auth-wrapper">
+        <div class="glass-card">
+            <div class="side-dark">
+                <h1>Dev<span>Root</span></h1>
+                <p>Infraestructura para mentes digitales.</p>
+                <div class="mini-terminal">
+                    <code>> system.init("Emmanuel");</code><br>
+                    <code>> status: ONLINE</code>
                 </div>
             </div>
-
-            <div class="auth-side-form">
-                <div class="form-tabs">
-                    <button class="tab-btn active">Ingresar</button>
-                    <button class="tab-btn">Nuevo Perfil</button>
+            <div class="side-white">
+                <h2>Bienvenido de Nuevo</h2>
+                <div class="input-group">
+                    <label>Email de Desarrollador</label>
+                    <input type="email" id="email" placeholder="dev@emmanuel.store">
                 </div>
-
-                <div id="login-form">
-                    <div class="input-group">
-                        <label>Credencial de Acceso</label>
-                        <div class="input-field">
-                            <i class="fa-regular fa-envelope"></i>
-                            <input type="email" id="email" placeholder="dev@emmanuel.store">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label>Llave Maestra</label>
-                        <div class="input-field">
-                            <i class="fa-regular fa-lock"></i>
-                            <input type="password" id="pass" placeholder="••••••••">
-                        </div>
-                    </div>
-                    <button class="btn-connect" onclick="login()">
-                        Conectar al Nodo <i class="fa-solid fa-arrow-right"></i>
-                    </button>
-                    <p style="margin-top: 20px; text-align: center; font-size: 0.9rem; color: #718096;">
-                        ¿Olvidaste tu llave? <a href="#" style="color: var(--blue); text-decoration: none;">Recuperar acceso</a>
-                    </p>
+                <div class="input-group">
+                    <label>Llave Maestra</label>
+                    <input type="password" id="pass" placeholder="••••••••">
                 </div>
+                <button onclick="access()" class="btn-primary">Conectar Nodo</button>
             </div>
         </div>
-    </section>
+    </div>
 
-    <main id="app-dashboard" class="hidden">
-        <nav class="navbar">
-            <h2 style="font-weight: 800;">Dev<span style="color: var(--blue);">Root</span></h2>
-            <div class="user-pill">
-                <div style="width:30px; height:30px; background:var(--blue); border-radius:50%; display:flex; align-items:center; justify:center; color:#fff; font-weight:800;">E</div>
-                <span style="font-weight: 700;">Emmanuel @director</span>
-            </div>
+    <main id="dashboard" class="hidden">
+        <nav class="top-nav">
+            <div class="logo">Dev<span>Root</span></div>
+            <div class="user-info">Director: Emmanuel</div>
         </nav>
-        <div style="padding: 40px; text-align: center;">
-            <h1 style="color: var(--black);">Bienvenido, Director Emmanuel</h1>
-            <p>Accede a hosting gratuito para tus bots y web.</p>
+        <div class="content">
+            <h1>Panel de Control v6.0</h1>
+            <p>Gestionando Vexo Bot y Emerald Hosting.</p>
         </div>
     </main>
 
-    <script>
-        // Lógica de acceso
-        function login() {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('pass').value;
-
-            if(email && pass) {
-                // Efecto de carga
-                document.querySelector('.btn-connect').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...';
-                
-                setTimeout(() => {
-                    document.getElementById('auth-portal').classList.add('hidden');
-                    document.getElementById('app-dashboard').classList.remove('hidden');
-                }, 1200);
-            } else {
-                alert("Por favor, ingresa tus credenciales.");
-            }
-        }
-        
-        // [Más de 500 renglones de lógica para Emerald Hosting y VibeBlox...]
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
