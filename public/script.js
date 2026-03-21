@@ -1,39 +1,36 @@
-// VARIABLES GLOBALES
-let currentUser = null;
-
-// SISTEMA DE ALERTAS PERSONALIZADAS
-function showAlert(message, type = 'success') {
-    const alertBox = document.getElementById('alert-system');
-    const alert = document.createElement('div');
-    alert.className = `custom-alert animate__animated animate__fadeInRight ${type}`;
-    alert.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${message}`;
-    alertBox.appendChild(alert);
-    
+// --- SISTEMA DE GESTIÓN DE UI ---
+window.addEventListener('load', () => {
     setTimeout(() => {
-        alert.classList.replace('animate__fadeInRight', 'animate__fadeOutRight');
-        setTimeout(() => alert.remove(), 500);
-    }, 3500);
+        document.getElementById('loader').style.opacity = '0';
+        setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+    }, 1500);
+});
+
+function showBox(type) {
+    document.getElementById('box-login').classList.remove('active');
+    document.getElementById('box-reg').classList.remove('active');
+    document.getElementById(`box-${type}`).classList.add('active');
 }
 
-// CAMBIAR FORMULARIOS
-function toggleAuthForms(target) {
-    document.getElementById('form-login').classList.remove('active');
-    document.getElementById('form-reg').classList.remove('active');
-    
-    if(target === 'reg') {
-        document.getElementById('form-reg').classList.add('active');
-    } else {
-        document.getElementById('form-login').classList.add('active');
-    }
+function notify(msg, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast animate__animated animate__fadeInRight ${type}`;
+    toast.innerHTML = `<strong>${type === 'success' ? '✅' : '❌'}</strong> ${msg}`;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.replace('animate__fadeInRight', 'animate__fadeOutRight');
+        setTimeout(() => toast.remove(), 500);
+    }, 4000);
 }
 
-// REGISTRO
-async function processRegister() {
-    const username = document.getElementById('reg-user').value;
-    const email = document.getElementById('reg-email').value;
-    const password = document.getElementById('reg-pass').value;
+// --- LÓGICA DE SERVIDOR ---
+async function doRegister() {
+    const username = document.getElementById('r-user').value;
+    const email = document.getElementById('r-email').value;
+    const password = document.getElementById('r-pass').value;
 
-    if(!username || !email || !password) return showAlert("Por favor, llena todos los campos", "error");
+    if(!username || !email || !password) return notify("Completa todos los nodos", "error");
 
     try {
         const res = await fetch('/api/auth/register', {
@@ -42,23 +39,22 @@ async function processRegister() {
             body: JSON.stringify({ username, email, password })
         });
         const data = await res.json();
-        
+
         if(data.success) {
-            showAlert("¡Cuenta creada! Ya puedes iniciar sesión.");
-            toggleAuthForms('log');
-            document.getElementById('log-email').value = email;
+            notify("¡Cuenta creada! Inicializando entorno de login...");
+            setTimeout(() => {
+                showBox('login');
+                document.getElementById('l-email').value = email;
+            }, 1000);
         } else {
-            showAlert(data.error || "El email ya está en uso", "error");
+            notify(data.error || "Email ya registrado", "error");
         }
-    } catch(e) {
-        showAlert("Error al conectar con el servidor", "error");
-    }
+    } catch(e) { notify("Error de red central", "error"); }
 }
 
-// LOGIN
-async function processLogin() {
-    const email = document.getElementById('log-email').value;
-    const password = document.getElementById('log-pass').value;
+async function doLogin() {
+    const email = document.getElementById('l-email').value;
+    const password = document.getElementById('l-pass').value;
 
     try {
         const res = await fetch('/api/auth/login', {
@@ -67,78 +63,59 @@ async function processLogin() {
             body: JSON.stringify({ email, password })
         });
         const data = await res.json();
-        
+
         if(data.success) {
-            showAlert("Acceso concedido. Cargando tu entorno...");
-            currentUser = data.user;
-            initApp();
+            notify("Sincronizando perfil...");
+            launchApp(data.user);
         } else {
-            showAlert("Credenciales incorrectas", "error");
+            notify("Acceso denegado: Credenciales inválidas", "error");
         }
-    } catch(e) {
-        showAlert("Fallo en el servidor", "error");
-    }
+    } catch(e) { notify("Servidor no responde", "error"); }
 }
 
-// INICIAR DASHBOARD
-function initApp() {
-    document.getElementById('auth-view').classList.add('animate__animated', 'animate__fadeOut');
+function launchApp(user) {
+    document.getElementById('view-auth').classList.add('animate__animated', 'animate__fadeOut');
     setTimeout(() => {
-        document.getElementById('auth-view').style.display = 'none';
-        document.getElementById('app-view').classList.remove('hidden');
+        document.getElementById('view-auth').style.display = 'none';
+        document.getElementById('view-app').classList.remove('hidden');
         
-        // Actualizar datos de UI
-        document.getElementById('nav-username').innerText = currentUser.name;
-        document.getElementById('drop-name').innerText = currentUser.name;
-        document.getElementById('nav-avatar').innerText = currentUser.name[0].toUpperCase();
-        document.getElementById('drop-handle').innerText = "@" + currentUser.name.toLowerCase().replace(/\s/g, '');
+        // Carga de datos
+        document.getElementById('u-name').innerText = user.name;
+        document.getElementById('u-avatar').innerText = user.name[0].toUpperCase();
+        document.getElementById('u-handle').innerText = "@" + user.name.toLowerCase().replace(/\s/g, '');
+        document.getElementById('drop-email').innerText = user.email;
         
         loadFeed();
-    }, 500);
+    }, 600);
 }
 
-// PUBLICAR POST
-function publishPost() {
-    const text = document.getElementById('post-text').value;
+function createPost() {
+    const text = document.getElementById('post-input').value;
     if(!text.trim()) return;
 
-    const feed = document.getElementById('posts-feed');
-    const postHTML = `
-        <div class="post-card">
-            <div class="post-header">
-                <div class="u-avatar">${currentUser.name[0]}</div>
-                <div class="post-info">
-                    <strong>${currentUser.name}</strong>
-                    <span>Ahora mismo • 🌍 Público</span>
-                </div>
-            </div>
-            <div class="post-body">
-                ${text}
+    const feed = document.getElementById('feed-items');
+    const post = document.createElement('div');
+    post.className = 'post-card';
+    post.innerHTML = `
+        <div class="composer-header">
+            <div class="user-avatar xs">${document.getElementById('u-avatar').innerText}</div>
+            <div>
+                <strong>${document.getElementById('u-name').innerText}</strong>
+                <p style="font-size: 0.8rem; color: #888;">Ahora mismo • 🌍</p>
             </div>
         </div>
+        <div class="post-body">${text}</div>
     `;
     
-    feed.insertAdjacentHTML('afterbegin', postHTML);
-    document.getElementById('post-text').value = '';
-    showAlert("Publicación enviada");
+    feed.prepend(post);
+    document.getElementById('post-input').value = '';
+    notify("Publicación desplegada con éxito");
 }
 
-function loadFeed() {
-    // Aquí podrías hacer un fetch real a los posts de la DB
-    console.log("Feed cargado satisfactoriamente.");
+function toggleUserMenu() {
+    document.getElementById('user-dropdown').classList.toggle('active');
 }
 
-function toggleDropdown() {
-    document.getElementById('user-menu').classList.toggle('show');
-}
-
-function killSession() {
-    window.location.reload();
-}
-
-// Cerrar menú si se clickea fuera
-window.onclick = function(e) {
-    if (!e.target.closest('.user-pill')) {
-        document.getElementById('user-menu').classList.remove('show');
-    }
+function forceLogout() {
+    location.reload();
 }
