@@ -3,156 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emerald | Jexactyl Pro Panel</title>
+    <title>DevRoot | Conexión Elite</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
-<body class="theme-deep">
-
-    <div id="emerald-notify"></div>
-
+<body>
     <div id="app">
-        
-        <aside class="emerald-sidebar" id="sidebar" style="display:none">
-            <div class="side-brand">
-                <div class="logo-box"><i class="ri-flashlight-fill"></i></div>
-                <span>EMERALD</span>
+        <div id="auth-container" class="glass-card">
+            <h1 class="logo">DEV<span>ROOT</span></h1>
+            <p class="subtitle">Protocolo de acceso v6.0</p>
+
+            <div id="login-form">
+                <input type="email" id="login-email" placeholder="Email del Desarrollador">
+                <input type="password" id="login-pass" placeholder="Contraseña">
+                <button onclick="login()" class="btn-primary">ACCEDER</button>
+                <p class="toggle-text">¿No tienes cuenta? <span onclick="toggleAuth()">Crear Perfil</span></p>
             </div>
-            <nav class="side-menu">
-                <div class="menu-label">MENU</div>
-                <a href="#" class="menu-item active" onclick="navigate('dash')"><i class="ri-layout-grid-fill"></i> Dashboard</a>
-                <a href="#" class="menu-item" onclick="navigate('plans')"><i class="ri-shopping-bag-3-line"></i> Store</a>
-                <a href="#" class="menu-item" onclick="navigate('tickets')"><i class="ri-customer-service-2-line"></i> Support</a>
-                
-                <div class="menu-label">ADMIN</div>
-                <a href="#" class="menu-item"><i class="ri-settings-5-line"></i> Settings</a>
+
+            <div id="register-form" style="display: none;">
+                <input type="text" id="reg-user" placeholder="Nombre de Usuario">
+                <input type="email" id="reg-email" placeholder="Email">
+                <input type="password" id="reg-pass" placeholder="Contraseña">
+                <button onclick="register()" class="btn-success">REGISTRARSE</button>
+                <p class="toggle-text">¿Ya eres miembro? <span onclick="toggleAuth()">Iniciar Sesión</span></p>
+            </div>
+        </div>
+
+        <div id="dashboard" style="display: none;">
+            <nav>
+                <h2 class="logo-small">DEV<span>ROOT</span></h2>
+                <div class="user-info">
+                    <span id="display-name"></span>
+                    <button onclick="logout()" class="btn-logout">Salir</button>
+                </div>
             </nav>
-            <div class="side-profile">
-                <div class="p-info">
-                    <b id="user-name-label">User</b>
-                    <small id="user-role-label">Client</small>
+            <main>
+                <div class="stats-bar">
+                    <div class="stat">Seguidores: <b id="stat-followers">0</b></div>
+                    <div class="stat">Estado: <b id="stat-status">Cargando...</b></div>
                 </div>
-                <button class="btn-logout" onclick="logout()"><i class="ri-logout-box-r-line"></i></button>
-            </div>
-        </aside>
-
-        <main class="emerald-main">
-            
-            <section id="view-auth" class="auth-wrapper">
-                <div class="auth-container">
-                    <div class="auth-header">
-                        <h1>Join the <span>Elite</span></h1>
-                        <p>Inicia sesión o crea tu cuenta para gestionar tus bots.</p>
-                    </div>
-                    <div class="auth-tabs">
-                        <button id="tab-login" class="active" onclick="switchAuth('login')">LOGIN</button>
-                        <button id="tab-register" onclick="switchAuth('register')">REGISTER</button>
-                    </div>
-                    <div class="auth-body">
-                        <div id="box-login" class="auth-box active">
-                            <div class="input-group">
-                                <label>Email</label>
-                                <input type="email" id="l-email" placeholder="admin@emerald.host">
-                            </div>
-                            <div class="input-group">
-                                <label>Password</label>
-                                <input type="password" id="l-pass" placeholder="••••••••">
-                            </div>
-                            <button class="btn-auth" onclick="handleLogin()">ENTER PANEL</button>
-                        </div>
-                        <div id="box-register" class="auth-box">
-                            <div class="input-group">
-                                <label>Username</label>
-                                <input type="text" id="r-user" placeholder="Emmanuel">
-                            </div>
-                            <div class="input-group">
-                                <label>Email</label>
-                                <input type="email" id="r-email" placeholder="emma@mail.com">
-                            </div>
-                            <div class="input-group">
-                                <label>Password</label>
-                                <input type="password" id="r-pass" placeholder="••••••••">
-                            </div>
-                            <button class="btn-auth" onclick="handleRegister()">CREATE ACCOUNT</button>
-                        </div>
-                    </div>
+                <div class="feed-placeholder">
+                    <h3>Feed de Proyectos</h3>
+                    <p>Esperando despliegues de la comunidad...</p>
                 </div>
-            </section>
-
-            <section id="view-plans" style="display:none" class="view-padding">
-                <div class="header-view">
-                    <h2>Deploy <span>Server</span></h2>
-                    <p>Selecciona tu plan ideal para empezar.</p>
-                </div>
-                <div class="plans-grid">
-                    <div class="p-card free">
-                        <div class="p-head">
-                            <h3>Free Tier</h3>
-                            <div class="p-price">€0.00<span>/mo</span></div>
-                        </div>
-                        <ul class="p-features">
-                            <li><i class="ri-check-line"></i> 50% CPU Priority</li>
-                            <li><i class="ri-check-line"></i> 512MB DDR4 RAM</li>
-                            <li><i class="ri-check-line"></i> 1GB NVMe Disk</li>
-                            <li><i class="ri-check-line"></i> Port forwarding</li>
-                        </ul>
-                        <button class="btn-deploy" onclick="deployProcess('Free')">DEPLOY NOW</button>
-                    </div>
-                </div>
-            </section>
-
-            <section id="view-console" style="display:none" class="console-view">
-                <div class="console-top">
-                    <div class="server-title">
-                        <h2 id="disp-server-name">bot vexol</h2>
-                        <span class="node-tag">node-01.emerald.host</span>
-                    </div>
-                    <div class="power-btns">
-                        <button class="p-btn start" onclick="power('start')"><i class="ri-play-fill"></i> START</button>
-                        <button class="p-btn restart" onclick="power('restart')"><i class="ri-refresh-line"></i> RESTART</button>
-                        <button class="p-btn stop" onclick="power('stop')"><i class="ri-stop-fill"></i> STOP</button>
-                    </div>
-                </div>
-
-                <div class="console-grid">
-                    <div class="terminal-box">
-                        <div id="terminal-logs" class="logs">
-                            <div class="l-line yellow">[SYSTEM] Checking server status...</div>
-                            <div class="l-line">[SYSTEM] Mounting filesystem...</div>
-                            <div class="l-line green">[OK] Server ready for commands.</div>
-                        </div>
-                        <div class="terminal-bar">
-                            <span>container:~$</span>
-                            <input type="text" id="cmd-input" placeholder="Type a command...">
-                        </div>
-                    </div>
-                    <div class="stats-box">
-                        <div class="s-card">
-                            <small>ADDRESS</small>
-                            <p id="disp-ip">92.118.206.166:30108</p>
-                        </div>
-                        <div class="s-card">
-                            <small>STATUS</small>
-                            <p class="green-text">RUNNING</p>
-                        </div>
-                        <div class="s-card">
-                            <small>CPU USAGE</small>
-                            <div class="bar-cont"><div class="fill" style="width: 2%"></div></div>
-                            <p>0.42% / 100%</p>
-                        </div>
-                        <div class="s-card">
-                            <small>MEMORY USAGE</small>
-                            <div class="bar-cont"><div class="fill" style="width: 15%"></div></div>
-                            <p>76 MiB / 512 MiB</p>
-                        </div>
-                        <button class="btn-renew">RENEW SERVER</button>
-                    </div>
-                </div>
-            </section>
-
-        </main>
+            </main>
+        </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
