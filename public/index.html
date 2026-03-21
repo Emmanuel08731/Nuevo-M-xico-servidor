@@ -3,169 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="author" content="Emmanuel Director">
     
     <title>DevRoot Ecosystem v6.0 | Emmanuel Digital Projects</title>
-    <meta name="description" content="Infraestructura elite para desarrolladores. Creado por Emmanuel.">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200;0,400;0,600;0,800;1,400&family=Fira+Code:wght@300;500;700&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="emmanuel-dark-mode-off">
+<body class="minimalist-modern-style">
 
-    <div id="master-loader" class="preloader">
-        <div class="loader-inner">
-            <div class="logo-morph">
-                <span class="l-text">Dev</span><span class="r-text">Root</span>
+    <div id="master-loader" class="preloader-overlay">
+        <div class="loader-content-wrapper">
+            <div class="logo-morph-animation">
+                <span class="l-part">Dev</span><span class="r-part">Root</span>
             </div>
-            <div class="loading-track">
-                <div id="load-progress-bar" class="loading-fill"></div>
+            <div class="loading-track-container">
+                <div id="load-progress-bar" class="loading-fill-bar"></div>
             </div>
-            <div class="status-messages">
-                <p id="loader-msg">Verificando certificados SSL...</p>
-                <small>Emmanuel Server Engine v6.2.1</small>
-            </div>
-        </div>
-    </div>
-
-    <div id="toast-center" class="toast-stack-container top-right"></div>
-
-    <div id="modal-overlay" class="modal-bg hidden">
-        <div class="modal-content animate__animated animate__zoomIn">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-gears"></i> Ajustes del Nodo</h3>
-                <button onclick="closeModal()" class="close-btn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="settings-grid">
-                    <div class="setting-item">
-                        <span>Modo Oscuro Pro</span>
-                        <div class="toggle-switch">
-                            <input type="checkbox" id="dark-mode-toggle">
-                            <label for="dark-mode-toggle"></label>
-                        </div>
-                    </div>
-                    <div class="setting-item">
-                        <span>Notificaciones de Red</span>
-                        <div class="toggle-switch">
-                            <input type="checkbox" checked>
-                            <label></label>
-                        </div>
-                    </div>
-                </div>
+            <div class="loader-status-text">
+                <p id="loader-status-msg">Iniciando Emmanuel Server Engine v6.2.1...</p>
+                <small>Verificando certificados SSL y base de datos PostgreSQL...</small>
             </div>
         </div>
     </div>
 
-    <section id="auth-portal" class="auth-layout">
-        <div class="bg-decorative-blobs">
-            <div class="blob blob-blue"></div>
-            <div class="blob blob-purple"></div>
+    <div id="toast-center" class="notification-stack top-right"></div>
+
+    <section id="auth-portal" class="auth-master-layout">
+        <div class="decorative-background">
+            <div class="blob b-blue"></div>
+            <div class="blob b-purple"></div>
         </div>
 
-        <div class="auth-card-master animate__animated animate__fadeIn">
-            <div class="auth-visual-column">
-                <div class="visual-branding">
-                    <div class="main-logo-big">Dev<span>Root</span></div>
-                    <p class="branding-tagline">Infraestructura elite para mentes digitales.</p>
+        <div class="auth-card-container animate__animated animate__fadeIn">
+            <div class="auth-visual-side">
+                <div class="branding-header">
+                    <div class="main-logo-xl">Dev<span>Root</span></div>
+                    <p class="tagline">La red social donde tu código habla por ti.</p>
                 </div>
-                
-                <div class="terminal-mockup">
-                    <div class="term-head">
-                        <span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span>
-                        <span class="term-title">devroot_server.js</span>
+
+                <div class="terminal-container">
+                    <div class="term-header">
+                        <div class="term-dots"><span class="d-red"></span><span class="d-yellow"></span><span class="d-green"></span></div>
+                        <span class="term-filename">emmanuel_director.js</span>
                     </div>
                     <div class="term-body">
-                        <pre><code><span class="c-k">const</span> director = <span class="c-v">"Emmanuel"</span>;
-<span class="c-k">async function</span> <span class="c-f">bootSystem</span>() {
-  <span class="c-k">const</span> status = <span class="c-k">await</span> Render.<span class="c-f">check</span>();
-  console.<span class="c-f">log</span>(<span class="c-v">"DevRoot Online..."</span>);
+                        <pre><code><span class="ck">const</span> project = <span class="cv">"DevRoot"</span>;
+<span class="ck">function</span> <span class="cf">initSystem</span>() {
+  console.<span class="cf">log</span>(<span class="cv">"Conectando a Render..."</span>);
+  <span class="ck">return</span> <span class="cf">boot</span>(project);
 }</code></pre>
                     </div>
                 </div>
 
-                <div class="auth-stats">
-                    <div class="stat-unit">
-                        <strong>+2.4k</strong>
-                        <span>Despliegues</span>
-                    </div>
-                    <div class="stat-unit">
-                        <strong>Uptime</strong>
-                        <span>99.9%</span>
-                    </div>
+                <div class="auth-footer-stats">
+                    <div class="stat-box"><strong>+2.4k</strong><span>Despliegues</span></div>
+                    <div class="stat-box"><strong>99.9%</strong><span>Uptime</span></div>
                 </div>
             </div>
 
-            <div class="auth-form-column">
-                <div class="form-tabs-nav">
-                    <button id="btn-tab-login" class="tab-trigger active" onclick="toggleAuthForm('login')">Ingresar</button>
-                    <button id="btn-tab-reg" class="tab-trigger" onclick="toggleAuthForm('register')">Nuevo Perfil</button>
+            <div class="auth-form-side">
+                <div class="auth-nav-tabs">
+                    <button id="btn-tab-login" class="auth-tab active" onclick="toggleAuthForm('login')">Ingresar</button>
+                    <button id="btn-tab-reg" class="auth-tab" onclick="toggleAuthForm('register')">Nuevo Perfil</button>
                 </div>
 
-                <div id="login-container" class="form-container-fade active">
-                    <div class="form-intro">
+                <div id="login-container" class="auth-form-box active">
+                    <div class="form-header">
                         <h2>Bienvenido de Nuevo</h2>
-                        <p>Inicia sesión para gestionar tus bots y proyectos.</p>
+                        <p>Ingresa tus credenciales para gestionar tus proyectos.</p>
                     </div>
-                    <div class="input-master-group">
-                        <label>Credencial de Acceso</label>
-                        <div class="input-with-icon">
+                    <div class="input-field-group">
+                        <label>Email de Desarrollador</label>
+                        <div class="input-icon-wrapper">
                             <i class="fa-regular fa-envelope"></i>
-                            <input type="email" id="l-email" placeholder="dev@emmanuel.store">
+                            <input type="email" id="l-email" placeholder="dev@emmanuel.store" required>
                         </div>
                     </div>
-                    <div class="input-master-group">
-                        <label>Llave Maestra</label>
-                        <div class="input-with-icon">
+                    <div class="input-field-group">
+                        <label>Llave de Seguridad</label>
+                        <div class="input-icon-wrapper">
                             <i class="fa-regular fa-lock"></i>
-                            <input type="password" id="l-pass" placeholder="••••••••">
+                            <input type="password" id="l-pass" placeholder="••••••••" required>
                         </div>
                     </div>
                     <button class="btn-primary-action" onclick="processLogin()">
-                        <span>Conectar al Nodo</span>
-                        <i class="fa-solid fa-arrow-right-long"></i>
+                        <span>Conectar Nodo</span>
+                        <i class="fa-solid fa-arrow-right"></i>
                     </button>
-                    <div class="form-extra">
-                        <label><input type="checkbox"> Mantener sesión activa</label>
-                        <a href="#">Recuperar acceso</a>
+                    <div class="auth-options">
+                        <label><input type="checkbox"> Recordar sesión</label>
+                        <a href="#">¿Olvidaste tu llave?</a>
                     </div>
                 </div>
 
-                <div id="register-container" class="form-container-fade">
-                    <div class="form-intro">
-                        <h2>Crear Perfil Elite</h2>
-                        <p>Únete a la infraestructura digital más avanzada.</p>
+                <div id="register-container" class="auth-form-box">
+                    <div class="form-header">
+                        <h2>Crear Cuenta Elite</h2>
+                        <p>Únete a la infraestructura digital de 2026.</p>
                     </div>
-                    <div class="input-master-group">
-                        <label>Nombre de Usuario (ID)</label>
-                        <div class="input-with-icon">
+                    <div class="input-field-group">
+                        <label>Username (ID)</label>
+                        <div class="input-icon-wrapper">
                             <i class="fa-regular fa-user"></i>
-                            <input type="text" id="r-user" placeholder="@usuario">
+                            <input type="text" id="r-user" placeholder="@tu_usuario">
                         </div>
                     </div>
-                    <div class="input-master-group">
-                        <label>Correo Corporativo</label>
-                        <div class="input-with-icon">
+                    <div class="input-field-group">
+                        <label>Email Corporativo</label>
+                        <div class="input-icon-wrapper">
                             <i class="fa-regular fa-at"></i>
-                            <input type="email" id="r-email" placeholder="nombre@devroot.com">
+                            <input type="email" id="r-email" placeholder="correo@ejemplo.com">
                         </div>
                     </div>
-                    <div class="input-master-group">
-                        <label>Establecer Contraseña</label>
-                        <div class="input-with-icon">
+                    <div class="input-field-group">
+                        <label>Contraseña</label>
+                        <div class="input-icon-wrapper">
                             <i class="fa-regular fa-shield-halved"></i>
                             <input type="password" id="r-pass" placeholder="Mínimo 8 caracteres">
                         </div>
                     </div>
                     <button class="btn-success-action" onclick="processRegister()">
-                        <span>Inicializar Base de Datos</span>
+                        <span>Inicializar Datos</span>
                         <i class="fa-solid fa-plus-circle"></i>
                     </button>
                 </div>
@@ -173,41 +136,41 @@
         </div>
     </section>
 
-    <main id="app-interface" class="main-dashboard-app hidden">
+    <main id="app-interface" class="dashboard-main-app hidden">
         
-        <header class="navbar-pro-top">
-            <div class="nav-wrapper">
-                <div class="nav-branding-section">
-                    <div class="app-logo-small">Dev<span>Root</span></div>
-                    <div class="search-pro-container">
-                        <i class="fa-solid fa-search"></i>
-                        <input type="text" placeholder="Buscar en el ecosistema...">
+        <header class="top-nav-bar">
+            <div class="nav-content-container">
+                <div class="nav-left-branding">
+                    <div class="app-logo-nav">Dev<span>Root</span></div>
+                    <div class="nav-search-engine">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" placeholder="Buscar repositorios, personas...">
                     </div>
                 </div>
 
-                <div class="nav-user-section">
-                    <div class="nav-actions">
-                        <button class="nav-btn-icon"><i class="fa-regular fa-bell"></i><span class="dot"></span></button>
-                        <button class="nav-btn-icon"><i class="fa-regular fa-comments"></i></button>
+                <div class="nav-right-controls">
+                    <div class="icon-actions-group">
+                        <button class="icon-btn-nav"><i class="fa-regular fa-bell"></i><span class="notif-dot"></span></button>
+                        <button class="icon-btn-nav"><i class="fa-regular fa-comment-dots"></i></button>
                     </div>
-                    <div class="user-pill-control" onclick="toggleDropMenu()">
-                        <div class="pill-text">
+                    <div class="user-profile-pill" onclick="toggleUserMenu()">
+                        <div class="u-pill-info">
                             <span id="nav-user-name">Emmanuel</span>
                             <small id="nav-user-tag">@director</small>
                         </div>
-                        <div class="pill-avatar" id="nav-user-avatar">E</div>
+                        <div class="u-pill-avatar" id="nav-user-avatar">E</div>
                         <i class="fa-solid fa-chevron-down"></i>
 
-                        <div id="nav-dropdown" class="nav-drop-menu">
-                            <div class="drop-head">
-                                <p id="drop-user-email">emmanuel@store.com</p>
+                        <div id="user-nav-dropdown" class="nav-dropdown-box">
+                            <div class="drop-user-header">
+                                <p id="drop-email-display">admin@emerald.host</p>
                             </div>
-                            <ul class="drop-links">
-                                <li><i class="fa-regular fa-id-card"></i> Mi Perfil</li>
-                                <li onclick="openModal()"><i class="fa-solid fa-sliders"></i> Ajustes</li>
-                                <li class="verified"><i class="fa-solid fa-certificate"></i> Verificado</li>
+                            <ul class="drop-menu-list">
+                                <li><i class="fa-regular fa-circle-user"></i> Mi Perfil</li>
+                                <li><i class="fa-solid fa-sliders"></i> Ajustes de Dev</li>
+                                <li class="verified-status"><i class="fa-solid fa-star"></i> Verificación (0/100)</li>
                                 <hr>
-                                <li class="logout" onclick="userSignOut()"><i class="fa-solid fa-power-off"></i> Desconexión</li>
+                                <li class="logout-action" onclick="userSignOut()"><i class="fa-solid fa-power-off"></i> Desconectar</li>
                             </ul>
                         </div>
                     </div>
@@ -215,118 +178,93 @@
             </div>
         </header>
 
-        <div class="dashboard-grid">
+        <div class="app-grid-layout">
             
-            <aside class="sidebar-nav-left">
-                <div class="sticky-side-nav">
-                    <nav class="main-side-menu">
-                        <a href="#" class="nav-item active">
-                            <i class="fa-solid fa-house-chimney"></i>
-                            <span>Feed Global</span>
-                        </a>
-                        <a href="#" class="nav-item">
-                            <i class="fa-solid fa-bolt-lightning"></i>
-                            <span>Tendencias</span>
-                        </a>
-                        <a href="#" class="nav-item">
-                            <i class="fa-solid fa-layer-group"></i>
-                            <span>Proyectos</span>
-                        </a>
-                        <a href="#" class="nav-item">
-                            <i class="fa-solid fa-users-rectangle"></i>
-                            <span>Comunidades</span>
-                        </a>
-                    </nav>
+            <aside class="sidebar-left">
+                <nav class="vertical-menu">
+                    <a href="#" class="v-menu-item active"><i class="fa-solid fa-house"></i> Feed Global</a>
+                    <a href="#" class="v-menu-item"><i class="fa-solid fa-fire"></i> Tendencias</a>
+                    <a href="#" class="v-menu-item"><i class="fa-solid fa-folder-open"></i> Mis Proyectos</a>
+                    <a href="#" class="v-menu-item"><i class="fa-solid fa-users"></i> Comunidades</a>
+                    <a href="#" class="v-menu-item"><i class="fa-solid fa-bookmark"></i> Guardados</a>
+                </nav>
 
-                    <div class="emerald-promo-card">
-                        <div class="p-icon-box"><i class="fa-solid fa-gem"></i></div>
-                        <h4>Emerald Hosting</h4>
-                        <p>Despliega tus bots v6.0 sin límites de RAM.</p>
-                        <button class="btn-promo-side">Ver Paneles</button>
-                    </div>
+                <div class="pro-promo-box">
+                    <div class="promo-icon">⚡</div>
+                    <h4>DevRoot Pro</h4>
+                    <p>Accede a hosting gratuito para tus bots y web.</p>
+                    <button class="btn-upgrade-side">Mejorar Ahora</button>
                 </div>
             </aside>
 
-            <section class="feed-central-column">
+            <section class="central-feed-column">
                 <div class="post-composer-card">
-                    <div class="composer-top">
-                        <div class="u-avatar-medium" id="composer-avatar">E</div>
-                        <textarea id="composer-input" placeholder="¿Qué estás construyendo hoy, Emmanuel?"></textarea>
+                    <div class="composer-top-row">
+                        <div class="u-avatar-mid">E</div>
+                        <textarea id="composer-input" placeholder="¿Qué código estás desplegando hoy, Emmanuel?"></textarea>
                     </div>
-                    <div class="composer-options">
-                        <div class="tool-buttons">
-                            <button title="Añadir Imagen"><i class="fa-regular fa-image"></i> Media</button>
-                            <button title="Fragmento de Código"><i class="fa-solid fa-code"></i> Code</button>
-                            <button title="Adjuntar Link"><i class="fa-solid fa-link"></i> Enlace</button>
+                    <div class="composer-bottom-actions">
+                        <div class="tool-group">
+                            <button title="Imagen"><i class="fa-solid fa-image"></i></button>
+                            <button title="Código"><i class="fa-solid fa-code"></i></button>
+                            <button title="Enlace"><i class="fa-solid fa-link"></i></button>
                         </div>
-                        <button class="btn-post-publish" onclick="submitFeedPost()">Publicar Nodo</button>
+                        <button class="btn-publish-post" onclick="submitFeedPost()">Publicar Nodo</button>
                     </div>
                 </div>
 
-                <div id="posts-feed-container" class="posts-list-wrapper">
-                    <div class="skeleton-post-loader">
-                        <div class="s-header"></div>
-                        <div class="s-body"></div>
-                        <div class="s-footer"></div>
+                <div id="posts-feed-container" class="feed-stream">
+                    <div class="skeleton-loader-ui">
+                        <div class="sk-header"></div>
+                        <div class="sk-body"></div>
+                        <div class="sk-footer"></div>
                     </div>
                 </div>
             </section>
 
-            <aside class="sidebar-widgets-right">
-                <div class="widget-box">
-                    <div class="widget-header">
+            <aside class="sidebar-right">
+                <div class="side-widget-card">
+                    <div class="widget-head">
                         <h3>Sugerencias de Red</h3>
-                        <a href="#">Ver todo</a>
                     </div>
                     <div class="widget-body">
-                        <div class="user-suggestion">
+                        <div class="suggest-user">
                             <div class="s-avatar">W</div>
-                            <div class="s-info">
-                                <strong>William Dev</strong>
-                                <span>Especialista Backend</span>
-                            </div>
+                            <div class="s-text"><strong>William Dev</strong><span>Fullstack</span></div>
                             <button class="btn-follow-mini">Seguir</button>
                         </div>
-                        <div class="user-suggestion">
+                        <div class="suggest-user">
                             <div class="s-avatar">A</div>
-                            <div class="s-info">
-                                <strong>Angel Bot</strong>
-                                <span>Discord Developer</span>
-                            </div>
+                            <div class="s-text"><strong>Angel Bot</strong><span>Discord Expert</span></div>
                             <button class="btn-follow-mini">Seguir</button>
                         </div>
                     </div>
                 </div>
 
-                <div class="widget-box">
-                    <div class="widget-header">
-                        <h3>Servidores Activos</h3>
+                <div class="side-widget-card">
+                    <div class="widget-head">
+                        <h3>Estatus de Servicios</h3>
                     </div>
                     <div class="widget-body">
-                        <div class="server-status-item">
-                            <div class="status-indicator online"></div>
-                            <div class="server-details">
-                                <p>VibeBlox Catalog API</p>
-                                <small>Latencia: 12ms</small>
+                        <div class="service-status online">
+                            <div class="status-indicator"></div>
+                            <div class="service-info">
+                                <p>Emerald Hosting v6.0</p>
+                                <small>Nodo: Render-01</small>
                             </div>
                         </div>
-                        <div class="server-status-item">
-                            <div class="status-indicator warning"></div>
-                            <div class="server-details">
-                                <p>Vexo Bot (Shard #1)</p>
-                                <small>Reiniciando...</small>
+                        <div class="service-status warning">
+                            <div class="status-indicator"></div>
+                            <div class="service-info">
+                                <p>Vexo Bot System</p>
+                                <small>Sincronizando Slash Commands...</small>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <footer class="app-footer-links">
-                    <div class="f-links">
-                        <a href="#">Privacidad</a>
-                        <a href="#">Términos</a>
-                        <a href="#">API</a>
-                    </div>
-                    <p>© 2026 Emmanuel Store Oficial. <br> Powered by Render & PostgreSQL.</p>
+                <footer class="side-footer">
+                    <p>© 2026 Emmanuel Store Oficial.<br>Plataforma para Desarrolladores Elite.</p>
                 </footer>
             </aside>
 
@@ -334,10 +272,5 @@
     </main>
 
     <script src="script.js"></script>
-    
-    <script>
-        console.log("%cDevRoot v6.0 - Emmanuel Director", "color: #0066ff; font-size: 20px; font-weight: bold;");
-        console.log("Acceso de desarrollador detectado.");
-    </script>
 </body>
 </html>
