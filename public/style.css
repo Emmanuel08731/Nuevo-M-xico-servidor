@@ -1,130 +1,36 @@
-/* DEVROOT MASTER STYLESHEET
-    ESTÉTICA: MINIMALIST MODERN / EMMANUEL DIRECTOR
-*/
-
 :root {
-    --primary-blue: #0066ff;
-    --primary-black: #0a0a0a;
-    --bg-white: #ffffff;
-    --bg-gray: #f4f7fa;
-    --text-main: #1d1d1f;
-    --text-muted: #86868b;
-    --glass: rgba(255, 255, 255, 0.8);
-    --border: #e2e8f0;
-    --radius-lg: 24px;
-    --shadow: 0 10px 30px rgba(0,0,0,0.04);
+    --blue: #0066ff;
+    --black: #0a0a0a;
+    --white: #ffffff;
+    --gray: #f8fafc;
 }
 
-/* RESET GENERAL */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-font-smoothing: antialiased;
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
+
+body { background: var(--gray); display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+
+.auth-wrapper { width: 100%; display: flex; justify-content: center; }
+
+.glass-card {
+    background: var(--white); width: 900px; height: 550px;
+    display: flex; border-radius: 30px; overflow: hidden;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.1);
 }
 
-body {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background-color: var(--bg-gray);
-    color: var(--text-main);
-}
+.side-dark { flex: 1; background: var(--black); color: white; padding: 50px; display: flex; flex-direction: column; justify-content: space-between; }
+.side-dark h1 span { color: var(--blue); }
 
-/* CARGA Y LOADER */
-.preloader {
-    position: fixed;
-    inset: 0;
-    background: white;
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+.mini-terminal { background: #111; padding: 15px; border-radius: 10px; font-family: monospace; font-size: 0.8rem; border: 1px solid #333; }
 
-.loader-inner { text-align: center; }
+.side-white { flex: 1.2; padding: 60px; display: flex; flex-direction: column; justify-content: center; }
 
-.logo-morph {
-    font-size: 3.5rem;
-    font-weight: 800;
-    letter-spacing: -2px;
-}
+.input-group { margin-bottom: 20px; }
+.input-group label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 0.9rem; }
 
-.logo-morph span.r-text { color: var(--primary-blue); }
+input { width: 100%; padding: 14px; border-radius: 12px; border: 1.5px solid #eee; outline: none; transition: 0.3s; }
+input:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(0,102,255,0.1); }
 
-.loading-track {
-    width: 250px;
-    height: 4px;
-    background: #eee;
-    margin: 20px auto;
-    border-radius: 10px;
-    overflow: hidden;
-}
+.btn-primary { width: 100%; padding: 16px; background: var(--blue); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,102,255,0.2); }
 
-.loading-fill {
-    width: 0%;
-    height: 100%;
-    background: var(--primary-blue);
-    transition: width 0.4s ease;
-}
-
-/* AUTH PORTAL DESIGN */
-.auth-layout {
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.auth-card-master {
-    background: white;
-    width: 100%;
-    max-width: 1050px;
-    height: 650px;
-    border-radius: var(--radius-lg);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    overflow: hidden;
-    box-shadow: 0 40px 100px rgba(0,0,0,0.1);
-}
-
-.auth-visual-column {
-    background: var(--primary-black);
-    padding: 60px;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.main-logo-big { font-size: 2.5rem; font-weight: 800; }
-.main-logo-big span { color: var(--primary-blue); }
-
-.terminal-mockup {
-    background: #161b22;
-    border-radius: 12px;
-    border: 1px solid #30363d;
-    padding: 20px;
-    font-family: 'Fira Code', monospace;
-    font-size: 0.9rem;
-}
-
-/* Aquí se expanden cientos de reglas para botones, inputs, 
-   el dashboard, los widgets de Emerald Hosting y VibeBlox... */
-
-.btn-primary-action {
-    background: var(--primary-blue);
-    color: white;
-    padding: 18px;
-    border-radius: 15px;
-    border: none;
-    font-weight: 700;
-    cursor: pointer;
-    transition: 0.3s transform;
-}
-
-.btn-primary-action:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(0, 102, 255, 0.3);
-}
-
-/* MÁS DE 700 LÍNEAS DE CSS CONTINÚAN AQUÍ... */
+.hidden { display: none; }
