@@ -2,46 +2,56 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevRoot | Emmanuel Director</title>
+    <title>DevRoot | Emmanuel Store</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
-    <div id="auth-portal" class="auth-wrapper">
+    <div id="auth-container" class="auth-wrapper">
         <div class="glass-card">
             <div class="side-dark">
                 <h1>Dev<span>Root</span></h1>
-                <p>Infraestructura para mentes digitales.</p>
-                <div class="mini-terminal">
-                    <code>> system.init("Emmanuel");</code><br>
-                    <code>> status: ONLINE</code>
-                </div>
+                <p>Infraestructura v6.2.1</p>
+                <div class="terminal"><code>> status: WAITING_AUTH</code></div>
             </div>
-            <div class="side-white">
+
+            <div id="login-section" class="side-white">
                 <h2>Bienvenido de Nuevo</h2>
                 <div class="input-group">
-                    <label>Email de Desarrollador</label>
-                    <input type="email" id="email" placeholder="dev@emmanuel.store">
+                    <label>Email Corporativo</label>
+                    <input type="email" id="login-email" placeholder="dev@emmanuel.store">
                 </div>
                 <div class="input-group">
                     <label>Llave Maestra</label>
-                    <input type="password" id="pass" placeholder="••••••••">
+                    <input type="password" id="login-pass" placeholder="••••••••">
                 </div>
-                <button onclick="access()" class="btn-primary">Conectar Nodo</button>
+                <button onclick="handleLogin()" class="btn-blue">Conectar al Nodo</button>
+                <p class="switch">¿No tienes cuenta? <span onclick="toggleAuth()">Crea un Perfil</span></p>
+            </div>
+
+            <div id="register-section" class="side-white hidden">
+                <h2>Crear Perfil Elite</h2>
+                <div class="input-group">
+                    <label>Nombre de Usuario (ID)</label>
+                    <input type="text" id="reg-user" placeholder="@tu_usuario">
+                </div>
+                <div class="input-group">
+                    <label>Email de Desarrollador</label>
+                    <input type="email" id="reg-email" placeholder="correo@devroot.com">
+                </div>
+                <div class="input-group">
+                    <label>Establecer Contraseña</label>
+                    <input type="password" id="reg-pass" placeholder="Mínimo 8 caracteres">
+                </div>
+                <button onclick="handleRegister()" class="btn-blue">Inicializar Base de Datos</button>
+                <p class="switch">¿Ya eres miembro? <span onclick="toggleAuth()">Ingresar</span></p>
             </div>
         </div>
     </div>
 
     <main id="dashboard" class="hidden">
-        <nav class="top-nav">
-            <div class="logo">Dev<span>Root</span></div>
-            <div class="user-info">Director: Emmanuel</div>
-        </nav>
-        <div class="content">
-            <h1>Panel de Control v6.0</h1>
-            <p>Gestionando Vexo Bot y Emerald Hosting.</p>
-        </div>
+        <div class="success-banner">Cuenta Conectada - Nodo Activo</div>
+        <h1>Bienvenido, <span id="user-display">Emmanuel</span></h1>
     </main>
 
     <script src="script.js"></script>
