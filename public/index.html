@@ -2,57 +2,44 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>DevRoot | Emmanuel Store</title>
+    <title>DevRoot | Emmanuel Director</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="auth-container" class="auth-wrapper">
-        <div class="glass-card">
-            <div class="side-dark">
+    <div id="toast" class="toast-hidden"></div>
+
+    <div id="auth-screen" class="main-container">
+        <div class="auth-card">
+            <div class="side-brand">
                 <h1>Dev<span>Root</span></h1>
-                <p>Infraestructura v6.2.1</p>
-                <div class="terminal"><code>> status: WAITING_AUTH</code></div>
+                <p>Director: Emmanuel</p>
             </div>
-
-            <div id="login-section" class="side-white">
-                <h2>Bienvenido de Nuevo</h2>
-                <div class="input-group">
-                    <label>Email Corporativo</label>
-                    <input type="email" id="login-email" placeholder="dev@emmanuel.store">
-                </div>
-                <div class="input-group">
-                    <label>Llave Maestra</label>
-                    <input type="password" id="login-pass" placeholder="••••••••">
-                </div>
-                <button onclick="handleLogin()" class="btn-blue">Conectar al Nodo</button>
-                <p class="switch">¿No tienes cuenta? <span onclick="toggleAuth()">Crea un Perfil</span></p>
-            </div>
-
-            <div id="register-section" class="side-white hidden">
-                <h2>Crear Perfil Elite</h2>
-                <div class="input-group">
-                    <label>Nombre de Usuario (ID)</label>
-                    <input type="text" id="reg-user" placeholder="@tu_usuario">
-                </div>
-                <div class="input-group">
-                    <label>Email de Desarrollador</label>
-                    <input type="email" id="reg-email" placeholder="correo@devroot.com">
-                </div>
-                <div class="input-group">
-                    <label>Establecer Contraseña</label>
-                    <input type="password" id="reg-pass" placeholder="Mínimo 8 caracteres">
-                </div>
-                <button onclick="handleRegister()" class="btn-blue">Inicializar Base de Datos</button>
-                <p class="switch">¿Ya eres miembro? <span onclick="toggleAuth()">Ingresar</span></p>
+            <div class="side-form" id="form-box">
+                <h2 id="form-title">Iniciar Sesión</h2>
+                <input type="email" id="email" placeholder="Email corporativo">
+                <input type="password" id="pass" placeholder="Llave maestra">
+                <button onclick="authAction()" id="btn-main" class="btn-primary">Conectar</button>
+                <p class="toggle-text" onclick="toggleMode()">¿No tienes cuenta? <span>Crear una</span></p>
             </div>
         </div>
     </div>
 
-    <main id="dashboard" class="hidden">
-        <div class="success-banner">Cuenta Conectada - Nodo Activo</div>
-        <h1>Bienvenido, <span id="user-display">Emmanuel</span></h1>
-    </main>
+    <div id="dashboard" class="dashboard-hidden">
+        <nav class="dash-nav">
+            <div class="logo">Dev<span>Root</span></div>
+            <div class="nav-actions">
+                <button onclick="logout()" class="btn-outline">Cerrar Sesión</button>
+                <button onclick="deleteAccount()" class="btn-danger">Eliminar Cuenta</button>
+            </div>
+        </nav>
+        <div class="dash-body">
+            <div class="welcome-card">
+                <h2>Panel de Control v6.0</h2>
+                <p>Bienvenido, <span id="user-name">Director</span>. Todos los sistemas están operativos.</p>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
