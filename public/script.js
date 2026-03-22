@@ -1,25 +1,40 @@
-async function access() {
-    const email = document.getElementById('email').value;
-    const pass = document.getElementById('pass').value;
+function toggleAuth() {
+    document.getElementById('login-section').classList.toggle('hidden');
+    document.getElementById('register-section').classList.toggle('hidden');
+}
 
-    if(!email || !pass) return alert("Ingresa datos");
+async function handleRegister() {
+    const username = document.getElementById('reg-user').value;
+    const email = document.getElementById('reg-email').value;
+    const password = document.getElementById('reg-pass').value;
 
-    try {
-        const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password: pass })
-        });
+    const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password })
+    });
+    const data = await res.json();
+    if(data.success) {
+        alert("¡Cuenta creada!");
+        toggleAuth();
+    }
+}
 
-        const data = await response.json();
+async function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-pass').value;
 
-        if(data.success) {
-            document.getElementById('auth-portal').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-        } else {
-            alert(data.error);
-        }
-    } catch (err) {
-        alert("Error de conexión");
+    const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if(data.success) {
+        document.getElementById('auth-container').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+        document.getElementById('user-display').innerText = data.user.name;
+    } else {
+        alert(data.error);
     }
 }
