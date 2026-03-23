@@ -1,7 +1,8 @@
 /**
  * ==============================================================================
- * DEVROOT PLATFORM ENGINE v6.0.4
- * CORE INFRASTRUCTURE - PRODUCTION LEVEL
+ * DEVROOT CORE SYSTEM v7.0.0
+ * ARCHITECTURE: NODE.JS + EXPRESS + BCRYPT
+ * DEVELOPER: EMMANUEL
  * ==============================================================================
  */
 
@@ -14,130 +15,133 @@ const bcrypt = require('bcryptjs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-/**
- * CONFIGURACIÓN DE SEGURIDAD Y OPTIMIZACIÓN
- * Se utiliza la variable DATABASE_URL configurada en Render para la conexión.
- */
-const DB_URI = process.env.DATABASE_URL;
+// Configuración de la Variable de Entorno de Render
+const DATABASE_URL = process.env.DATABASE_URL;
 
+/**
+ * MIDDLEWARES DE ALTO RENDIMIENTO
+ */
 app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
-            styleSrc: ["'self'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
-            imgSrc: ["'self'", "data:", "blob:"],
-            connectSrc: ["'self'"]
-        }
-    },
+    contentSecurityPolicy: false, // Permitir fuentes externas de Google
     crossOriginEmbedderPolicy: false
 }));
 
 app.use(compression());
 app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 /**
- * GESTIÓN DE MEMORIA Y PERSISTENCIA
+ * SISTEMA DE PERSISTENCIA TEMPORAL (DATABASE EMULATOR)
+ * En producción, aquí se usaría la variable DATABASE_URL con un pool de Postgres.
  */
-let userStore = [];
-let systemEvents = [
-    { id: 1, type: 'info', msg: 'Motor DevRoot inicializado exitosamente.' },
-    { id: 2, type: 'security', msg: 'Firewall de capa 7 activado.' }
+let userDatabase = []; 
+let serverLogs = [
+    { timestamp: new Date(), event: "SISTEMA INICIALIZADO", status: "OK" }
 ];
 
 /**
- * RECURSOS ESTÁTICOS CON CACHÉ DE LARGO PLAZO
+ * SERVIDOR DE ARCHIVOS ESTÁTICOS CON CABECERAS DE SEGURIDAD
  */
-const staticConfig = {
-    dotfiles: 'ignore',
-    etag: true,
-    index: "index.html",
+app.use(express.static(path.join(__dirname, 'public'), {
     maxAge: '31d',
     setHeaders: (res) => {
-        res.set('X-DevRoot-Version', '6.0.4');
+        res.set('X-Powered-By', 'DevRoot-Engine-v7');
+        res.set('X-Content-Type-Options', 'nosniff');
     }
-};
-
-app.use(express.static(path.join(__dirname, 'public'), staticConfig));
+}));
 
 /**
- * API ENDPOINTS: AUTENTICACIÓN Y CUENTAS
+ * CONTROLADOR DE AUTENTICACIÓN: REGISTRO
  */
-
-// CREAR CUENTA
 app.post('/api/auth/register', async (req, res) => {
     const { email, password } = req.body;
 
-    if (!email || !password || password.length < 6) {
-        return res.status(400).json({ success: false, error: "Datos insuficientes o contraseña muy corta." });
-    }
-
-    const check = userStore.find(u => u.email === email);
-    if (check) return res.status(409).json({ success: false, error: "Este correo ya está registrado." });
-
     try {
-        const salt = await bcrypt.genSalt(14);
-        const passwordHash = await bcrypt.hash(password, salt);
-        
+        if (!email || !password) {
+            return res.status(400).json({ success: false, error: "Todos los campos son obligatorios." });
+        }
+
+        const userExists = userDatabase.find(u => u.email === email);
+        if (userExists) {
+            return res.status(409).json({ success: false, error: "El correo ya está en uso." });
+        }
+
+        // Encriptación de alto nivel (12 rounds)
+        const salt = await bcrypt.genSalt(12);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
         const newUser = {
-            id: `USR-${Math.floor(Math.random() * 99999)}`,
+            id: `UID-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
             email: email,
-            hash: passwordHash,
-            createdAt: new Date().toISOString()
+            password: hashedPassword,
+            joined: new Date().toISOString()
         };
 
-        userStore.push(newUser);
+        userDatabase.push(newUser);
+        serverLogs.push({ timestamp: new Date(), event: `REGISTRO: ${email}`, status: "SUCCESS" });
+
         return res.status(201).json({ 
             success: true, 
             message: "Cuenta creada correctamente." 
         });
+
     } catch (err) {
-        return res.status(500).json({ success: false, error: "Fallo crítico en el módulo crypt." });
+        console.error(err);
+        return res.status(500).json({ success: false, error: "Fallo interno en el núcleo de seguridad." });
     }
 });
 
-// INICIAR SESIÓN
+/**
+ * CONTROLADOR DE AUTENTICACIÓN: LOGIN
+ */
 app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
-    const user = userStore.find(u => u.email === email);
-
-    if (!user) return res.status(401).json({ success: false, error: "Cuenta no encontrada." });
 
     try {
-        const match = await bcrypt.compare(password, user.hash);
-        if (!match) return res.status(401).json({ success: false, error: "Contraseña incorrecta." });
+        const user = userDatabase.find(u => u.email === email);
+        if (!user) {
+            return res.status(401).json({ success: false, error: "Usuario no encontrado." });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, error: "Contraseña incorrecta." });
+        }
+
+        serverLogs.push({ timestamp: new Date(), event: `LOGIN: ${email}`, status: "SUCCESS" });
 
         return res.json({ 
             success: true, 
             message: "Sesión iniciada correctamente.",
-            user: { email: user.email, uid: user.id }
+            userData: { email: user.email, id: user.id }
         });
+
     } catch (err) {
-        return res.status(500).json({ success: false, error: "Error en la validación de seguridad." });
+        return res.status(500).json({ success: false, error: "Error en el proceso de autenticación." });
     }
-});
-
-// ELIMINAR CUENTA (ZONA DE PELIGRO)
-app.post('/api/auth/delete', (req, res) => {
-    const { email } = req.body;
-    const originalSize = userStore.length;
-    userStore = userStore.filter(u => u.email !== email);
-
-    if (userStore.length < originalSize) {
-        return res.json({ success: true, message: "Cuenta eliminada permanentemente." });
-    }
-    res.status(404).json({ success: false, error: "No se pudo localizar la cuenta." });
 });
 
 /**
- * MONITOR DE ESTADO
+ * CONTROLADOR: ELIMINAR CUENTA
+ */
+app.post('/api/auth/delete-account', (req, res) => {
+    const { email } = req.body;
+    const initialCount = userDatabase.length;
+    userDatabase = userDatabase.filter(u => u.email !== email);
+
+    if (userDatabase.length < initialCount) {
+        serverLogs.push({ timestamp: new Date(), event: `CUENTA ELIMINADA: ${email}`, status: "WARNING" });
+        return res.json({ success: true, message: "Cuenta eliminada del sistema." });
+    }
+    
+    return res.status(404).json({ success: false, error: "No se encontró el perfil." });
+});
+
+/**
+ * INICIO DEL SERVIDOR
  */
 app.listen(PORT, () => {
-    console.clear();
     console.log("------------------------------------------");
-    console.log(`| DEVROOT SERVER | STATUS: ONLINE       |`);
-    console.log(`| PORT: ${PORT} | DATABASE: DETECTED    |`);
+    console.log(`| DEVROOT v7.0 | ONLINE EN PUERTO: ${PORT} |`);
     console.log("------------------------------------------");
 });
