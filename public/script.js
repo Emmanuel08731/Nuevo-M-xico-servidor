@@ -1,58 +1,65 @@
 let isLogin = true;
 let currentUser = null;
 
-function showToast(msg) {
+function msg(text) {
     const toast = document.getElementById('toast');
-    toast.innerText = msg;
+    toast.innerText = text;
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3000); // Se quita tras 3 seg
+    setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-function toggleMode() {
+function switchAuth() {
     isLogin = !isLogin;
-    document.getElementById('form-title').innerText = isLogin ? "Iniciar Sesión" : "Crear Cuenta";
-    document.getElementById('btn-main').innerText = isLogin ? "Conectar" : "Inicializar";
+    document.getElementById('auth-title').innerText = isLogin ? "Iniciar Sesión" : "Crear Perfil";
+    document.getElementById('btn-auth').innerText = isLogin ? "Conectar" : "Inicializar";
 }
 
-async function authAction() {
+async function runAuth() {
     const email = document.getElementById('email').value;
     const pass = document.getElementById('pass').value;
-    const path = isLogin ? '/api/auth/login' : '/api/auth/register';
+    const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
 
-    const res = await fetch(path, {
+    if(!email || !pass) return msg("Completa todos los campos");
+
+    const res = await fetch(endpoint, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ email, password: pass, username: "Director Emmanuel" })
+        body: JSON.stringify({ email, password: pass, username: "Emmanuel Director" })
     });
+
+    const data = await res.json();
 
     if(res.ok) {
         if(isLogin) {
-            currentUser = email;
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('dashboard').classList.add('dash-show');
-            document.getElementById('dashboard').style.display = 'block';
-            showToast("Nodo Conectado Correctamente");
+            currentUser = data.user;
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('display-name').innerText = data.user.name;
+            document.getElementById('drop-user').innerText = data.user.name;
+            msg("Nodo Conectado Correctamente");
         } else {
-            showToast("Cuenta Creada en la Base de Datos");
-            toggleMode();
+            msg("Perfil creado en la base de datos");
+            switchAuth();
         }
     } else {
-        showToast("Error: Llave Incorrecta");
+        msg(data.error || "Error de conexión");
     }
 }
 
-function logout() {
-    location.reload();
-}
+function toggleDrop() { document.getElementById('user-drop').classList.toggle('drop-hidden'); }
+function openSettings() { document.getElementById('modal-settings').classList.remove('modal-hidden'); toggleDrop(); }
+function closeSettings() { document.getElementById('modal-settings').classList.add('modal-hidden'); }
 
-async function deleteAccount() {
-    if(confirm("¿Seguro que quieres eliminar tu perfil?")) {
+async function destroyAccount() {
+    if(confirm("¿Eliminar perfil de DevRoot permanentemente?")) {
         await fetch('/api/auth/delete', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email: currentUser })
+            body: JSON.stringify({ email: currentUser.email })
         });
-        showToast("Cuenta Eliminada del Sistema");
-        setTimeout(() => logout(), 2000);
+        msg("Cuenta eliminada del sistema");
+        setTimeout(() => location.reload(), 2000);
     }
 }
+
+function exit() { location.reload(); }
