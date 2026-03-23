@@ -2,176 +2,252 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevRoot | Professional Workspace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DevRoot Onyx | Enterprise Development Network</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div id="toast-wrapper"></div>
-
-    <div id="loading-screen">
-        <div class="loader-inner">
-            <h1 class="dev-logo-anim">Dev<span>Root</span></h1>
-            <div class="loader-bar"><span></span></div>
-            <p>Iniciando entorno de desarrollo...</p>
+    <div id="onyx-launcher">
+        <div class="launcher-content">
+            <div class="logo-main">Dev<span>Root</span></div>
+            <div class="progress-track"><div id="load-bar"></div></div>
+            <p class="status-text">Sincronizando con el núcleo de datos...</p>
         </div>
     </div>
 
-    <div id="profile-modal" class="modal-hidden">
-        <div class="modal-content animate-zoom">
-            <button class="close-modal" onclick="closeProfile()"><i class="fa-solid fa-xmark"></i></button>
-            <div class="profile-header-bg"></div>
-            <div class="profile-main-data">
-                <div class="profile-avatar-large" id="p-modal-init">?</div>
-                <h2 id="p-modal-name">Usuario</h2>
-                <span class="p-badge" id="p-modal-rank">Pro Developer</span>
-                <p id="p-modal-bio">Cargando información del perfil...</p>
-                <div class="p-stats">
-                    <div class="stat"><strong>0</strong><span>Posts</span></div>
-                    <div class="stat"><strong>0</strong><span>Seguidores</span></div>
-                </div>
-                <button class="btn-follow">Seguir Usuario</button>
+    <header class="navbar">
+        <div class="nav-left">
+            <div class="brand" onclick="window.location.reload()">
+                Dev<span>Root</span> <small>ONYX</small>
             </div>
-        </div>
-    </div>
-
-    <section id="view-auth">
-        <div class="auth-card animate-slide-up">
-            <div class="auth-info">
-                <div class="info-top">
-                    <h2 class="logo">Dev<span>Root</span></h2>
-                    <p>La plataforma definitiva para la gestión de activos y desarrollo colaborativo.</p>
-                </div>
-                <div class="info-bottom">
-                    <div class="system-status">
-                        <div class="dot green"></div>
-                        <span>Servidores en USA-East Operativos</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="auth-form">
-                <div class="form-scroll">
-                    <h3 id="auth-title">Iniciar Sesión</h3>
-                    <p id="auth-subtitle">Accede a tu panel de control maestro.</p>
-
-                    <div class="fields-container">
-                        <div class="input-wrap hidden" id="wrap-user">
-                            <i class="fa-regular fa-user"></i>
-                            <input type="text" id="in-user" placeholder=" " autocomplete="off">
-                            <label>Nombre de Usuario</label>
-                        </div>
-
-                        <div class="input-wrap">
-                            <i class="fa-regular fa-envelope"></i>
-                            <input type="text" id="in-id" placeholder=" " autocomplete="off">
-                            <label id="lbl-id">Email o Usuario</label>
-                        </div>
-
-                        <div class="input-wrap">
-                            <i class="fa-regular fa-lock"></i>
-                            <input type="password" id="in-pass" placeholder=" " autocomplete="off">
-                            <label>Contraseña</label>
-                            <button class="pass-toggle" onclick="togglePassView()">
-                                <i id="eye-icon" class="fa-regular fa-eye"></i>
-                            </button>
+            
+            <div class="search-container">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="global-search-input" 
+                       placeholder="Buscar desarrolladores, rangos o IDs..." 
+                       onkeyup="if(event.key === 'Enter') executeSearch(this.value)">
+                
+                <div id="search-results-overlay">
+                    <div class="overlay-header">RESULTADOS DE IDENTIDAD</div>
+                    <div id="search-res-list">
+                        <div class="search-placeholder">
+                            <i class="fa-solid fa-terminal"></i>
+                            <p>Presiona Enter para buscar en el Lake de datos</p>
                         </div>
                     </div>
-
-                    <button class="btn-main" onclick="handleAuth()">
-                        <span id="btn-label">ACCEDER AL ENTORNO</span>
-                        <div class="btn-spinner hidden"></div>
-                    </button>
-
-                    <div class="form-footer">
-                        <span id="footer-hint">¿No tienes acceso todavía?</span>
-                        <button onclick="switchAuth()" id="footer-btn">Crear Cuenta</button>
-                    </div>
+                    <div class="overlay-footer">Resultados procesados por DevRoot Engine</div>
                 </div>
             </div>
         </div>
-    </section>
 
-    <main id="view-app" class="hidden">
-        <nav class="main-nav">
-            <div class="nav-container">
-                <div class="nav-left">
-                    <h1 class="logo-small">Dev<span>Root</span></h1>
-                    
-                    <div class="search-engine">
-                        <div class="search-input-group">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            <input type="text" id="search-bar" placeholder="Buscar personas o posts..." onkeyup="if(event.key==='Enter') searchGlobal(this.value)">
-                        </div>
+        <div class="nav-right">
+            <div class="nav-actions">
+                <button class="nav-icon-btn" title="Notificaciones">
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="badge-dot"></span>
+                </button>
+                <button class="nav-icon-btn" title="Mensajes">
+                    <i class="fa-regular fa-comment-dots"></i>
+                </button>
+            </div>
 
-                        <div id="search-results-panel" class="results-hidden">
-                            <div class="results-grid">
-                                <div class="results-column">
-                                    <header>PERSONAS</header>
-                                    <div id="res-people-list"></div>
-                                </div>
-                                <div class="results-column">
-                                    <header>PUBLICACIONES</header>
-                                    <div id="res-posts-list">
-                                        <div class="empty-res">Sin publicaciones</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="results-footer">ESC para cerrar</div>
-                        </div>
+            <div class="user-profile-trigger" onclick="toggleUserMenu()">
+                <div class="u-info">
+                    <span id="nav-user-name">Invitado</span>
+                    <small id="nav-user-rank">No Autenticado</small>
+                </div>
+                <div class="u-avatar" id="nav-user-avatar">?</div>
+                
+                <div id="user-context-menu" class="ctx-hidden">
+                    <ul>
+                        <li onclick="loadFullProfile(STATE.me.uid)"><i class="fa-regular fa-circle-user"></i> Mi Perfil</li>
+                        <li><i class="fa-solid fa-gear"></i> Ajustes de Onyx</li>
+                        <li class="divider"></li>
+                        <li onclick="location.reload()" class="logout-opt"><i class="fa-solid fa-arrow-right-from-bracket"></i> Desconectar</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-container">
+        <aside class="sidebar">
+            <nav class="side-nav">
+                <div class="nav-group">
+                    <header>PRINCIPAL</header>
+                    <a href="#" class="nav-link active"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                    <a href="#" class="nav-link"><i class="fa-solid fa-code-branch"></i> Repositorios</a>
+                    <a href="#" class="nav-link"><i class="fa-solid fa-microchip"></i> Activos Digitales</a>
+                </div>
+
+                <div class="nav-group">
+                    <header>COMUNIDAD</header>
+                    <a href="#" class="nav-link"><i class="fa-solid fa-users"></i> Equipos</a>
+                    <a href="#" class="nav-link"><i class="fa-solid fa-globe"></i> Explorar Mundo</a>
+                </div>
+            </nav>
+
+            <div class="system-card">
+                <p>Uptime: 99.9%</p>
+                <small>Región: USA-East-1</small>
+            </div>
+        </aside>
+
+        <section class="content-view">
+            <div class="view-header">
+                <h1>Panel de Control</h1>
+                <p>Bienvenido al entorno de desarrollo unificado de DevRoot.</p>
+            </div>
+
+            <div class="feed-grid">
+                <div class="glass-card welcome-card">
+                    <div class="card-body">
+                        <h2>Explora la red Onyx</h2>
+                        <p>Busca a otros programadores en la barra superior para ver sus perfiles, seguirlos y colaborar en proyectos.</p>
+                        <button class="btn-primary" onclick="document.getElementById('global-search-input').focus()">Empezar Búsqueda</button>
                     </div>
                 </div>
 
-                <div class="nav-right">
-                    <div class="user-trigger" onclick="toggleUserMenu()">
-                        <div class="u-meta">
-                            <span id="nav-username">Cargando...</span>
-                            <small id="nav-rank">Developer</small>
+                <div class="glass-card stats-overview">
+                    <div class="stat-row">
+                        <div class="stat-item">
+                            <strong>14.2k</strong>
+                            <span>Usuarios</span>
                         </div>
-                        <div class="u-avatar" id="nav-avatar">U</div>
-                        
-                        <div id="user-dropdown" class="drop-hidden">
-                            <div class="drop-header">
-                                <p id="drop-email">email@devroot.com</p>
-                            </div>
-                            <ul>
-                                <li onclick="location.reload()" class="logout-btn">
-                                    <i class="fa-solid fa-power-off"></i> Cerrar Sesión
-                                </li>
-                            </ul>
+                        <div class="stat-item">
+                            <strong>502</strong>
+                            <span>Online</span>
                         </div>
                     </div>
                 </div>
             </div>
-        </nav>
-
-        <div class="app-content">
-            <aside class="sidebar-left">
-                <div class="side-menu">
-                    <div class="menu-item active"><i class="fa-solid fa-house"></i> Dashboard</div>
-                    <div class="menu-item"><i class="fa-solid fa-code-branch"></i> Proyectos</div>
-                    <div class="menu-item"><i class="fa-solid fa-database"></i> Activos</div>
-                </div>
-            </aside>
-
-            <section class="feed-section">
-                <div id="main-feed">
-                    <div class="skeleton-post">
-                        <div class="sk-head">
-                            <div class="sk-circle"></div>
-                            <div class="sk-lines"><span></span><span></span></div>
-                        </div>
-                        <div class="sk-body"></div>
-                    </div>
-                </div>
-            </section>
-        </div>
+        </section>
     </main>
 
+    <div id="onyx-profile-modal">
+        <div class="profile-shell" id="profile-shell-main">
+            <button class="close-modal-btn" onclick="closeProfileModal()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="profile-hero"></div>
+            
+            <div class="profile-content">
+                <div class="avatar-xl" id="p-avatar-box">?</div>
+                <h2 class="p-name" id="p-name-txt">Cargando...</h2>
+                <span class="p-rank" id="p-rank-txt">Developer</span>
+                
+                <p class="p-bio" id="p-bio-txt">
+                    Obteniendo la biografía desde el servidor seguro de DevRoot...
+                </p>
+
+                <div class="stats-grid">
+                    <div class="stat-node" onclick="openSocialList('followers')">
+                        <span class="stat-val" id="stat-followers">0</span>
+                        <span class="stat-lab">Seguidores</span>
+                    </div>
+                    <div class="stat-node" onclick="openSocialList('following')">
+                        <span class="stat-val" id="stat-following">0</span>
+                        <span class="stat-lab">Siguiendo</span>
+                    </div>
+                    <div class="stat-node">
+                        <span class="stat-val" id="stat-posts">0</span>
+                        <span class="stat-lab">Posts</span>
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <button class="btn-social follow" id="follow-main-btn" onclick="toggleFollowAction()">
+                        Seguir Usuario
+                    </button>
+                    <button class="btn-secondary-outline">
+                        <i class="fa-regular fa-envelope"></i> Mensaje
+                    </button>
+                </div>
+            </div>
+
+            <div id="onyx-list-layer">
+                <div class="layer-header">
+                    <button class="back-btn" onclick="closeListLayer()">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <h3 id="layer-title-txt">Seguidores</h3>
+                </div>
+                
+                <div class="user-list-scroll" id="layer-scroll-box">
+                    <div class="loader-spinner"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="auth-gateway" class="auth-visible">
+        <div class="auth-card">
+            <div class="auth-left">
+                <div class="auth-logo">Dev<span>Root</span></div>
+                <h1>Acceso al Sistema</h1>
+                <p>Ingresa tus credenciales para conectar con el nodo Onyx.</p>
+                
+                <div class="auth-footer-info">
+                    <div class="status-indicator">
+                        <span class="dot pulse"></span> Núcleo Operativo
+                    </div>
+                </div>
+            </div>
+
+            <div class="auth-right">
+                <div id="auth-form-container">
+                    <div class="input-group">
+                        <label>Identidad (Usuario o Email)</label>
+                        <div class="i-field">
+                            <i class="fa-regular fa-user"></i>
+                            <input type="text" id="auth-user" placeholder="ej. Emmanuel_Pro">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Código de Acceso</label>
+                        <div class="i-field">
+                            <i class="fa-solid fa-key"></i>
+                            <input type="password" id="auth-pass" placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <button class="btn-auth-submit" onclick="attemptLogin()">
+                        CONECTAR AHORA
+                    </button>
+
+                    <p class="auth-switch">
+                        ¿No tienes cuenta? <a href="#" onclick="toast('Registro deshabilitado temporalmente')">Solicitar acceso</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-manager"></div>
+
     <script src="script.js"></script>
+    <script>
+        // Simulación de carga inicial para el Launcher
+        window.addEventListener('load', () => {
+            const bar = document.getElementById('load-bar');
+            bar.style.width = '100%';
+            setTimeout(() => {
+                document.getElementById('onyx-launcher').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('onyx-launcher').style.display = 'none';
+                }, 600);
+            }, 1000);
+        });
+    </script>
 </body>
 </html>
