@@ -1,128 +1,139 @@
 /**
- * DEVROOT INTERFACE LOGIC v6.0.4
- * DIRECTOR: EMMANUEL
+ * DEVROOT INTERFACE CONTROL v6.0.4
  */
 
-let isLoginMode = true;
-let sessionUser = null;
+// --- 1. MOTOR DE PARTÍCULAS VECTORIAL ---
+const canvas = document.getElementById('canvas-particles');
+const ctx = canvas.getContext('2d');
+let particlesArray = [];
 
-// SISTEMA DE NOTIFICACIONES (TOAST)
-function msg(text) {
-    const toast = document.getElementById('toast');
-    const toastMsg = document.getElementById('toast-msg');
-    
-    toastMsg.innerText = text;
-    toast.classList.add('show');
-    
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3500);
-}
-
-// CAMBIO DE MODO: LOGIN / REGISTRO
-function toggleAuthMode() {
-    isLoginMode = !isLoginMode;
-    const title = document.getElementById('auth-title');
-    const btn = document.getElementById('btn-auth');
-    const switchText = document.getElementById('switch-text');
-    
-    if (isLoginMode) {
-        title.innerText = "Iniciar Sesión";
-        btn.innerText = "Sincronizar Nodo";
-        switchText.innerHTML = '¿No eres miembro aún? <span onclick="toggleAuthMode()">Crea una cuenta</span>';
-    } else {
-        title.innerText = "Crear Cuenta";
-        btn.innerText = "Inicializar Nodo";
-        switchText.innerHTML = '¿Ya tienes acceso? <span onclick="toggleAuthMode()">Inicia sesión</span>';
+class Particle {
+    constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 2 + 0.5;
+        this.speedX = Math.random() * 0.5 - 0.25;
+        this.speedY = Math.random() * 0.5 - 0.25;
+    }
+    update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        if (this.x > canvas.width) this.x = 0;
+        if (this.x < 0) this.x = canvas.width;
+        if (this.y > canvas.height) this.y = 0;
+        if (this.y < 0) this.y = canvas.height;
+    }
+    draw() {
+        ctx.fillStyle = '#0066ff33';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
     }
 }
 
-// ACCIÓN DE AUTENTICACIÓN
-async function handleAuthAction() {
-    const email = document.getElementById('email').value;
-    const pass = document.getElementById('pass').value;
-    const url = isLoginMode ? '/api/auth/login' : '/api/auth/register';
+function handleParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < particlesArray.length; i++) {
+        particlesArray[i].update();
+        particlesArray[i].draw();
+    }
+    requestAnimationFrame(handleParticles);
+}
 
-    if (!email || !pass) return msg("Identidad incompleta");
+function initCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    particlesArray = [];
+    for (let i = 0; i < 60; i++) particlesArray.push(new Particle());
+}
+
+window.addEventListener('resize', initCanvas);
+initCanvas();
+handleParticles();
+
+// --- 2. SISTEMA DE NOTIFICACIONES (TOAST) ---
+function showToast(msg, type = "info") {
+    const toast = document.getElementById('toast-element');
+    const label = document.getElementById('toast-message');
+    label.innerText = msg;
+    toast.classList.remove('toast-hidden');
+    setTimeout(() => toast.classList.add('toast-hidden'), 4000);
+}
+
+// --- 3. GESTIÓN DE AUTENTICACIÓN ---
+let isLoggingIn = true;
+let activeNodeUser = null;
+
+function toggleAuthMode() {
+    isLoggingIn = !isLoggingIn;
+    const title = document.getElementById('auth-title');
+    const btn = document.getElementById('auth-btn');
+    const link = document.getElementById('mode-trigger');
+
+    title.innerText = isLoggingIn ? "Iniciar Sesión" : "Registrar Nodo";
+    btn.innerHTML = isLoggingIn ? "<span>Conectar al Sistema</span>" : "<span>Inicializar Acceso</span>";
+    link.innerText = isLoggingIn ? "Registrar Nuevo Acceso" : "Volver al Login";
+}
+
+async function runAuthentication() {
+    const email = document.getElementById('user-email').value;
+    const pass = document.getElementById('user-pass').value;
+    const url = isLoggingIn ? '/api/auth/login' : '/api/auth/register';
+
+    if (!email || !pass) return showToast("Por favor, rellene todos los campos.");
 
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                email, 
-                password: pass, 
-                username: email.split('@')[0] 
-            })
+            body: JSON.stringify({ email, password: pass })
         });
 
         const data = await response.json();
 
         if (response.ok) {
-            if (isLoginMode) {
-                sessionUser = data.user;
-                msg(`Bienvenido, Director ${data.user.name}`);
-                launchDashboard();
+            if (isLoggingIn) {
+                activeNodeUser = data.user;
+                transitionToDashboard();
             } else {
-                msg("Nodo registrado correctamente");
+                showToast("Nodo registrado correctamente. Inicie sesión.");
                 toggleAuthMode();
             }
         } else {
-            msg(data.error || "Falla en el protocolo");
+            showToast(data.error);
         }
     } catch (err) {
-        msg("Error crítico de conexión");
+        showToast("Error crítico en la red de DevRoot.");
     }
 }
 
-// LANZAR EL DASHBOARD
-function launchDashboard() {
-    document.getElementById('auth-screen').classList.add('hidden');
-    const dash = document.getElementById('dashboard');
-    dash.classList.remove('hidden');
-    
-    document.getElementById('nav-user-name').innerText = sessionUser.name;
-    document.getElementById('drop-user').innerText = sessionUser.name;
+function transitionToDashboard() {
+    document.getElementById('auth-container').classList.add('hidden-view');
+    document.getElementById('dashboard-app').classList.remove('hidden-view');
+    document.getElementById('display-email').innerText = activeNodeUser.email;
+    document.getElementById('user-initial').innerText = activeNodeUser.email[0].toUpperCase();
+    showToast("Conexión segura establecida.");
 }
 
-// GESTIÓN DE MENÚ DESPLEGABLE
-function toggleDropdown() {
-    document.getElementById('user-dropdown').classList.toggle('drop-hidden');
-}
+// --- 4. CONTROL DE INTERFAZ DASHBOARD ---
+function toggleDropdown() { document.getElementById('dropdown-menu').classList.toggle('dropdown-hidden'); }
+function openConfigModal() { document.getElementById('modal-settings').classList.remove('hidden-view'); toggleDropdown(); }
+function closeConfigModal() { document.getElementById('modal-settings').classList.add('hidden-view'); }
 
-// GESTIÓN DE MODALES
-function openModal(id) {
-    document.getElementById(id).classList.remove('hidden');
-    if (id === 'config-modal') toggleDropdown();
-}
-
-function closeModal(id) {
-    document.getElementById(id).classList.add('hidden');
-}
-
-// ELIMINAR CUENTA
-async function confirmDeleteAccount() {
-    if (confirm("¿Estás seguro de eliminar permanentemente este nodo?")) {
-        const response = await fetch('/api/auth/delete', {
+async function initiateNodeDestruction() {
+    if (confirm("¿Confirmar destrucción permanente del nodo de acceso?")) {
+        await fetch('/api/auth/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: sessionUser.email })
+            body: JSON.stringify({ email: activeNodeUser.email })
         });
-        
-        if (response.ok) {
-            msg("Nodo eliminado. Reiniciando...");
-            setTimeout(() => logout(), 2000);
-        }
+        location.reload();
     }
 }
 
-function logout() {
-    location.reload();
-}
-
-// CERRAR DROPDOWN AL HACER CLICK AFUERA
-window.onclick = function(event) {
-    if (!event.target.closest('.user-control')) {
-        document.getElementById('user-dropdown').classList.add('drop-hidden');
+// Cerrar dropdown al clickear fuera
+window.onclick = (e) => {
+    if (!e.target.closest('.user-control-pill')) {
+        document.getElementById('dropdown-menu').classList.add('dropdown-hidden');
     }
 }
