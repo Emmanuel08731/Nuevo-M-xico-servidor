@@ -3,125 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevRoot | Professional Cloud</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>DevRoot | Professional Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <canvas id="canvas-bg"></canvas>
+    <canvas id="bg-canvas"></canvas>
 
-    <div id="alert-container">
-        <div id="alert-toast" class="alert-hidden">
-            <div class="alert-bar"></div>
-            <div class="alert-content">
-                <i class="fa-solid fa-circle-check" id="alert-icon"></i>
-                <span id="alert-text">Mensaje del sistema</span>
-            </div>
+    <div id="toast" class="toast-hide">
+        <div class="toast-progress"></div>
+        <div class="toast-content">
+            <i class="fa-solid fa-circle-check"></i>
+            <span id="toast-msg">Mensaje</span>
         </div>
     </div>
 
-    <section id="auth-layout" class="view-visible">
-        <div class="glass-card animate-pop">
-            <div class="card-side-visual">
-                <div class="visual-header">
-                    <h1 class="brand">Dev<span>Root</span></h1>
-                    <p>Infraestructura para Desarrolladores</p>
-                </div>
-                <div class="visual-stats">
-                    <div class="stat-item">
-                        <span>ESTADO</span>
-                        <strong>ONLINE</strong>
-                    </div>
-                </div>
+    <section id="auth-screen">
+        <div class="auth-box animate-in">
+            <div class="auth-visual">
+                <h1 class="logo">Dev<span>Root</span></h1>
+                <p>Infraestructura Digital v7.5</p>
+                <div class="status-badge">SISTEMA ACTIVO</div>
             </div>
+            <div class="auth-form">
+                <h2 id="form-title">Iniciar Sesión</h2>
+                <p id="form-desc">Ingresa tus credenciales para entrar.</p>
 
-            <div class="card-side-form">
-                <div class="form-wrapper">
-                    <h2 id="main-title">Iniciar Sesión</h2>
-                    <p id="main-desc">Ingresa tus datos para acceder a tu panel de control.</p>
+                <div class="input-group">
+                    <i class="fa-regular fa-envelope"></i>
+                    <input type="email" id="inp-email" placeholder=" " required>
+                    <label>Correo Electrónico</label>
+                </div>
 
-                    <div class="custom-input">
-                        <i class="fa-regular fa-envelope"></i>
-                        <input type="email" id="user-email" placeholder=" " required>
-                        <label>Correo Electrónico</label>
-                    </div>
+                <div class="input-group">
+                    <i class="fa-regular fa-lock"></i>
+                    <input type="password" id="inp-pass" placeholder=" " required>
+                    <label>Contraseña</label>
+                </div>
 
-                    <div class="custom-input">
-                        <i class="fa-regular fa-lock"></i>
-                        <input type="password" id="user-pass" placeholder=" " required>
-                        <label>Contraseña Maestra</label>
-                        <span class="toggle-eye" onclick="viewPassword()">
-                            <i id="eye-icon" class="fa-regular fa-eye"></i>
-                        </span>
-                    </div>
+                <button class="btn-primary" id="btn-submit" onclick="handleAuth()">
+                    <span id="btn-text">Iniciar Sesión</span>
+                </button>
 
-                    <button class="primary-btn" onclick="submitAuth()">
-                        <span id="btn-text-action">Entrar al Sistema</span>
-                        <div class="spinner hidden"></div>
-                    </button>
-
-                    <div class="mode-switcher">
-                        <p id="switcher-info">¿Aún no tienes cuenta?</p>
-                        <button onclick="toggleAuthMode()" id="switcher-link">Crear Cuenta</button>
-                    </div>
+                <div class="auth-switch">
+                    <span id="switch-text">¿No tienes cuenta?</span>
+                    <button onclick="toggleMode()" id="switch-btn">Crear Cuenta</button>
                 </div>
             </div>
         </div>
     </section>
 
-    <main id="app-dashboard" class="hidden">
-        <header class="main-header">
-            <div class="header-inner">
-                <div class="h-logo">Dev<span>Root</span></div>
-                
-                <div class="h-profile" onclick="openProfileMenu()">
-                    <div class="p-details">
-                        <span id="profile-name">Cargando...</span>
-                        <small>Status: Pro</small>
+    <main id="dashboard" class="hidden">
+        <nav class="navbar">
+            <div class="nav-left">
+                <div class="nav-logo">Dev<span>Root</span></div>
+            </div>
+            <div class="nav-right">
+                <div class="user-pill" onclick="toggleMenu()">
+                    <div class="user-info">
+                        <span id="user-email-display">usuario@email.com</span>
+                        <small>Online</small>
                     </div>
-                    <div class="p-avatar" id="avatar-circle">U</div>
-                    <i class="fa-solid fa-caret-down"></i>
+                    <div class="user-avatar" id="avatar-icon">U</div>
+                    <i class="fa-solid fa-chevron-down"></i>
 
-                    <div id="drop-menu" class="menu-closed animate-slide">
-                        <div class="menu-label">MI CUENTA</div>
+                    <div id="user-menu" class="menu-hidden animate-slide">
+                        <div class="menu-label">OPCIONES</div>
                         <ul>
-                            <li onclick="showModal('settings-modal')">
-                                <i class="fa-solid fa-user-gear"></i> Configuración
-                            </li>
-                            <li onclick="location.reload()" class="btn-logout">
-                                <i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión
-                            </li>
+                            <li onclick="showModal('config-modal')"><i class="fa-solid fa-gear"></i> Configuración</li>
+                            <li onclick="location.reload()" class="logout-li"><i class="fa-solid fa-power-off"></i> Cerrar Sesión</li>
                         </ul>
                     </div>
                 </div>
             </div>
-        </header>
+        </nav>
 
-        <section class="feed-area">
-            <div class="feed-container animate-fade">
-                <div class="empty-state">
-                    <div class="radar-ping"></div>
-                    <div class="icon-box">
-                        <i class="fa-solid fa-database"></i>
-                    </div>
-                    <h3>No hay publicaciones</h3>
-                    <p>El canal de datos central está sincronizado pero vacío.</p>
-                </div>
+        <section class="content-feed">
+            <div class="feed-empty animate-fade">
+                <div class="radar"></div>
+                <div class="icon-wrap"><i class="fa-solid fa-box-open"></i></div>
+                <h3>No hay publicaciones</h3>
+                <p>El servidor no ha detectado contenido nuevo.</p>
             </div>
         </section>
 
-        <div id="settings-modal" class="modal-layer hidden">
-            <div class="modal-content animate-zoom">
-                <div class="modal-header">
-                    <h3>Configuración Avanzada</h3>
-                    <button class="close-x" onclick="closeModal('settings-modal')">&times;</button>
+        <div id="config-modal" class="modal-overlay hidden">
+            <div class="modal-box animate-pop">
+                <div class="modal-head">
+                    <h3>Ajustes de Cuenta</h3>
+                    <button class="close-modal" onclick="closeModal('config-modal')">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <div class="danger-section">
-                        <h4>Zona de Peligro</h4>
-                        <p>Eliminar tu cuenta es una acción definitiva y borrará todos tus registros de DevRoot.</p>
-                        <button class="danger-btn" onclick="deleteUserAccount()">Eliminar mi cuenta</button>
+                    <div class="danger-zone">
+                        <h4>Borrar Cuenta</h4>
+                        <p>Esta acción eliminará todos tus datos permanentemente.</p>
+                        <button class="btn-danger" onclick="deleteAccount()">Eliminar mi cuenta</button>
                     </div>
                 </div>
             </div>
