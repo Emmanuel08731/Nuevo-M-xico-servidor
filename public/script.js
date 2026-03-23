@@ -1,172 +1,221 @@
 /**
- * DEVROOT KERNEL v8.0.2
- * MANEJADOR DE INTERFAZ Y COMUNICACIONES
- * EMMANUEL EXCLUSIVE
+ * ==============================================================================
+ * DEVROOT NEXUS CONTROL v10.0.4
+ * CLIENT-SIDE LOGIC ENGINE
+ * DEVELOPER: EMMANUEL
+ * ==============================================================================
  */
 
-// 1. GESTOR DE CARGA (SPLASH SCREEN)
-window.addEventListener('load', () => {
-    let progress = 0;
-    const bar = document.getElementById('progress-bar');
-    const text = document.getElementById('loading-text');
-    const splash = document.getElementById('splash-screen');
-
-    const interval = setInterval(() => {
-        progress += Math.random() * 20;
-        if (progress > 100) progress = 100;
-        bar.style.width = `${progress}%`;
-
-        if (progress < 40) text.innerText = "CARGANDO MODULOS...";
-        else if (progress < 80) text.innerText = "ESTABLECIENDO CONEXIÓN...";
-        else text.innerText = "SISTEMA LISTO.";
-
-        if (progress === 100) {
-            clearInterval(interval);
-            setTimeout(() => {
-                splash.style.opacity = '0';
-                setTimeout(() => splash.style.display = 'none', 800);
-            }, 500);
-        }
-    }, 150);
+// 1. SISTEMA DE CARGA (SPLASH)
+window.addEventListener('DOMContentLoaded', () => {
+    const splash = document.getElementById('app-loader');
+    
+    // Simulación de carga de módulos del núcleo
+    setTimeout(() => {
+        splash.style.opacity = '0';
+        setTimeout(() => splash.style.display = 'none', 800);
+        console.log("Kernel DevRoot: Sincronizado.");
+    }, 2500);
 });
 
-// 2. FONDO NEURONAL (CANVAS)
-const canvas = document.getElementById('neural-bg');
+// 2. MOTOR GRÁFICO DEL FONDO (PARTÍCULAS)
+const canvas = document.getElementById('main-canvas');
 const ctx = canvas.getContext('2d');
-let nodes = [];
+let points = [];
 
-function initCanvas() {
+function initPhysics() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    nodes = [];
-    for (let i = 0; i < 90; i++) {
-        nodes.push({
+    points = [];
+    const count = window.innerWidth < 800 ? 40 : 95;
+    
+    for (let i = 0; i < count; i++) {
+        points.push({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            vx: (Math.random() - 0.5) * 0.45,
-            vy: (Math.random() - 0.5) * 0.45,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5,
             r: Math.random() * 2 + 1
         });
     }
 }
 
-function updateCanvas() {
+function drawPhysics() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#0066ff33';
     ctx.strokeStyle = '#0066ff0a';
 
-    nodes.forEach((n, i) => {
-        n.x += n.vx; n.y += n.vy;
-        if (n.x < 0 || n.x > canvas.width) n.vx *= -1;
-        if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
+    points.forEach((p, i) => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
 
         ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fill();
 
-        for (let j = i + 1; j < nodes.length; j++) {
-            let n2 = nodes[j];
-            let dist = Math.hypot(n.x - n2.x, n.y - n2.y);
+        for (let j = i + 1; j < points.length; j++) {
+            const p2 = points[j];
+            const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
             if (dist < 180) {
-                ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(n2.x, n2.y); ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
             }
         }
     });
-    requestAnimationFrame(updateCanvas);
+    requestAnimationFrame(drawPhysics);
 }
 
-initCanvas(); updateCanvas();
-window.onresize = initCanvas;
+initPhysics();
+drawPhysics();
+window.onresize = initPhysics;
 
-// 3. NOTIFICACIONES (TOAST)
-function showToast(msg) {
+// 3. SISTEMA DE NOTIFICACIONES (TOAST)
+function showNotify(msg, type = "success") {
     const toast = document.getElementById('toast-notif');
-    document.getElementById('toast-content').innerText = msg;
+    const content = document.getElementById('toast-message');
+    const icon = document.getElementById('toast-icon');
+
+    content.innerText = msg;
+    icon.className = type === "success" ? "fa-solid fa-circle-check" : "fa-solid fa-triangle-exclamation";
+    
     toast.classList.remove('toast-hidden');
     setTimeout(() => toast.classList.add('toast-hidden'), 4500);
 }
 
-// 4. LÓGICA DE REGISTRO / LOGIN
-let isRegistering = false;
+// 4. GESTIÓN DE AUTENTICACIÓN
+let isLoginMode = true;
 
-function switchAuthMode() {
-    isRegistering = !isRegistering;
-    document.getElementById('auth-title').innerText = isRegistering ? "Crear Cuenta" : "Iniciar Sesión";
-    document.getElementById('auth-subtitle').innerText = isRegistering ? "Únete a la infraestructura de Emmanuel." : "Accede a tu cuenta de desarrollador.";
-    document.getElementById('action-label').innerText = isRegistering ? "Registrarme Ahora" : "Entrar al Sistema";
-    document.getElementById('footer-text').innerText = isRegistering ? "¿Ya eres miembro?" : "¿No tienes una cuenta aún?";
-    document.getElementById('footer-btn').innerText = isRegistering ? "Iniciar Sesión" : "Crear Cuenta";
+function switchMode() {
+    isLoginMode = !isLoginMode;
+    const title = document.getElementById('ui-title');
+    const desc = document.getElementById('ui-desc');
+    const btn = document.getElementById('btn-label');
+    const switchTxt = document.getElementById('toggle-text');
+    const switchBtn = document.getElementById('toggle-btn');
+
+    title.innerText = isLoginMode ? "Iniciar Sesión" : "Crear Cuenta";
+    desc.innerText = isLoginMode ? "Panel de acceso para desarrolladores." : "Únete a la infraestructura de Emmanuel.";
+    btn.innerText = isLoginMode ? "ACCEDER" : "REGISTRARSE";
+    switchTxt.innerText = isLoginMode ? "¿No tienes cuenta?" : "¿Ya tienes cuenta?";
+    switchBtn.innerText = isLoginMode ? "Registrarse" : "Iniciar Sesión";
+    
+    console.log(`Modo cambiado a: ${isLoginMode ? 'LOGIN' : 'SIGNUP'}`);
 }
 
-function togglePassView() {
-    const p = document.getElementById('pass-field');
-    const i = document.getElementById('eye-icon');
-    p.type = p.type === 'password' ? 'text' : 'password';
-    i.classList.toggle('fa-eye-slash');
+function togglePass() {
+    const input = document.getElementById('pass');
+    const icon = document.getElementById('eye-icon');
+    input.type = input.type === 'password' ? 'text' : 'password';
+    icon.classList.toggle('fa-eye-slash');
 }
 
-async function processAuth() {
-    const email = document.getElementById('email-field').value;
-    const password = document.getElementById('pass-field').value;
-    const url = isRegistering ? '/api/v1/auth/create' : '/api/v1/auth/access';
+/**
+ * ACCIÓN PRINCIPAL DE ENVÍO
+ */
+async function handleAuthAction() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('pass').value;
+    const btn = document.getElementById('btn-submit');
+    const loader = btn.querySelector('.btn-loader');
 
-    if (!email || !password) return showToast("Error: Campos vacíos.");
+    if (!email || !password) {
+        return showNotify("Por favor, rellena todos los campos.", "error");
+    }
+
+    // Activamos UI de carga
+    btn.disabled = true;
+    loader.classList.remove('hidden');
+
+    const endpoint = isLoginMode ? '/api/auth/signin' : '/api/auth/signup';
 
     try {
-        const response = await fetch(url, {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
+
         const data = await response.json();
 
         if (response.ok) {
-            showToast(data.message);
-            if (isRegistering) {
-                switchAuthMode(); // Cambia a login tras registrar
+            showNotify(data.message);
+            if (isLoginMode) {
+                initApp(data.user);
             } else {
-                launchDashboard(data.profile);
+                switchMode(); // Cambia a login tras registro exitoso
             }
         } else {
-            showToast(data.error);
+            showNotify(data.message, "error");
         }
-    } catch (e) {
-        showToast("Fallo crítico de conexión.");
+    } catch (err) {
+        showNotify("Error de comunicación con el núcleo.", "error");
+    } finally {
+        btn.disabled = false;
+        loader.classList.add('hidden');
     }
 }
 
-// 5. MANEJO DEL DASHBOARD
-function launchDashboard(profile) {
+// 5. INICIALIZACIÓN DEL DASHBOARD
+function initApp(user) {
     document.getElementById('view-auth').classList.add('hidden');
-    document.getElementById('view-dashboard').classList.remove('hidden');
-    document.getElementById('user-display').innerText = profile.email;
-    document.getElementById('avatar-init').innerText = profile.email[0].toUpperCase();
+    document.getElementById('view-app').classList.remove('hidden');
+    
+    // Actualizamos UI con datos del usuario
+    document.getElementById('user-name').innerText = user.username || user.email;
+    document.getElementById('user-initial').innerText = (user.username || user.email)[0].toUpperCase();
+    
+    // Guardamos sesión en LocalStorage
+    localStorage.setItem('dr_session', JSON.stringify(user));
+    console.log(`Sesión iniciada: ${user.uid}`);
 }
 
-function toggleUserDrop() { document.getElementById('drop-box').classList.toggle('drop-closed'); }
-function openConfig() { document.getElementById('modal-config').classList.remove('hidden'); toggleUserDrop(); }
-function closeConfig() { document.getElementById('modal-config').classList.add('hidden'); }
+// 6. MENÚS Y MODALES
+function toggleUserMenu() {
+    document.getElementById('user-menu').classList.toggle('menu-hidden');
+}
 
-async function confirmAccountDeletion() {
-    if (confirm("¿Confirmas la eliminación total?")) {
-        const email = document.getElementById('user-display').innerText;
-        await fetch('/api/v1/auth/terminate', {
+function showModal(id) {
+    document.getElementById(`modal-${id}`).classList.remove('hidden');
+}
+
+function closeModal(id) {
+    document.getElementById(`modal-${id}`).classList.add('hidden');
+}
+
+/**
+ * ACCIÓN DE DESTRUCCIÓN
+ */
+async function destroyAccount() {
+    const session = JSON.parse(localStorage.getItem('dr_session'));
+    if (!session) return;
+
+    const confirmDestroy = confirm("¿Estás absolutamente seguro de destruir este nodo?");
+    if (!confirmDestroy) return;
+
+    try {
+        const response = await fetch('/api/auth/destroy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
+            body: JSON.stringify({ email: session.email })
         });
-        location.reload();
+
+        if (response.ok) {
+            localStorage.clear();
+            location.reload();
+        }
+    } catch (e) {
+        showNotify("Error al destruir la instancia.", "error");
     }
 }
 
-function triggerScan() {
-    showToast("Sincronizando con el servidor central...");
-    setTimeout(() => showToast("Base de datos actualizada."), 2000);
-}
-
-// Cerrar clics externos
-window.onclick = (e) => {
-    if (!e.target.closest('.profile-trigger')) {
-        document.getElementById('drop-box').classList.add('drop-closed');
+// Cierre automático de menús al clickear fuera
+window.addEventListener('click', (e) => {
+    if (!e.target.closest('.nav-user')) {
+        document.getElementById('user-menu').classList.add('menu-hidden');
     }
-};
+});
