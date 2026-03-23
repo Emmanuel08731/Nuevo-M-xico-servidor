@@ -1,139 +1,179 @@
 /**
- * DEVROOT INTERFACE CONTROL v6.0.4
+ * DEVROOT INTERFACE LOGIC v6.0.4
+ * GESTIÓN DINÁMICA DE NODOS
  */
 
-// --- 1. MOTOR DE PARTÍCULAS VECTORIAL ---
-const canvas = document.getElementById('canvas-particles');
+// 1. MOTOR DE PARTÍCULAS (CANVAS PHYSICS)
+const canvas = document.getElementById('particle-net');
 const ctx = canvas.getContext('2d');
-let particlesArray = [];
-
-class Particle {
-    constructor() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 2 + 0.5;
-        this.speedX = Math.random() * 0.5 - 0.25;
-        this.speedY = Math.random() * 0.5 - 0.25;
-    }
-    update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
-        if (this.x > canvas.width) this.x = 0;
-        if (this.x < 0) this.x = canvas.width;
-        if (this.y > canvas.height) this.y = 0;
-        if (this.y < 0) this.y = canvas.height;
-    }
-    draw() {
-        ctx.fillStyle = '#0066ff33';
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-    }
-}
-
-function handleParticles() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < particlesArray.length; i++) {
-        particlesArray[i].update();
-        particlesArray[i].draw();
-    }
-    requestAnimationFrame(handleParticles);
-}
+let dots = [];
 
 function initCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    particlesArray = [];
-    for (let i = 0; i < 60; i++) particlesArray.push(new Particle());
+    dots = [];
+    for (let i = 0; i < 80; i++) {
+        dots.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5,
+            size: Math.random() * 2 + 1
+        });
+    }
+}
+
+function drawParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#0066ff";
+    ctx.globalAlpha = 0.2;
+
+    dots.forEach(dot => {
+        dot.x += dot.vx;
+        dot.y += dot.vy;
+        if (dot.x < 0 || dot.x > canvas.width) dot.vx *= -1;
+        if (dot.y < 0 || dot.y > canvas.height) dot.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    requestAnimationFrame(drawParticles);
 }
 
 window.addEventListener('resize', initCanvas);
 initCanvas();
-handleParticles();
+drawParticles();
 
-// --- 2. SISTEMA DE NOTIFICACIONES (TOAST) ---
-function showToast(msg, type = "info") {
-    const toast = document.getElementById('toast-element');
-    const label = document.getElementById('toast-message');
-    label.innerText = msg;
+// 2. SISTEMA DE NOTIFICACIONES (TOAST)
+function notify(title, msg, type = "info") {
+    const toast = document.getElementById('toast-notif');
+    const tTitle = document.getElementById('toast-title');
+    const tBody = document.getElementById('toast-body');
+    
+    tTitle.innerText = title;
+    tBody.innerText = msg;
+    
     toast.classList.remove('toast-hidden');
-    setTimeout(() => toast.classList.add('toast-hidden'), 4000);
+    
+    setTimeout(() => {
+        toast.classList.add('toast-hidden');
+    }, 4000);
 }
 
-// --- 3. GESTIÓN DE AUTENTICACIÓN ---
-let isLoggingIn = true;
-let activeNodeUser = null;
+// 3. LÓGICA DE AUTENTICACIÓN
+let isLoginMode = true;
+let currentUser = null;
 
-function toggleAuthMode() {
-    isLoggingIn = !isLoggingIn;
-    const title = document.getElementById('auth-title');
-    const btn = document.getElementById('auth-btn');
-    const link = document.getElementById('mode-trigger');
+function switchAuthMode() {
+    isLoginMode = !isLoginMode;
+    const title = document.getElementById('auth-title-text');
+    const btn = document.getElementById('btn-label');
+    const link = document.getElementById('auth-link');
+    const switchP = document.getElementById('auth-switch-p');
 
-    title.innerText = isLoggingIn ? "Iniciar Sesión" : "Registrar Nodo";
-    btn.innerHTML = isLoggingIn ? "<span>Conectar al Sistema</span>" : "<span>Inicializar Acceso</span>";
-    link.innerText = isLoggingIn ? "Registrar Nuevo Acceso" : "Volver al Login";
+    if (isLoginMode) {
+        title.innerText = "Bienvenido al Nodo";
+        btn.innerText = "Iniciar Sesión";
+        switchP.innerHTML = '¿Aún no tienes un nodo? <span onclick="switchAuthMode()" id="auth-link">Registrar Acceso</span>';
+    } else {
+        title.innerText = "Crear Nuevo Acceso";
+        btn.innerText = "Inicializar Nodo";
+        switchP.innerHTML = '¿Ya tienes un nodo activo? <span onclick="switchAuthMode()" id="auth-link">Volver al Login</span>';
+    }
 }
 
-async function runAuthentication() {
-    const email = document.getElementById('user-email').value;
-    const pass = document.getElementById('user-pass').value;
-    const url = isLoggingIn ? '/api/auth/login' : '/api/auth/register';
+function togglePassword() {
+    const passInput = document.getElementById('pass-in');
+    const eyeIcon = document.getElementById('pass-eye');
+    if (passInput.type === 'password') {
+        passInput.type = 'text';
+        eyeIcon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        passInput.type = 'password';
+        eyeIcon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
 
-    if (!email || !pass) return showToast("Por favor, rellene todos los campos.");
+async function processAuth() {
+    const email = document.getElementById('email-in').value;
+    const password = document.getElementById('pass-in').value;
+    const url = isLoginMode ? '/api/auth/login' : '/api/auth/register';
+
+    if (!email || !password) return notify("Error", "Completa todos los campos obligatorios.");
 
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password: pass })
+            body: JSON.stringify({ email, password })
         });
 
         const data = await response.json();
 
         if (response.ok) {
-            if (isLoggingIn) {
-                activeNodeUser = data.user;
-                transitionToDashboard();
+            if (isLoginMode) {
+                currentUser = data.user;
+                notify("Sincronizado", "Acceso concedido al servidor.");
+                launchDashboard();
             } else {
-                showToast("Nodo registrado correctamente. Inicie sesión.");
-                toggleAuthMode();
+                notify("Éxito", "Nodo registrado. Ahora puedes iniciar sesión.");
+                switchAuthMode();
             }
         } else {
-            showToast(data.error);
+            notify("Acceso Denegado", data.error);
         }
     } catch (err) {
-        showToast("Error crítico en la red de DevRoot.");
+        notify("Fallo de Red", "No se pudo conectar con el motor DevRoot.");
     }
 }
 
-function transitionToDashboard() {
-    document.getElementById('auth-container').classList.add('hidden-view');
-    document.getElementById('dashboard-app').classList.remove('hidden-view');
-    document.getElementById('display-email').innerText = activeNodeUser.email;
-    document.getElementById('user-initial').innerText = activeNodeUser.email[0].toUpperCase();
-    showToast("Conexión segura establecida.");
+// 4. TRANSICIÓN AL DASHBOARD
+function launchDashboard() {
+    document.getElementById('auth-gateway').classList.add('hidden');
+    document.getElementById('main-dashboard').classList.remove('hidden');
+    document.getElementById('user-name-display').innerText = currentUser.email;
+    document.getElementById('avatar-char').innerText = currentUser.email[0].toUpperCase();
 }
 
-// --- 4. CONTROL DE INTERFAZ DASHBOARD ---
-function toggleDropdown() { document.getElementById('dropdown-menu').classList.toggle('dropdown-hidden'); }
-function openConfigModal() { document.getElementById('modal-settings').classList.remove('hidden-view'); toggleDropdown(); }
-function closeConfigModal() { document.getElementById('modal-settings').classList.add('hidden-view'); }
+// 5. GESTIÓN DE UI DASHBOARD
+function toggleUserDropdown() {
+    document.getElementById('user-dropdown').classList.toggle('drop-hidden');
+}
 
-async function initiateNodeDestruction() {
-    if (confirm("¿Confirmar destrucción permanente del nodo de acceso?")) {
-        await fetch('/api/auth/delete', {
+function showModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+    toggleUserDropdown();
+}
+
+function hideModal(id) {
+    document.getElementById(id).classList.add('hidden');
+}
+
+async function initiateAccountDestruction() {
+    if (confirm("¿Estás absolutamente seguro de purgar este nodo?")) {
+        const res = await fetch('/api/auth/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: activeNodeUser.email })
+            body: JSON.stringify({ email: currentUser.email })
         });
-        location.reload();
+        
+        if (res.ok) {
+            notify("Purga Completa", "El nodo ha sido eliminado.");
+            setTimeout(() => location.reload(), 2000);
+        }
     }
 }
 
-// Cerrar dropdown al clickear fuera
-window.onclick = (e) => {
-    if (!e.target.closest('.user-control-pill')) {
-        document.getElementById('dropdown-menu').classList.add('dropdown-hidden');
+function logoutProcedure() {
+    notify("Desconexión", "Cerrando sesión segura...");
+    setTimeout(() => location.reload(), 1500);
+}
+
+// Cerrar dropdown si se hace click fuera
+window.onclick = function(event) {
+    if (!event.target.closest('.user-profile-btn')) {
+        document.getElementById('user-dropdown').classList.add('drop-hidden');
     }
 }
