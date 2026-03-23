@@ -2,42 +2,86 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>DevRoot | Emmanuel Director</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevRoot | Dashboard Director</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <div id="toast" class="toast-hidden"></div>
 
-    <div id="auth-screen" class="main-container">
+    <div id="auth-screen" class="full-page">
         <div class="auth-card">
-            <div class="side-brand">
+            <div class="auth-brand">
                 <h1>Dev<span>Root</span></h1>
-                <p>Director: Emmanuel</p>
+                <p>Infraestructura Digital v6.0</p>
             </div>
-            <div class="side-form" id="form-box">
-                <h2 id="form-title">Iniciar Sesión</h2>
-                <input type="email" id="email" placeholder="Email corporativo">
-                <input type="password" id="pass" placeholder="Llave maestra">
-                <button onclick="authAction()" id="btn-main" class="btn-primary">Conectar</button>
-                <p class="toggle-text" onclick="toggleMode()">¿No tienes cuenta? <span>Crear una</span></p>
+            <div class="auth-fields">
+                <h2 id="auth-title">Iniciar Sesión</h2>
+                <div class="field"><i class="fa-solid fa-at"></i><input type="email" id="email" placeholder="Correo"></div>
+                <div class="field"><i class="fa-solid fa-key"></i><input type="password" id="pass" placeholder="Contraseña"></div>
+                <button onclick="runAuth()" id="btn-auth">Conectar</button>
+                <p class="switcher" onclick="switchAuth()">¿Necesitas una cuenta? <span>Regístrate</span></p>
             </div>
         </div>
     </div>
 
-    <div id="dashboard" class="dashboard-hidden">
-        <nav class="dash-nav">
-            <div class="logo">Dev<span>Root</span></div>
-            <div class="nav-actions">
-                <button onclick="logout()" class="btn-outline">Cerrar Sesión</button>
-                <button onclick="deleteAccount()" class="btn-danger">Eliminar Cuenta</button>
+    <div id="dashboard" class="hidden">
+        <nav class="glass-nav">
+            <div class="nav-left">
+                <div class="nav-logo">Dev<span>Root</span></div>
+            </div>
+            <div class="nav-right">
+                <div class="user-profile" onclick="toggleDrop()">
+                    <span id="display-name">Emmanuel</span>
+                    <div class="avatar-circle">E</div>
+                </div>
+                <div id="user-drop" class="drop-hidden">
+                    <div class="drop-info">
+                        <strong id="drop-user">Emmanuel</strong>
+                        <p>Director de Proyectos</p>
+                    </div>
+                    <button onclick="openSettings()"><i class="fa-solid fa-sliders"></i> Configuración</button>
+                    <button onclick="exit()" class="danger-text"><i class="fa-solid fa-power-off"></i> Cerrar Sesión</button>
+                </div>
             </div>
         </nav>
-        <div class="dash-body">
-            <div class="welcome-card">
-                <h2>Panel de Control v6.0</h2>
-                <p>Bienvenido, <span id="user-name">Director</span>. Todos los sistemas están operativos.</p>
+
+        <main class="app-layout">
+            <aside class="sidebar">
+                <button class="active"><i class="fa-solid fa-house"></i> Feed Principal</button>
+                <button><i class="fa-solid fa-rocket"></i> VibeBlox</button>
+                <button><i class="fa-solid fa-server"></i> Emerald Hosting</button>
+            </aside>
+
+            <section class="main-feed">
+                <div class="embed-empty">
+                    <div class="embed-icon"><i class="fa-solid fa-layer-group"></i></div>
+                    <h3>No hay publicaciones todavía</h3>
+                    <p>Cuando el Director publique algo, aparecerá en este nodo central.</p>
+                </div>
+            </section>
+
+            <aside class="status-bar">
+                <div class="status-card">
+                    <h4>Estado del Sistema</h4>
+                    <div class="status-item"><span class="dot online"></span> Nodo: Operativo</div>
+                    <div class="status-item"><span class="dot online"></span> Database: Conectada</div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <div id="modal-settings" class="modal-hidden">
+        <div class="modal-box">
+            <h3>Gestión de Cuenta</h3>
+            <p>Ajustes avanzados para tu perfil.</p>
+            <div class="danger-box">
+                <p>Eliminar permanentemente tu acceso al nodo.</p>
+                <button onclick="destroyAccount()">Eliminar Cuenta</button>
             </div>
+            <button class="close-btn" onclick="closeSettings()">Regresar</button>
         </div>
     </div>
 
