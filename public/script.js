@@ -1,193 +1,172 @@
 /**
- * CORE PLATFORM SCRIPTING ENGINE
- * VERSION: 12.0.4 - MASTER BUILD
+ * SYSTEM PRO - FRONTEND CONTROLLER
+ * SPEED: ULTRA FAST
  */
 
-// 1. GESTIÓN DEL CARGADOR GLOBAL
-window.addEventListener('load', () => {
-    const loader = document.getElementById('global-loader');
+// 1. CARGADOR INICIAL
+window.addEventListener('DOMContentLoaded', () => {
+    const bar = document.querySelector('.progress-bar span');
+    bar.style.width = '100%';
+    
     setTimeout(() => {
-        loader.style.opacity = '0';
-        setTimeout(() => loader.style.display = 'none', 800);
-    }, 1500);
+        document.getElementById('screen-loader').style.opacity = '0';
+        setTimeout(() => document.getElementById('screen-loader').style.display = 'none', 600);
+    }, 800);
 });
 
-// 2. SISTEMA DE NOTIFICACIONES (TOAST)
-const showToast = (message, type = "success") => {
-    const toast = document.getElementById('notif-system');
-    const msgEl = document.getElementById('notif-msg');
-    const icon = document.getElementById('notif-icon');
-    const bar = document.getElementById('notif-bar');
-
-    msgEl.innerText = message;
-    icon.className = type === "success" ? "fa-solid fa-circle-check" : "fa-solid fa-triangle-exclamation";
-    bar.style.backgroundColor = type === "success" ? "#34c759" : "#ff3b30";
-
-    toast.classList.remove('notif-hidden');
-    setTimeout(() => toast.classList.add('notif-hidden'), 4500);
-};
-
-// 3. MODO DE AUTENTICACIÓN (LOGIN VS REGISTER)
-let isRegisterMode = false;
-
-const switchAuthMode = () => {
-    isRegisterMode = !isRegisterMode;
+// 2. SISTEMA DE ALERTAS (TOASTS)
+function notify(msg, type = "success") {
+    const container = document.getElementById('alert-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-circle-exclamation'}"></i>
+        <span>${msg}</span>
+    `;
     
-    // Selectores de UI
-    const title = document.getElementById('form-title');
-    const desc = document.getElementById('form-desc');
-    const btnLabel = document.getElementById('btn-label');
-    const modeBtn = document.getElementById('btn-mode');
-    const hint = document.getElementById('hint-text');
-    const userBox = document.getElementById('box-user');
-    const idLabel = document.getElementById('lbl-id');
+    container.appendChild(toast);
+    
+    // Eliminar automáticamente
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-20px)';
+        setTimeout(() => toast.remove(), 400);
+    }, 3500);
+}
 
-    // Transición de texto
-    title.innerText = isRegisterMode ? "Crear Cuenta" : "Iniciar Sesión";
-    desc.innerText = isRegisterMode ? "Únete a la red global de SystemCore." : "Introduce tus credenciales autorizadas.";
-    btnLabel.innerText = isRegisterMode ? "REGISTRAR CUENTA" : "ACCEDER AL SISTEMA";
-    modeBtn.innerText = isRegisterMode ? "Iniciar Sesión" : "Crear Cuenta";
-    hint.innerText = isRegisterMode ? "¿Ya tienes una cuenta?" : "¿No tienes acceso todavía?";
-    idLabel.innerText = isRegisterMode ? "Correo Electrónico" : "Email o Usuario";
+// 3. CAMBIO DE MODO (LOGIN / REGISTRO)
+let isLogin = true;
 
-    // Mostrar campo de usuario
-    if (isRegisterMode) {
-        userBox.classList.remove('hidden');
-        userBox.classList.add('animate-pop');
+function toggleMode() {
+    isLogin = !isLogin;
+    
+    const ui = {
+        title: document.getElementById('ui-title'),
+        sub: document.getElementById('ui-subtitle'),
+        btn: document.getElementById('btn-text'),
+        hint: document.getElementById('foot-hint'),
+        switch: document.getElementById('btn-switch'),
+        userField: document.getElementById('field-user'),
+        lblId: document.getElementById('lbl-id')
+    };
+
+    if (!isLogin) {
+        ui.title.innerText = "Crear Cuenta";
+        ui.sub.innerText = "Únete a la plataforma profesional.";
+        ui.btn.innerText = "REGISTRAR CUENTA";
+        ui.hint.innerText = "¿Ya tienes cuenta?";
+        ui.switch.innerText = "Iniciar Sesión";
+        ui.userField.classList.remove('hidden');
+        ui.lblId.innerText = "Correo Electrónico";
     } else {
-        userBox.classList.add('hidden');
+        ui.title.innerText = "Bienvenido";
+        ui.sub.innerText = "Introduce tus datos para continuar.";
+        ui.btn.innerText = "INICIAR SESIÓN";
+        ui.hint.innerText = "¿No tienes cuenta?";
+        ui.switch.innerText = "Crear Cuenta";
+        ui.userField.classList.add('hidden');
+        ui.lblId.innerText = "Email o Usuario";
     }
-};
+}
 
-// 4. LÓGICA DE ENVÍO DE FORMULARIOS
-const handleAuth = async () => {
-    const email = document.getElementById('inp-id').value;
-    const pass = document.getElementById('inp-pass').value;
-    const user = document.getElementById('inp-user').value;
-    
-    const btn = document.querySelector('.btn-submit');
+// 4. ENVÍO DE DATOS AL NÚCLEO
+async function submitAuth() {
+    const user = document.getElementById('in-user').value;
+    const identity = document.getElementById('in-id').value;
+    const pass = document.getElementById('in-pass').value;
+    const btn = document.querySelector('.btn-action');
+    const spinner = btn.querySelector('.spinner');
 
-    // Validación frontal
-    if (!email || !pass || (isRegisterMode && !user)) {
-        return showToast("⚠️ Por favor, completa todos los campos requeridos.", "error");
+    // Validación frontal rápida
+    if (!identity || !pass || (!isLogin && !user)) {
+        return notify("Completa todos los campos.", "error");
     }
 
+    if (!isLogin && pass.length < 5) {
+        return notify("Contraseña mínima: 5 caracteres.", "error");
+    }
+
+    // Bloqueo de UI
     btn.disabled = true;
-    
-    const endpoint = isRegisterMode ? '/api/v1/auth/register' : '/api/v1/auth/login';
-    const payload = isRegisterMode 
-        ? { user, email, password: pass }
-        : { identity: email, password: pass };
+    spinner.classList.remove('hidden');
+
+    const path = isLogin ? '/api/v1/auth/login' : '/api/v1/auth/signup';
+    const payload = isLogin ? { identity, password: pass } : { user, email: identity, password: pass };
 
     try {
-        const response = await fetch(endpoint, {
+        const res = await fetch(path, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        const result = await response.json();
+        const data = await res.json();
 
-        if (response.ok) {
-            showToast(result.msg);
-            if (isRegisterMode) {
-                switchAuthMode();
+        if (res.ok) {
+            if (isLogin) {
+                notify("¡Acceso autorizado!");
+                startDashboard(data.user);
             } else {
-                initDashboard(result.payload);
+                notify(data.message);
+                toggleMode();
             }
         } else {
-            showToast(result.msg, "error");
+            // El servidor ahora envía errores específicos como "Cuenta no encontrada"
+            notify(data.error || "Error en la solicitud.", "error");
         }
-    } catch (err) {
-        showToast("Error de red: Imposible conectar con el núcleo.", "error");
+    } catch (e) {
+        notify("No hay conexión con el servidor.", "error");
     } finally {
         btn.disabled = false;
+        spinner.classList.add('hidden');
     }
-};
+}
 
-// 5. MOTOR DE BÚSQUEDA DINÁMICA
-let searchTimeout;
-const executeSearch = (query) => {
-    const panel = document.getElementById('search-panel');
-    const userList = document.getElementById('results-users');
-    const loader = document.getElementById('s-loader');
-
-    clearTimeout(searchTimeout);
-
-    if (query.length < 1) {
-        panel.classList.add('search-panel-hidden');
+// 5. MOTOR DE BÚSQUEDA INSTANTÁNEO
+async function doSearch(val) {
+    const drop = document.getElementById('search-drop');
+    if (val.length < 2) {
+        drop.classList.add('drop-hidden');
         return;
     }
 
-    loader.classList.remove('hidden');
+    try {
+        const res = await fetch(`/api/v1/search?q=${val}`);
+        const { results } = await res.json();
 
-    searchTimeout = setTimeout(async () => {
-        try {
-            const res = await fetch(`/api/v1/search?q=${encodeURIComponent(query)}`);
-            const json = await res.json();
-            
-            panel.classList.remove('search-panel-hidden');
-            userList.innerHTML = '';
-
-            if (json.data.users.length > 0) {
-                json.data.users.forEach(u => {
-                    const div = document.createElement('div');
-                    div.className = 'res-card';
-                    div.innerHTML = `<i class="fa-regular fa-circle-user"></i> <span>${u.user}</span>`;
-                    userList.appendChild(div);
-                });
-            } else {
-                userList.innerHTML = '<p class="no-results">Sin coincidencias.</p>';
-            }
-
-        } catch (e) {
-            console.error("Critical Search Error");
-        } finally {
-            loader.classList.add('hidden');
+        drop.innerHTML = "";
+        if (results.length > 0) {
+            drop.classList.remove('drop-hidden');
+            results.forEach(r => {
+                const item = document.createElement('div');
+                item.className = 'search-res';
+                item.innerHTML = `<i class="fa-regular fa-user"></i> ${r.name}`;
+                drop.appendChild(item);
+            });
+        } else {
+            drop.classList.add('drop-hidden');
         }
-    }, 400);
+    } catch (e) { console.error("Search failed"); }
+}
+
+// 6. DASHBOARD
+function startDashboard(user) {
+    document.getElementById('auth-section').classList.add('hidden');
+    document.getElementById('app-section').classList.remove('hidden');
+    document.getElementById('u-name').innerText = user.name;
+    document.getElementById('u-init').innerText = user.name[0].toUpperCase();
+}
+
+function togglePass() {
+    const inp = document.getElementById('in-pass');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function toggleMenu() {
+    document.getElementById('drop-menu').classList.toggle('drop-hidden');
+}
+
+// Cierre de clics externos
+window.onclick = (e) => {
+    if (!e.target.closest('.user-control')) document.getElementById('drop-menu').classList.add('drop-hidden');
 };
-
-// 6. INICIALIZACIÓN DEL DASHBOARD
-const initDashboard = (data) => {
-    document.getElementById('auth-view').classList.add('hidden');
-    document.getElementById('app-view').classList.remove('hidden');
-    
-    // Inyectar datos del perfil
-    document.getElementById('nav-user-name').innerText = data.user;
-    document.getElementById('nav-user-init').innerText = data.user[0].toUpperCase();
-    document.getElementById('menu-email').innerText = data.email;
-    
-    console.log(`[SYS] Sesión activa: ${data.uid}`);
-};
-
-// 7. INTERACCIONES DE INTERFAZ
-const togglePassView = () => {
-    const inp = document.getElementById('inp-pass');
-    const icon = document.getElementById('eye-icon');
-    const isPass = inp.type === 'password';
-    inp.type = isPass ? 'text' : 'password';
-    icon.className = isPass ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
-};
-
-const toggleUserMenu = () => {
-    document.getElementById('user-menu').classList.toggle('menu-hidden');
-};
-
-// Cierre global de modales
-window.addEventListener('click', (e) => {
-    if (!e.target.closest('.user-trigger')) {
-        document.getElementById('user-menu').classList.add('menu-hidden');
-    }
-    if (!e.target.closest('.search-engine')) {
-        document.getElementById('search-panel').classList.add('search-panel-hidden');
-    }
-});
-
-// ESC Key support
-window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        document.getElementById('search-panel').classList.add('search-panel-hidden');
-        document.getElementById('user-menu').classList.add('menu-hidden');
-    }
-});
