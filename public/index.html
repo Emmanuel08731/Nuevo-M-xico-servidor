@@ -3,130 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevRoot | Emmanuel's Workspace</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <title>DevRoot | Emmanuel's Master Platform</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&family=Space+Grotesk:wght@300;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="splash-screen">
-        <div class="splash-content">
-            <h1 class="logo-anim">Dev<span>Root</span></h1>
-            <div class="progress-container">
-                <div id="progress-bar"></div>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="toast-wrapper">
+        <div id="toast-notif" class="toast-hidden">
+            <div class="toast-bar"></div>
+            <div class="toast-content">
+                <i id="toast-icon" class="fa-solid fa-circle-check"></i>
+                <span id="toast-message">Sistema Sincronizado</span>
             </div>
-            <p id="loading-text">Iniciando Kernel...</p>
         </div>
     </div>
 
-    <div id="toast-notif" class="toast-hidden">
-        <div class="toast-timer"></div>
-        <div class="toast-body">
-            <i class="fa-solid fa-bolt"></i>
-            <span id="toast-content">Conectando...</span>
+    <div id="app-loader">
+        <div class="loader-inner">
+            <h1 class="loader-logo">Dev<span>Root</span></h1>
+            <div class="loader-line"></div>
+            <p>CONECTANDO CON EL NÚCLEO...</p>
         </div>
     </div>
 
-    <canvas id="neural-bg"></canvas>
-
-    <section id="view-auth">
-        <div class="main-card animate-pop">
-            <div class="card-hero">
-                <div class="hero-top">
-                    <h1 class="brand-logo">Dev<span>Root</span></h1>
-                    <p>La plataforma definitiva de Emmanuel.</p>
+    <section id="view-auth" class="view-active">
+        <div class="glass-container animate-fade-in">
+            <div class="auth-visual">
+                <div class="visual-header">
+                    <h1 class="logo-main">Dev<span>Root</span></h1>
+                    <p>Powered by Emmanuel</p>
                 </div>
-                <div class="hero-bottom">
-                    <div class="badge-row">
-                        <span>VERSION 8.0</span>
-                        <span>SECURE LAYER 7</span>
-                    </div>
+                <div class="visual-footer">
+                    <div class="tag-item">V10.0</div>
+                    <div class="tag-item">SECURE</div>
                 </div>
             </div>
 
-            <div class="card-form">
-                <div class="form-container">
-                    <h2 id="auth-title">Iniciar Sesión</h2>
-                    <p id="auth-subtitle">Accede a tu cuenta de desarrollador.</p>
+            <div class="auth-form-side">
+                <div id="form-box">
+                    <h2 id="ui-title">Iniciar Sesión</h2>
+                    <p id="ui-desc">Panel de acceso para desarrolladores.</p>
 
-                    <div class="field-box">
-                        <i class="fa-regular fa-user"></i>
-                        <input type="email" id="email-field" placeholder=" " required>
-                        <label>Email Corporativo</label>
+                    <div class="input-field">
+                        <i class="fa-regular fa-envelope"></i>
+                        <input type="email" id="email" placeholder=" " required autocomplete="off">
+                        <label>Correo Electrónico</label>
                     </div>
 
-                    <div class="field-box">
-                        <i class="fa-regular fa-keyboard"></i>
-                        <input type="password" id="pass-field" placeholder=" " required>
-                        <label>Contraseña</label>
-                        <div class="eye-toggle" onclick="togglePassView()">
+                    <div class="input-field">
+                        <i class="fa-regular fa-lock"></i>
+                        <input type="password" id="pass" placeholder=" " required>
+                        <label>Contraseña Maestra</label>
+                        <div class="show-pass" onclick="togglePass()">
                             <i id="eye-icon" class="fa-regular fa-eye"></i>
                         </div>
                     </div>
 
-                    <button class="action-btn" onclick="processAuth()">
-                        <span id="action-label">Entrar al Sistema</span>
-                        <div class="btn-spinner hidden"></div>
+                    <button class="btn-main" id="btn-submit" onclick="handleAuthAction()">
+                        <span id="btn-label">ACCEDER</span>
+                        <div class="btn-loader hidden"></div>
                     </button>
 
-                    <div class="form-footer">
-                        <p id="footer-text">¿No tienes una cuenta aún?</p>
-                        <button onclick="switchAuthMode()" id="footer-btn">Crear Cuenta</button>
+                    <div class="mode-toggle">
+                        <span id="toggle-text">¿No tienes cuenta?</span>
+                        <button onclick="switchMode()" id="toggle-btn">Registrarse</button>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <main id="view-dashboard" class="hidden">
-        <nav class="top-navbar">
-            <div class="nav-wrap">
-                <div class="nav-brand">Dev<span>Root</span></div>
+    <main id="view-app" class="hidden">
+        <nav class="app-nav">
+            <div class="nav-container">
+                <div class="nav-logo">Dev<span>Root</span></div>
                 
-                <div class="nav-actions">
-                    <div class="profile-trigger" onclick="toggleUserDrop()">
-                        <div class="p-text">
-                            <span id="user-display">invitado@email.com</span>
-                            <small>Suscripción Pro</small>
-                        </div>
-                        <div class="p-img" id="avatar-init">I</div>
-                        <i class="fa-solid fa-angle-down"></i>
+                <div class="nav-user" onclick="toggleUserMenu()">
+                    <div class="user-meta">
+                        <span id="user-name">Emmanuel</span>
+                        <small>Developer Pro</small>
+                    </div>
+                    <div class="user-icon" id="user-initial">E</div>
+                    <i class="fa-solid fa-angle-down"></i>
 
-                        <div id="drop-box" class="drop-closed animate-slide">
-                            <div class="drop-header">MI ESPACIO</div>
-                            <ul class="drop-items">
-                                <li onclick="openConfig()"><i class="fa-solid fa-screwdriver-wrench"></i> Configuración</li>
-                                <li onclick="location.reload()" class="logout-item"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</li>
-                            </ul>
-                        </div>
+                    <div id="user-menu" class="menu-hidden animate-slide-up">
+                        <div class="menu-header">CONFIGURACIÓN</div>
+                        <ul class="menu-list">
+                            <li onclick="showModal('settings')">
+                                <i class="fa-solid fa-gear"></i> Ajustes de Cuenta
+                            </li>
+                            <li onclick="location.reload()" class="logout-btn">
+                                <i class="fa-solid fa-power-off"></i> Cerrar Sesión
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <section class="main-content">
-            <div class="empty-feed animate-fade">
-                <div class="radar-pulse"></div>
-                <div class="circle-icon">
-                    <i class="fa-solid fa-wind"></i>
+        <section class="app-content">
+            <div class="content-wrapper">
+                <div class="empty-state animate-pop">
+                    <div class="pulse-ring"></div>
+                    <div class="icon-circle">
+                        <i class="fa-solid fa-terminal"></i>
+                    </div>
+                    <h3>Nodo Sincronizado</h3>
+                    <p>No se han detectado nuevas entradas en el servidor de Emmanuel.</p>
                 </div>
-                <h3>Sin Actividad Reciente</h3>
-                <p>Tu flujo de datos está limpio y sincronizado con la nube.</p>
-                <button class="btn-secondary" onclick="triggerScan()">Sincronizar Ahora</button>
             </div>
         </section>
 
-        <div id="modal-config" class="modal-container hidden">
-            <div class="modal-box animate-zoom">
-                <div class="modal-title">
-                    <h3>Ajustes de Infraestructura</h3>
-                    <button onclick="closeConfig()">&times;</button>
+        <div id="modal-settings" class="modal-overlay hidden">
+            <div class="modal-card animate-zoom">
+                <div class="modal-head">
+                    <h3>Ajustes Avanzados</h3>
+                    <button class="close-btn" onclick="closeModal('settings')">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <div class="danger-area">
-                        <h4>Eliminación de Registro</h4>
-                        <p>Esta acción es definitiva. No se podrán recuperar los archivos del servidor.</p>
-                        <button class="btn-danger" onclick="confirmAccountDeletion()">ELIMINAR MI CUENTA</button>
+                    <div class="danger-box">
+                        <h4>Zona Crítica</h4>
+                        <p>Al eliminar tu cuenta, todos los datos en el servidor serán borrados sin posibilidad de recuperación.</p>
+                        <button class="btn-danger" onclick="destroyAccount()">DESTRUIR CUENTA</button>
                     </div>
                 </div>
             </div>
