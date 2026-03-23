@@ -1,8 +1,8 @@
 /**
  * ==============================================================================
- * DEVROOT PLATFORM ENGINE v8.0.2
- * ARCHITECTURE: NODE.JS + EXPRESS + BCRYPT + SESSION EMULATOR
+ * DEVROOT CORE ENGINE - V10.0.4
  * AUTHOR: EMMANUEL
+ * DESCRIPTION: SISTEMA DE GESTIÓN DE IDENTIDAD Y NODOS DE DATOS
  * ==============================================================================
  */
 
@@ -10,130 +10,180 @@ const express = require('express');
 const path = require('path');
 const helmet = require('helmet');
 const compression = require('compression');
-const bcrypt = require('bcryptjs');
+const morgan = require('morgan');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuración de Seguridad y Optimización para Render
-app.use(helmet({ contentSecurityPolicy: false }));
-app.use(compression());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true }));
-
 /**
- * BASE DE DATOS VOLÁTIL (ESTRUCTURA DE ALTA DISPONIBILIDAD)
- * Para persistencia real, conectar DATABASE_URL de Render.
+ * CONFIGURACIÓN DE SEGURIDAD Y RENDIMIENTO
+ * Optimizado para despliegue en Render/Vercel
  */
-let core_users = [];
-let core_system_logs = [
-    { id: 101, event: "KERNEL_INIT", status: "STABLE", time: new Date().toISOString() }
-];
-
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false
+}));
+app.use(compression());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(morgan('dev'));
 
 /**
- * MIDDLEWARE DE AUDITORÍA
+ * DATABASE EMULATOR (PERSISTENCIA VOLÁTIL)
+ * Estructura de datos optimizada para búsqueda rápida
+ */
+const DATA_KERNEL = {
+    users: [],
+    logs: [],
+    sessions: new Map(),
+    stats: {
+        total_requests: 0,
+        failed_auths: 0,
+        successful_registrations: 0
+    }
+};
+
+/**
+ * SERVIDOR DE ARCHIVOS ESTÁTICOS
+ */
+app.use(express.static(path.join(__dirname, 'public'), {
+    maxAge: '1d',
+    setHeaders: (res, path) => {
+        res.set('X-Server-Source', 'DevRoot-Node-Core');
+    }
+}));
+
+/**
+ * MIDDLEWARE: AUDITORÍA DE ACCESO
  */
 app.use((req, res, next) => {
-    console.log(`[${new Date().toLocaleTimeString()}] INBOUND: ${req.method} ${req.url}`);
+    DATA_KERNEL.stats.total_requests++;
+    const logEntry = {
+        timestamp: new Date().toISOString(),
+        method: req.method,
+        path: req.path,
+        ip: req.ip
+    };
+    DATA_KERNEL.logs.push(logEntry);
+    if (DATA_KERNEL.logs.length > 100) DATA_KERNEL.logs.shift();
     next();
 });
 
-// --- ENDPOINTS DE AUTENTICACIÓN ---
+/**
+ * ENDPOINT: REGISTRO DE USUARIO (POST /api/auth/signup)
+ */
+app.post('/api/auth/signup', (req, res) => {
+    const { email, password, username } = req.body;
 
-// REGISTRO DE CUENTA
-app.post('/api/v1/auth/create', async (req, res) => {
-    const { email, password } = req.body;
-
-    if (!email || !password || password.length < 6) {
+    // Validación de integridad de datos
+    if (!email || !password) {
         return res.status(400).json({ 
             success: false, 
-            error: "Datos inválidos. La contraseña debe tener +6 caracteres." 
+            message: "Error Crítico: El payload está incompleto." 
         });
     }
 
-    const checkUser = core_users.find(u => u.user_email === email);
-    if (checkUser) {
+    // Verificación de duplicados
+    const userExists = DATA_KERNEL.users.find(u => u.email === email);
+    if (userExists) {
         return res.status(409).json({ 
             success: false, 
-            error: "Este correo ya está registrado en nuestra red." 
+            message: "Conflicto: La identidad ya existe en el núcleo." 
         });
     }
 
-    try {
-        const salt = await bcrypt.genSalt(12);
-        const hash = await bcrypt.hash(password, salt);
+    // Inserción en el núcleo
+    const newUser = {
+        uid: `DBX-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+        email: email.toLowerCase(),
+        password: password, // En producción usar bcrypt
+        username: username || email.split('@')[0],
+        createdAt: new Date().toISOString(),
+        role: "DEVELOPER"
+    };
 
-        const newUser = {
-            user_id: `DR-${Math.floor(Math.random() * 90000) + 10000}`,
-            user_email: email,
-            user_hash: hash,
-            created_at: new Date().toISOString(),
-            status: "ACTIVE"
-        };
+    DATA_KERNEL.users.push(newUser);
+    DATA_KERNEL.stats.successful_registrations++;
 
-        core_users.push(newUser);
-        core_system_logs.push({ event: "USER_REGISTRATION", user: email, status: "SUCCESS" });
+    console.log(`[AUTH] Registro exitoso: ${newUser.uid}`);
 
-        return res.status(201).json({ 
-            success: true, 
-            message: "Cuenta creada correctamente. Ya puedes iniciar sesión." 
-        });
-
-    } catch (err) {
-        return res.status(500).json({ success: false, error: "Fallo crítico en el módulo crypt." });
-    }
+    return res.status(201).json({
+        success: true,
+        message: "Nodo de usuario creado correctamente.",
+        redirect: "/login"
+    });
 });
 
-// INICIO DE SESIÓN
-app.post('/api/v1/auth/access', async (req, res) => {
+/**
+ * ENDPOINT: ACCESO AL SISTEMA (POST /api/auth/signin)
+ */
+app.post('/api/auth/signin', (req, res) => {
     const { email, password } = req.body;
-    const user = core_users.find(u => u.user_email === email);
+
+    const user = DATA_KERNEL.users.find(u => 
+        u.email === email.toLowerCase() && u.password === password
+    );
 
     if (!user) {
-        return res.status(401).json({ success: false, error: "Cuenta no localizada." });
+        DATA_KERNEL.stats.failed_auths++;
+        return res.status(401).json({ 
+            success: false, 
+            message: "Denegado: Credenciales no válidas." 
+        });
     }
 
-    try {
-        const isMatch = await bcrypt.compare(password, user.user_hash);
-        if (!isMatch) {
-            return res.status(401).json({ success: false, error: "La contraseña es incorrecta." });
+    // Generación de sesión ficticia
+    const sessionToken = `SES-${Date.now()}-${user.uid}`;
+    DATA_KERNEL.sessions.set(sessionToken, user.uid);
+
+    return res.json({
+        success: true,
+        message: "Acceso autorizado.",
+        user: {
+            email: user.email,
+            username: user.username,
+            uid: user.uid,
+            token: sessionToken
         }
+    });
+});
 
-        core_system_logs.push({ event: "USER_ACCESS", user: email, status: "GRANTED" });
+/**
+ * ENDPOINT: ELIMINAR CUENTA (POST /api/auth/destroy)
+ */
+app.post('/api/auth/destroy', (req, res) => {
+    const { email, token } = req.body;
 
+    const initialCount = DATA_KERNEL.users.length;
+    DATA_KERNEL.users = DATA_KERNEL.users.filter(u => u.email !== email);
+
+    if (DATA_KERNEL.users.length < initialCount) {
         return res.json({ 
             success: true, 
-            message: "Sesión iniciada correctamente.", 
-            profile: { email: user.user_email, uid: user.user_id, joined: user.created_at } 
+            message: "Instancia de usuario destruida permanentemente." 
         });
-
-    } catch (err) {
-        return res.status(500).json({ success: false, error: "Error de validación interna." });
     }
+
+    return res.status(404).json({ 
+        success: false, 
+        message: "Error: No se encontró la instancia para destruir." 
+    });
 });
 
-// ELIMINACIÓN DE CUENTA
-app.post('/api/v1/auth/terminate', (req, res) => {
-    const { email } = req.body;
-    const initialSize = core_users.length;
-    core_users = core_users.filter(u => u.user_email !== email);
-
-    if (core_users.length < initialSize) {
-        return res.json({ success: true, message: "Cuenta eliminada permanentemente del núcleo." });
-    }
-    res.status(404).json({ success: false, error: "No se pudo procesar la baja." });
+/**
+ * MANEJADOR DE ERRORES 404
+ */
+app.use((req, res) => {
+    res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// MONITOR DE SISTEMA
-app.get('/api/v1/sys/status', (req, res) => {
-    res.json({ online: true, users_cached: core_users.length, version: "8.0.2" });
-});
-
+/**
+ * INICIALIZACIÓN DEL KERNEL
+ */
 app.listen(PORT, () => {
-    console.clear();
-    console.log(`\n\x1b[36m%s\x1b[0m`, `>>> DEVROOT ENGINE v8.0.2 IS LIVE`);
-    console.log(`\x1b[32m%s\x1b[0m`, `>>> PORT: ${PORT} | MODE: PRODUCTION`);
-    console.log(`\x1b[33m%s\x1b[0m`, `>>> DATABASE: MEMORY_POOL_ACTIVE\n`);
+    console.log(`\n\x1b[34m------------------------------------------\x1b[0m`);
+    console.log(`\x1b[1m DEVROOT SERVER v10.0.4 IS RUNNING\x1b[0m`);
+    console.log(`\x1b[32m PORT: ${PORT}\x1b[0m`);
+    console.log(`\x1b[32m DATE: ${new Date().toLocaleString()}\x1b[0m`);
+    console.log(`\x1b[34m------------------------------------------\x1b[0m\n`);
 });
