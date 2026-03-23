@@ -1,6 +1,6 @@
 /**
- * DEVROOT KERNEL V25.0 - RELATIONAL ENGINE
- * GESTIÓN DE PERFILES Y SISTEMA DE SEGUIDORES
+ * DEVROOT KERNEL V30.0 - RELATIONAL ARCHITECTURE
+ * SISTEMA INTEGRADO DE SEGUIDORES Y PERFILES DINÁMICOS
  */
 
 const express = require('express');
@@ -10,38 +10,51 @@ const http = require('http');
 
 const app = express();
 const server = http.createServer(app);
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(compression());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 /**
- * BASE DE DATOS MEJORADA CON RELACIONES
+ * DATABASE CORE (SISTEMA DE MEMORIA VOLÁTIL PRO)
  */
 const DB = {
     users: [
         { 
-            uid: "DR-SYSTEM", 
-            user: "DevRoot_Admin", 
-            email: "admin@devroot.com", 
-            password: "admin", 
-            rank: "Master Architect", 
-            bio: "Cuenta oficial de administración del núcleo DevRoot.",
-            followers: [],
+            uid: "DR-ADMIN", 
+            user: "Emmanuel_Dev", 
+            email: "emmanuel@devroot.com", 
+            password: "123", 
+            rank: "Lead Architect", 
+            bio: "Creador de la infraestructura DevRoot.",
+            followers: [], // Lista de UIDs que me siguen
+            following: [], // Lista de UIDs a los que sigo
+            posts: []
+        },
+        { 
+            uid: "DR-BOT", 
+            user: "System_Pro", 
+            email: "bot@devroot.com", 
+            password: "bot", 
+            rank: "System Bot", 
+            bio: "Cuenta de soporte automatizado.",
+            followers: ["DR-ADMIN"], 
             following: [],
-            posts_count: 5
+            posts: []
         }
-    ],
-    posts: []
+    ]
 };
 
+// Inicialización de relación de prueba
+DB.users[0].following.push("DR-BOT");
+
 /**
- * API: BÚSQUEDA GLOBAL (PERSONAS + POSTS)
+ * MOTOR DE BÚSQUEDA GLOBAL (PERSONAS Y PUBLICACIONES)
  */
 app.get('/api/v1/search/global', (req, res) => {
     const q = req.query.q ? req.query.q.toLowerCase() : "";
-    if (!q) return res.json({ results: { people: [], posts: [] } });
+    if (!q) return res.json({ results: { people: [] } });
 
     const people = DB.users
         .filter(u => u.user.toLowerCase().includes(q))
@@ -49,94 +62,79 @@ app.get('/api/v1/search/global', (req, res) => {
             uid: u.uid,
             name: u.user,
             rank: u.rank,
-            bio: u.bio,
-            followers_count: u.followers.length,
-            following_count: u.following.length,
-            posts_count: u.posts_count,
-            init: u.user[0].toUpperCase()
+            init: u.user[0].toUpperCase(),
+            followersCount: u.followers.length
         }));
 
-    res.json({ results: { people, posts: [] } });
+    res.json({ results: { people } });
 });
 
 /**
- * API: SISTEMA DE FOLLOW/UNFOLLOW (Lógica de +200 líneas internas)
- */
-app.post('/api/v1/user/follow', (req, res) => {
-    const { followerUid, targetUid } = req.body;
-
-    const follower = DB.users.find(u => u.uid === followerUid);
-    const target = DB.users.find(u => u.uid === targetUid);
-
-    if (!follower || !target) return res.status(404).json({ error: "Usuario no encontrado." });
-
-    const alreadyFollowing = follower.following.includes(targetUid);
-
-    if (alreadyFollowing) {
-        // UNFOLLOW
-        follower.following = follower.following.filter(id => id !== targetUid);
-        target.followers = target.followers.filter(id => id !== followerUid);
-        return res.json({ status: "unfollowed", followers: target.followers.length });
-    } else {
-        // FOLLOW
-        follower.following.push(targetUid);
-        target.followers.push(followerUid);
-        return res.json({ status: "followed", followers: target.followers.length });
-    }
-});
-
-/**
- * API: OBTENER PERFIL ESPECÍFICO
+ * OBTENER DATOS COMPLETOS DE UN PERFIL (INCLUYENDO LISTAS)
  */
 app.get('/api/v1/user/profile/:uid', (req, res) => {
     const user = DB.users.find(u => u.uid === req.params.uid);
-    if (!user) return res.status(404).json({ error: "Perfil inexistente." });
+    if (!user) return res.status(404).json({ error: "Usuario no hallado." });
+
+    // Mapear los nombres de los seguidores y seguidos para las listas
+    const getNames = (uids) => {
+        return DB.users
+            .filter(u => uids.includes(u.uid))
+            .map(u => ({ name: u.user, uid: u.uid, init: u.user[0].toUpperCase() }));
+    };
 
     res.json({
+        uid: user.uid,
         name: user.user,
         rank: user.rank,
         bio: user.bio,
         stats: {
             followers: user.followers.length,
             following: user.following.length,
-            posts: user.posts_count
+            posts: user.posts.length
+        },
+        lists: {
+            followers: getNames(user.followers),
+            following: getNames(user.following)
         },
         init: user.user[0].toUpperCase()
     });
 });
 
 /**
- * API: REGISTRO CON INICIALIZACIÓN DE PERFIL
+ * SISTEMA DE FOLLOW/UNFOLLOW CON DOBLE ACTUALIZACIÓN
  */
-app.post('/api/v1/auth/signup', (req, res) => {
-    const { user, email, password } = req.body;
-    
-    if (password.length < 5) return res.status(400).json({ error: "Contraseña mínimo 5 caracteres." });
-    if (DB.users.find(u => u.email === email)) return res.status(409).json({ error: "Cuenta ya existente." });
+app.post('/api/v1/user/action/follow', (req, res) => {
+    const { myUid, targetUid } = req.body;
 
-    const newUser = {
-        uid: "DR-" + Math.random().toString(36).substr(2, 9),
-        user,
-        email,
-        password,
-        rank: "Pro Developer",
-        bio: "Explorando las fronteras de DevRoot.",
-        followers: [],
-        following: [],
-        posts_count: 0
-    };
+    const me = DB.users.find(u => u.uid === myUid);
+    const target = DB.users.find(u => u.uid === targetUid);
 
-    DB.users.push(newUser);
-    res.status(201).json({ success: true, message: "Cuenta DevRoot creada." });
+    if (!me || !target) return res.status(404).json({ error: "Identidad no válida." });
+
+    const isFollowing = me.following.includes(targetUid);
+
+    if (isFollowing) {
+        // Unfollow: Remover de mis seguidos y de sus seguidores
+        me.following = me.following.filter(id => id !== targetUid);
+        target.followers = target.followers.filter(id => id !== myUid);
+        return res.json({ status: "unfollowed", count: target.followers.length });
+    } else {
+        // Follow: Agregar a mis seguidos y a sus seguidores
+        me.following.push(targetUid);
+        target.followers.push(myUid);
+        return res.json({ status: "followed", count: target.followers.length });
+    }
 });
 
+/**
+ * AUTH SYSTEM
+ */
 app.post('/api/v1/auth/login', (req, res) => {
     const { identity, password } = req.body;
     const user = DB.users.find(u => (u.email === identity || u.user === identity) && u.password === password);
-
-    if (!user) return res.status(401).json({ error: "Cuenta no encontrada o contraseña incorrecta." });
-
-    res.json({ success: true, user: { name: user.user, uid: user.uid, email: user.email, rank: user.rank } });
+    if (!user) return res.status(401).json({ error: "Credenciales inválidas." });
+    res.json({ success: true, user: { uid: user.uid, name: user.user, rank: user.rank } });
 });
 
-server.listen(PORT, () => console.log(`KERNEL RUNNING ON ${PORT}`));
+server.listen(PORT, () => console.log(`DevRoot Kernel V30 - Active on ${PORT}`));
