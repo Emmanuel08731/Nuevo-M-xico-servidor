@@ -1,125 +1,156 @@
 /**
- * DEVROOT INTERFACE LOGIC v7.5
+ * DEVROOT KERNEL v8.0.2
+ * MANEJADOR DE INTERFAZ Y COMUNICACIONES
+ * EMMANUEL EXCLUSIVE
  */
 
-// 1. MOTOR DE FONDO (PARTICULAS)
-const canvas = document.getElementById('bg-canvas');
-const ctx = canvas.getContext('2d');
-let points = [];
+// 1. GESTOR DE CARGA (SPLASH SCREEN)
+window.addEventListener('load', () => {
+    let progress = 0;
+    const bar = document.getElementById('progress-bar');
+    const text = document.getElementById('loading-text');
+    const splash = document.getElementById('splash-screen');
 
-function init() {
+    const interval = setInterval(() => {
+        progress += Math.random() * 20;
+        if (progress > 100) progress = 100;
+        bar.style.width = `${progress}%`;
+
+        if (progress < 40) text.innerText = "CARGANDO MODULOS...";
+        else if (progress < 80) text.innerText = "ESTABLECIENDO CONEXIÓN...";
+        else text.innerText = "SISTEMA LISTO.";
+
+        if (progress === 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+                splash.style.opacity = '0';
+                setTimeout(() => splash.style.display = 'none', 800);
+            }, 500);
+        }
+    }, 150);
+});
+
+// 2. FONDO NEURONAL (CANVAS)
+const canvas = document.getElementById('neural-bg');
+const ctx = canvas.getContext('2d');
+let nodes = [];
+
+function initCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    points = [];
-    for (let i = 0; i < 85; i++) {
-        points.push({
+    nodes = [];
+    for (let i = 0; i < 90; i++) {
+        nodes.push({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            vx: (Math.random() - 0.5) * 0.4,
-            vy: (Math.random() - 0.5) * 0.4,
-            size: Math.random() * 2 + 1
+            vx: (Math.random() - 0.5) * 0.45,
+            vy: (Math.random() - 0.5) * 0.45,
+            r: Math.random() * 2 + 1
         });
     }
 }
 
-function render() {
+function updateCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#0066ff';
+    ctx.fillStyle = '#0066ff33';
     ctx.strokeStyle = '#0066ff0a';
 
-    points.forEach((p, i) => {
-        p.x += p.vx; p.y += p.vy;
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    nodes.forEach((n, i) => {
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < 0 || n.x > canvas.width) n.vx *= -1;
+        if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
 
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
         ctx.fill();
 
-        for (let j = i + 1; j < points.length; j++) {
-            let p2 = points[j];
-            let d = Math.hypot(p.x - p2.x, p.y - p2.y);
-            if (d < 160) {
-                ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+        for (let j = i + 1; j < nodes.length; j++) {
+            let n2 = nodes[j];
+            let dist = Math.hypot(n.x - n2.x, n.y - n2.y);
+            if (dist < 180) {
+                ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(n2.x, n2.y); ctx.stroke();
             }
         }
     });
-    requestAnimationFrame(render);
+    requestAnimationFrame(updateCanvas);
 }
 
-init(); render();
-window.onresize = init;
+initCanvas(); updateCanvas();
+window.onresize = initCanvas;
 
-// 2. ALERTAS (TOAST)
-function notify(msg) {
-    const toast = document.getElementById('toast');
-    document.getElementById('toast-msg').innerText = msg;
-    toast.classList.remove('toast-hide');
-    setTimeout(() => toast.classList.add('toast-hide'), 4000);
+// 3. NOTIFICACIONES (TOAST)
+function showToast(msg) {
+    const toast = document.getElementById('toast-notif');
+    document.getElementById('toast-content').innerText = msg;
+    toast.classList.remove('toast-hidden');
+    setTimeout(() => toast.classList.add('toast-hidden'), 4500);
 }
 
-// 3. CAMBIO DE MODO (LOGIN / REGISTRO)
-let isLogin = true;
+// 4. LÓGICA DE REGISTRO / LOGIN
+let isRegistering = false;
 
-function toggleMode() {
-    isLogin = !isLogin;
-    document.getElementById('form-title').innerText = isLogin ? "Iniciar Sesión" : "Crear Cuenta";
-    document.getElementById('form-desc').innerText = isLogin ? "Ingresa tus credenciales para entrar." : "Regístrate para empezar a usar DevRoot.";
-    document.getElementById('btn-text').innerText = isLogin ? "Iniciar Sesión" : "Registrar mi Cuenta";
-    document.getElementById('switch-text').innerText = isLogin ? "¿No tienes cuenta?" : "¿Ya tienes cuenta?";
-    document.getElementById('switch-btn').innerText = isLogin ? "Crear Cuenta" : "Iniciar Sesión";
+function switchAuthMode() {
+    isRegistering = !isRegistering;
+    document.getElementById('auth-title').innerText = isRegistering ? "Crear Cuenta" : "Iniciar Sesión";
+    document.getElementById('auth-subtitle').innerText = isRegistering ? "Únete a la infraestructura de Emmanuel." : "Accede a tu cuenta de desarrollador.";
+    document.getElementById('action-label').innerText = isRegistering ? "Registrarme Ahora" : "Entrar al Sistema";
+    document.getElementById('footer-text').innerText = isRegistering ? "¿Ya eres miembro?" : "¿No tienes una cuenta aún?";
+    document.getElementById('footer-btn').innerText = isRegistering ? "Iniciar Sesión" : "Crear Cuenta";
 }
 
-// 4. LÓGICA DE AUTENTICACIÓN (CORREGIDA)
-async function handleAuth() {
-    const email = document.getElementById('inp-email').value;
-    const password = document.getElementById('inp-pass').value;
-    
-    // Ruta dinámica
-    const path = isLogin ? '/api/auth/login' : '/api/auth/register';
+function togglePassView() {
+    const p = document.getElementById('pass-field');
+    const i = document.getElementById('eye-icon');
+    p.type = p.type === 'password' ? 'text' : 'password';
+    i.classList.toggle('fa-eye-slash');
+}
 
-    if (!email || !password) return notify("Completa todos los campos.");
+async function processAuth() {
+    const email = document.getElementById('email-field').value;
+    const password = document.getElementById('pass-field').value;
+    const url = isRegistering ? '/api/v1/auth/create' : '/api/v1/auth/access';
+
+    if (!email || !password) return showToast("Error: Campos vacíos.");
 
     try {
-        const res = await fetch(path, {
+        const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
-        const data = await res.json();
+        const data = await response.json();
 
-        if (res.ok) {
-            notify(data.message);
-            if (isLogin) {
-                enterApp(data.user);
+        if (response.ok) {
+            showToast(data.message);
+            if (isRegistering) {
+                switchAuthMode(); // Cambia a login tras registrar
             } else {
-                // Si registró bien, lo pasamos a login
-                toggleMode();
+                launchDashboard(data.profile);
             }
         } else {
-            notify(data.error);
+            showToast(data.error);
         }
     } catch (e) {
-        notify("Error de red.");
+        showToast("Fallo crítico de conexión.");
     }
 }
 
-function enterApp(user) {
-    document.getElementById('auth-screen').classList.add('hidden');
-    document.getElementById('dashboard').classList.remove('hidden');
-    document.getElementById('user-email-display').innerText = user.email;
-    document.getElementById('avatar-icon').innerText = user.email[0].toUpperCase();
+// 5. MANEJO DEL DASHBOARD
+function launchDashboard(profile) {
+    document.getElementById('view-auth').classList.add('hidden');
+    document.getElementById('view-dashboard').classList.remove('hidden');
+    document.getElementById('user-display').innerText = profile.email;
+    document.getElementById('avatar-init').innerText = profile.email[0].toUpperCase();
 }
 
-// 5. MENÚS Y MODALES
-function toggleMenu() { document.getElementById('user-menu').classList.toggle('menu-hidden'); }
-function showModal(id) { document.getElementById(id).classList.remove('hidden'); toggleMenu(); }
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function toggleUserDrop() { document.getElementById('drop-box').classList.toggle('drop-closed'); }
+function openConfig() { document.getElementById('modal-config').classList.remove('hidden'); toggleUserDrop(); }
+function closeConfig() { document.getElementById('modal-config').classList.add('hidden'); }
 
-async function deleteAccount() {
-    if (confirm("¿Estás seguro de eliminar tu cuenta?")) {
-        const email = document.getElementById('user-email-display').innerText;
-        await fetch('/api/auth/delete', {
+async function confirmAccountDeletion() {
+    if (confirm("¿Confirmas la eliminación total?")) {
+        const email = document.getElementById('user-display').innerText;
+        await fetch('/api/v1/auth/terminate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
@@ -128,8 +159,14 @@ async function deleteAccount() {
     }
 }
 
+function triggerScan() {
+    showToast("Sincronizando con el servidor central...");
+    setTimeout(() => showToast("Base de datos actualizada."), 2000);
+}
+
+// Cerrar clics externos
 window.onclick = (e) => {
-    if (!e.target.closest('.user-pill')) {
-        document.getElementById('user-menu').classList.add('menu-hidden');
+    if (!e.target.closest('.profile-trigger')) {
+        document.getElementById('drop-box').classList.add('drop-closed');
     }
 };
