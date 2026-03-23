@@ -1,137 +1,159 @@
 /**
- * DEVROOT NEXUS CONTROL v6.0.4
- * INTERFACE LOGIC & DATA STREAMING
+ * DEVROOT NEXUS ENGINE v7.0
+ * LÓGICA DE INTERFAZ Y COMUNICACIÓN CON EL SERVIDOR
  */
 
-// 1. ENGINE VISUAL (NETWORK PARTICLES)
-const canvas = document.getElementById('ui-canvas');
+// 1. MOTOR DE PARTÍCULAS DEL FONDO
+const canvas = document.getElementById('canvas-bg');
 const ctx = canvas.getContext('2d');
-let particles = [];
+let dots = [];
 
-function setupCanvas() {
+function setup() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    particles = [];
-    for (let i = 0; i < 95; i++) {
-        particles.push({
+    dots = [];
+    for (let i = 0; i < 90; i++) {
+        dots.push({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            vx: (Math.random() - 0.5) * 0.45,
-            vy: (Math.random() - 0.5) * 0.45,
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: (Math.random() - 0.5) * 0.4,
             size: Math.random() * 2 + 1
         });
     }
 }
 
-function draw() {
+function loop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#0066ff';
     ctx.strokeStyle = '#0066ff0a';
 
-    particles.forEach((p, i) => {
-        p.x += p.vx; p.y += p.vy;
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    dots.forEach((d, i) => {
+        d.x += d.vx; d.y += d.vy;
+        if (d.x < 0 || d.x > canvas.width) d.vx *= -1;
+        if (d.y < 0 || d.y > canvas.height) d.vy *= -1;
 
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
         ctx.fill();
 
-        for (let j = i + 1; j < particles.length; j++) {
-            let p2 = particles[j];
-            let dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-            if (dist < 160) {
-                ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+        for (let j = i + 1; j < dots.length; j++) {
+            let d2 = dots[j];
+            let dist = Math.hypot(d.x - d2.x, d.y - d2.y);
+            if (dist < 170) {
+                ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d2.x, d2.y); ctx.stroke();
             }
         }
     });
-    requestAnimationFrame(draw);
+    requestAnimationFrame(loop);
 }
 
-setupCanvas(); draw();
-window.onresize = setupCanvas;
+setup(); loop();
+window.addEventListener('resize', setup);
 
-// 2. SISTEMA DE MENSAJES (TOAST)
-function pushNotify(msg) {
-    const toast = document.getElementById('toast');
-    document.getElementById('toast-text').innerText = msg;
-    toast.classList.remove('toast-hidden');
-    setTimeout(() => toast.classList.add('toast-hidden'), 4000);
+// 2. SISTEMA DE NOTIFICACIONES (TOAST)
+function sendAlert(msg, type = "success") {
+    const toast = document.getElementById('alert-toast');
+    const text = document.getElementById('alert-text');
+    const icon = document.getElementById('alert-icon');
+
+    text.innerText = msg;
+    icon.className = type === "success" ? "fa-solid fa-circle-check" : "fa-solid fa-circle-exclamation";
+    
+    toast.classList.remove('alert-hidden');
+    setTimeout(() => toast.classList.add('alert-hidden'), 4000);
 }
 
-// 3. CONTROL DE AUTENTICACIÓN
-let isRegistering = false;
+// 3. LÓGICA DE INTERCAMBIO DE MODO (CREAR CUENTA / ENTRAR)
+let isLoginMode = true;
+
 function toggleAuthMode() {
-    isRegistering = !isRegistering;
-    document.getElementById('auth-title').innerText = isRegistering ? "Crear Cuenta" : "Iniciar Sesión";
-    document.getElementById('auth-desc').innerText = isRegistering ? "Únete a la infraestructura DevRoot." : "Ingresa tus credenciales para continuar.";
-    document.getElementById('btn-label').innerText = isRegistering ? "Crear Cuenta Ahora" : "Iniciar Sesión";
-    document.getElementById('mode-info').innerText = isRegistering ? "¿Ya tienes una cuenta?" : "¿No tienes una cuenta?";
-    document.getElementById('mode-btn').innerText = isRegistering ? "Iniciar Sesión" : "Crear Cuenta";
+    isLoginMode = !isLoginMode;
+    const title = document.getElementById('main-title');
+    const desc = document.getElementById('main-desc');
+    const btn = document.getElementById('btn-text-action');
+    const info = document.getElementById('switcher-info');
+    const link = document.getElementById('switcher-link');
+
+    title.innerText = isLoginMode ? "Iniciar Sesión" : "Crear Cuenta";
+    desc.innerText = isLoginMode ? "Ingresa tus datos para acceder a tu panel de control." : "Únete a la red DevRoot y empieza a construir hoy.";
+    btn.innerText = isLoginMode ? "Entrar al Sistema" : "Registrar mi Cuenta";
+    info.innerText = isLoginMode ? "¿Aún no tienes cuenta?" : "¿Ya eres miembro?";
+    link.innerText = isLoginMode ? "Crear Cuenta" : "Iniciar Sesión";
 }
 
-function viewPass() {
-    const p = document.getElementById('password');
-    const i = document.getElementById('eye-icon');
-    p.type = p.type === 'password' ? 'text' : 'password';
-    i.classList.toggle('fa-eye-slash');
+function viewPassword() {
+    const input = document.getElementById('user-pass');
+    const icon = document.getElementById('eye-icon');
+    input.type = input.type === 'password' ? 'text' : 'password';
+    icon.classList.toggle('fa-eye-slash');
 }
 
-async function executeAuth() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const endpoint = isRegistering ? '/api/auth/register' : '/api/auth/login';
+// 4. LÓGICA DE ENVÍO DE FORMULARIO (CORREGIDA)
+async function submitAuth() {
+    const email = document.getElementById('user-email').value;
+    const password = document.getElementById('user-pass').value;
+    
+    // Ruta dinámica según el modo
+    const targetPath = isLoginMode ? '/api/auth/login' : '/api/auth/register';
 
-    if (!email || !password) return pushNotify("Error: Complete los campos.");
+    if (!email || !password) {
+        return sendAlert("Por favor, completa todos los campos.", "error");
+    }
 
     try {
-        const response = await fetch(endpoint, {
+        const response = await fetch(targetPath, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
+
         const data = await response.json();
 
         if (response.ok) {
-            pushNotify(data.message);
-            if (!isRegistering) {
-                initDashboard(data.user);
+            sendAlert(data.message);
+            if (isLoginMode) {
+                // Entrar al Dashboard
+                loadDashboard(data.userData);
             } else {
+                // Si registró, lo llevamos al login automáticamente
                 toggleAuthMode();
             }
         } else {
-            pushNotify(data.error);
+            sendAlert(data.error, "error");
         }
-    } catch (e) { pushNotify("Fallo de comunicación con el servidor."); }
+    } catch (e) {
+        sendAlert("Error de conexión con el núcleo central.", "error");
+    }
 }
 
-// 4. FLUJO DEL DASHBOARD
-function initDashboard(user) {
-    document.getElementById('auth-view').classList.add('hidden');
+// 5. MANEJO DEL DASHBOARD
+function loadDashboard(user) {
+    document.getElementById('auth-layout').classList.add('hidden');
     document.getElementById('app-dashboard').classList.remove('hidden');
-    document.getElementById('display-email').innerText = user.email;
-    document.getElementById('avatar-char').innerText = user.email[0].toUpperCase();
+    document.getElementById('profile-name').innerText = user.email;
+    document.getElementById('avatar-circle').innerText = user.email[0].toUpperCase();
 }
 
-function toggleDrop() { document.getElementById('user-menu').classList.toggle('drop-hidden'); }
-function openSettings() { document.getElementById('modal-settings').classList.remove('hidden'); toggleDrop(); }
-function closeSettings() { document.getElementById('modal-settings').classList.add('hidden'); }
+function openProfileMenu() { document.getElementById('drop-menu').classList.toggle('menu-closed'); }
+function showModal(id) { document.getElementById(id).classList.remove('hidden'); openProfileMenu(); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-async function requestDeletion() {
-    if (confirm("¿Confirmas la eliminación total de tu cuenta?")) {
-        const email = document.getElementById('display-email').innerText;
-        await fetch('/api/auth/delete', {
+async function deleteUserAccount() {
+    if (confirm("¿Confirmas la eliminación total de tu perfil? Esto no se puede deshacer.")) {
+        const email = document.getElementById('profile-name').innerText;
+        const res = await fetch('/api/auth/delete-account', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
         });
-        location.reload();
+        if (res.ok) location.reload();
     }
 }
 
-// Gestión de clics globales
-window.addEventListener('click', (e) => {
-    if (!e.target.closest('.profile-trigger')) {
-        document.getElementById('user-menu').classList.add('drop-hidden');
+// Cerrar menús al clickear fuera
+window.onclick = (e) => {
+    if (!e.target.closest('.h-profile')) {
+        document.getElementById('drop-menu').classList.add('menu-closed');
     }
-});
+};
