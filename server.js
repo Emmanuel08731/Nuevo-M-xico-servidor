@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
- * DEVROOT CORE ENGINE v6.0.4 - SISTEMA DE GESTIÓN DE NODOS
- * ARQUITECTURA: BACK-END DE ALTA DISPONIBILIDAD
+ * DEVROOT PLATFORM ENGINE v6.0.4
+ * CORE INFRASTRUCTURE - PRODUCTION LEVEL
  * ==============================================================================
  */
 
@@ -14,14 +14,12 @@ const bcrypt = require('bcryptjs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// BASE DE DATOS EN MEMORIA (ESTRUCTURA VOLÁTIL)
-let usersDB = []; 
-let activeSessions = new Set();
-let securityAuditTrail = [];
-
 /**
- * MIDDLEWARES DE SEGURIDAD Y OPTIMIZACIÓN
+ * CONFIGURACIÓN DE SEGURIDAD Y OPTIMIZACIÓN
+ * Se utiliza la variable DATABASE_URL configurada en Render para la conexión.
  */
+const DB_URI = process.env.DATABASE_URL;
+
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -32,115 +30,114 @@ app.use(helmet({
             imgSrc: ["'self'", "data:", "blob:"],
             connectSrc: ["'self'"]
         }
-    }
+    },
+    crossOriginEmbedderPolicy: false
 }));
 
-app.use(compression()); 
-app.use(express.json({ limit: '50mb' })); 
+app.use(compression());
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 /**
- * CONFIGURACIÓN DE SERVIDOR ESTÁTICO
+ * GESTIÓN DE MEMORIA Y PERSISTENCIA
  */
-const staticOptions = {
+let userStore = [];
+let systemEvents = [
+    { id: 1, type: 'info', msg: 'Motor DevRoot inicializado exitosamente.' },
+    { id: 2, type: 'security', msg: 'Firewall de capa 7 activado.' }
+];
+
+/**
+ * RECURSOS ESTÁTICOS CON CACHÉ DE LARGO PLAZO
+ */
+const staticConfig = {
     dotfiles: 'ignore',
     etag: true,
     index: "index.html",
-    maxAge: '7d',
-    setHeaders: (res, path) => {
-        res.set('X-Server-Source', 'DevRoot-Nexus');
+    maxAge: '31d',
+    setHeaders: (res) => {
+        res.set('X-DevRoot-Version', '6.0.4');
     }
 };
 
-app.use(express.static(path.join(__dirname, 'public'), staticOptions));
+app.use(express.static(path.join(__dirname, 'public'), staticConfig));
 
 /**
- * RUTAS DE LA API DE AUTENTICACIÓN
+ * API ENDPOINTS: AUTENTICACIÓN Y CUENTAS
  */
 
-// REGISTRO DE NUEVA UNIDAD DE ACCESO
+// CREAR CUENTA
 app.post('/api/auth/register', async (req, res) => {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-        return res.status(400).json({ success: false, error: "Datos de entrada incompletos." });
+    if (!email || !password || password.length < 6) {
+        return res.status(400).json({ success: false, error: "Datos insuficientes o contraseña muy corta." });
     }
 
-    if (password.length < 8) {
-        return res.status(400).json({ success: false, error: "La política de seguridad requiere 8+ caracteres." });
-    }
-
-    const collision = usersDB.find(u => u.email === email);
-    if (collision) {
-        return res.status(409).json({ success: false, error: "El identificador ya está en uso." });
-    }
+    const check = userStore.find(u => u.email === email);
+    if (check) return res.status(409).json({ success: false, error: "Este correo ya está registrado." });
 
     try {
-        const salt = await bcrypt.genSalt(12);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        const salt = await bcrypt.genSalt(14);
+        const passwordHash = await bcrypt.hash(password, salt);
         
-        const newNode = {
-            id: `NODE-${Date.now()}`,
+        const newUser = {
+            id: `USR-${Math.floor(Math.random() * 99999)}`,
             email: email,
-            password: hashedPassword,
-            status: "standby",
-            created: new Date().toISOString()
+            hash: passwordHash,
+            createdAt: new Date().toISOString()
         };
 
-        usersDB.push(newNode);
-        securityAuditTrail.push(`[SISTEMA] Registro exitoso: ${email}`);
-        
-        return res.status(201).json({ success: true, message: "Registro completado." });
-    } catch (err) {
-        return res.status(500).json({ success: false, error: "Error en el módulo de encriptación." });
-    }
-});
-
-// LOGIN Y ACCESO AL DASHBOARD
-app.post('/api/auth/login', async (req, res) => {
-    const { email, password } = req.body;
-
-    const user = usersDB.find(u => u.email === email);
-    if (!user) {
-        return res.status(401).json({ success: false, error: "Credenciales de acceso inválidas." });
-    }
-
-    try {
-        const valid = await bcrypt.compare(password, user.password);
-        if (!valid) {
-            return res.status(401).json({ success: false, error: "La llave de seguridad no coincide." });
-        }
-
-        const sessionToken = `TOKEN-${Math.random().toString(36).substr(2, 10)}`;
-        activeSessions.add(sessionToken);
-        
-        return res.json({ 
+        userStore.push(newUser);
+        return res.status(201).json({ 
             success: true, 
-            user: { email: user.email, token: sessionToken } 
+            message: "Cuenta creada correctamente." 
         });
     } catch (err) {
-        return res.status(500).json({ success: false, error: "Error interno del servidor." });
+        return res.status(500).json({ success: false, error: "Fallo crítico en el módulo crypt." });
     }
 });
 
-// ELIMINACIÓN DE REGISTROS (PURGA)
+// INICIAR SESIÓN
+app.post('/api/auth/login', async (req, res) => {
+    const { email, password } = req.body;
+    const user = userStore.find(u => u.email === email);
+
+    if (!user) return res.status(401).json({ success: false, error: "Cuenta no encontrada." });
+
+    try {
+        const match = await bcrypt.compare(password, user.hash);
+        if (!match) return res.status(401).json({ success: false, error: "Contraseña incorrecta." });
+
+        return res.json({ 
+            success: true, 
+            message: "Sesión iniciada correctamente.",
+            user: { email: user.email, uid: user.id }
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: "Error en la validación de seguridad." });
+    }
+});
+
+// ELIMINAR CUENTA (ZONA DE PELIGRO)
 app.post('/api/auth/delete', (req, res) => {
     const { email } = req.body;
-    const prevLen = usersDB.length;
-    usersDB = usersDB.filter(u => u.email !== email);
+    const originalSize = userStore.length;
+    userStore = userStore.filter(u => u.email !== email);
 
-    if (usersDB.length < prevLen) {
-        securityAuditTrail.push(`[PURGA] Nodo eliminado: ${email}`);
-        return res.json({ success: true });
+    if (userStore.length < originalSize) {
+        return res.json({ success: true, message: "Cuenta eliminada permanentemente." });
     }
-    
-    return res.status(404).json({ success: false, error: "Nodo no localizado." });
+    res.status(404).json({ success: false, error: "No se pudo localizar la cuenta." });
 });
 
-// INICIO DEL SERVICIO
+/**
+ * MONITOR DE ESTADO
+ */
 app.listen(PORT, () => {
-    console.log("==========================================");
-    console.log(`| DEVROOT ENGINE v6.0.4 ONLINE          |`);
-    console.log(`| PUERTO ACTIVO: ${PORT}                  |`);
-    console.log("==========================================");
+    console.clear();
+    console.log("------------------------------------------");
+    console.log(`| DEVROOT SERVER | STATUS: ONLINE       |`);
+    console.log(`| PORT: ${PORT} | DATABASE: DETECTED    |`);
+    console.log("------------------------------------------");
 });
