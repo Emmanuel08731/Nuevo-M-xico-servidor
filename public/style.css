@@ -1,34 +1,80 @@
-:root { --blue: #0066ff; --dark: #050505; --white: #ffffff; --bg: #f8fafc; }
+:root { 
+    --p-blue: #0066ff; --p-black: #050505; --p-white: #ffffff; 
+    --p-gray: #f8fafc; --p-border: #edf2f7; --p-text: #1a202c;
+    --anim: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
-body { background: var(--bg); overflow: hidden; }
+body { background: var(--p-gray); color: var(--p-text); overflow: hidden; }
 
-/* Animación de Notificación */
+/* --- TOAST ANIMADO --- */
 #toast {
-    position: fixed; top: 20px; right: 20px; padding: 15px 30px;
-    background: var(--dark); color: white; border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000;
-    transform: translateY(-100px); transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: fixed; top: 25px; left: 50%; transform: translate(-50%, -150px);
+    background: var(--p-black); color: white; padding: 12px 30px; border-radius: 50px;
+    z-index: 9999; font-weight: 700; transition: var(--anim); box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
-#toast.show { transform: translateY(0); }
+#toast.show { transform: translate(-50%, 0); }
 
-/* Card Decorada */
-.main-container { height: 100vh; display: flex; align-items: center; justify-content: center; }
+/* --- AUTH UI --- */
+.full-page { height: 100vh; display: flex; align-items: center; justify-content: center; background: white; }
 .auth-card { 
-    background: white; width: 900px; height: 550px; display: flex; 
-    border-radius: 30px; box-shadow: 0 25px 60px rgba(0,0,0,0.06); overflow: hidden;
+    width: 950px; height: 580px; display: flex; border-radius: 35px; 
+    box-shadow: 0 40px 100px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid var(--p-border);
 }
-.side-brand { flex: 1; background: var(--dark); color: white; padding: 60px; display: flex; flex-direction: column; justify-content: space-between; }
-.side-brand h1 span { color: var(--blue); }
+.auth-brand { flex: 1; background: var(--p-black); color: white; padding: 60px; display: flex; flex-direction: column; justify-content: space-between; }
+.auth-brand h1 span { color: var(--p-blue); }
 
-.side-form { flex: 1.2; padding: 60px; display: flex; flex-direction: column; justify-content: center; }
-input { width: 100%; padding: 16px; margin-bottom: 15px; border-radius: 12px; border: 1.5px solid #eee; outline: none; transition: 0.3s; }
-input:focus { border-color: var(--blue); background: #fff; }
+.auth-fields { flex: 1.2; padding: 70px; display: flex; flex-direction: column; justify-content: center; }
+.field { display: flex; align-items: center; background: #f1f5f9; border-radius: 15px; margin-bottom: 15px; padding: 0 20px; }
+.field input { width: 100%; padding: 18px; border: none; background: none; outline: none; font-size: 1rem; }
+.field i { color: #94a3b8; }
 
-.btn-primary { background: var(--blue); color: white; border: none; padding: 18px; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s; }
-.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,102,255,0.2); }
+#btn-auth { 
+    background: var(--p-blue); color: white; border: none; padding: 20px; 
+    border-radius: 15px; font-weight: 800; cursor: pointer; transition: var(--anim); margin-top: 10px;
+}
+#btn-auth:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0,102,255,0.2); }
 
-/* Dashboard UI */
-.dashboard-hidden { display: none; }
-.dash-nav { background: white; padding: 20px 60px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
-.btn-danger { background: #ff4d4d15; color: #ff4d4d; border: 1px solid #ff4d4d; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-left: 10px; }
-.btn-outline { background: none; border: 1px solid #ddd; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+/* --- DASHBOARD UI --- */
+.glass-nav { 
+    height: 80px; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px);
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 40px; border-bottom: 1px solid var(--p-border); sticky: top;
+}
+.nav-logo { font-size: 1.6rem; font-weight: 800; }
+.nav-logo span { color: var(--p-blue); }
+
+.user-profile { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px 15px; border-radius: 50px; transition: 0.3s; }
+.user-profile:hover { background: #f1f5f9; }
+.avatar-circle { width: 38px; height: 38px; background: var(--p-blue); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+
+#user-drop {
+    position: absolute; top: 85px; right: 40px; width: 240px; background: white;
+    border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); border: 1px solid #eee; padding: 15px; z-index: 1000;
+}
+.drop-info { padding: 10px; border-bottom: 1px solid #f1f5f9; margin-bottom: 10px; }
+#user-drop button { width: 100%; text-align: left; padding: 12px; border: none; background: none; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; gap: 10px; }
+#user-drop button:hover { background: #f8fafc; color: var(--p-blue); }
+
+/* --- LAYOUT --- */
+.app-layout { display: grid; grid-template-columns: 280px 1fr 300px; height: calc(100vh - 80px); gap: 20px; padding: 25px; }
+.sidebar button { width: 100%; padding: 15px; text-align: left; border: none; background: none; border-radius: 12px; font-weight: 700; color: #64748b; cursor: pointer; margin-bottom: 5px; display: flex; gap: 15px; }
+.sidebar button.active { background: white; color: var(--p-blue); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+
+/* EMBED CENTRAL */
+.main-feed { display: flex; justify-content: center; }
+.embed-empty {
+    background: white; width: 100%; max-width: 650px; height: fit-content;
+    padding: 80px 40px; border-radius: 30px; text-align: center; border: 1px solid var(--p-border);
+}
+.embed-icon { font-size: 4rem; color: #e2e8f0; margin-bottom: 25px; }
+
+/* MODAL */
+#modal-settings { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+.modal-box { background: white; padding: 40px; border-radius: 30px; width: 450px; text-align: center; }
+.danger-box { margin: 25px 0; padding: 20px; border: 2px dashed #fee2e2; border-radius: 20px; }
+.danger-box button { background: #ef4444; color: white; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; }
+
+.hidden { display: none !important; }
+.drop-hidden { display: none; }
+.modal-hidden { display: none; }
