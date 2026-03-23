@@ -1,221 +1,193 @@
 /**
- * ==============================================================================
- * DEVROOT NEXUS CONTROL v10.0.4
- * CLIENT-SIDE LOGIC ENGINE
- * DEVELOPER: EMMANUEL
- * ==============================================================================
+ * CORE PLATFORM SCRIPTING ENGINE
+ * VERSION: 12.0.4 - MASTER BUILD
  */
 
-// 1. SISTEMA DE CARGA (SPLASH)
-window.addEventListener('DOMContentLoaded', () => {
-    const splash = document.getElementById('app-loader');
-    
-    // Simulación de carga de módulos del núcleo
+// 1. GESTIÓN DEL CARGADOR GLOBAL
+window.addEventListener('load', () => {
+    const loader = document.getElementById('global-loader');
     setTimeout(() => {
-        splash.style.opacity = '0';
-        setTimeout(() => splash.style.display = 'none', 800);
-        console.log("Kernel DevRoot: Sincronizado.");
-    }, 2500);
+        loader.style.opacity = '0';
+        setTimeout(() => loader.style.display = 'none', 800);
+    }, 1500);
 });
 
-// 2. MOTOR GRÁFICO DEL FONDO (PARTÍCULAS)
-const canvas = document.getElementById('main-canvas');
-const ctx = canvas.getContext('2d');
-let points = [];
+// 2. SISTEMA DE NOTIFICACIONES (TOAST)
+const showToast = (message, type = "success") => {
+    const toast = document.getElementById('notif-system');
+    const msgEl = document.getElementById('notif-msg');
+    const icon = document.getElementById('notif-icon');
+    const bar = document.getElementById('notif-bar');
 
-function initPhysics() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    points = [];
-    const count = window.innerWidth < 800 ? 40 : 95;
-    
-    for (let i = 0; i < count; i++) {
-        points.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            vx: (Math.random() - 0.5) * 0.5,
-            vy: (Math.random() - 0.5) * 0.5,
-            r: Math.random() * 2 + 1
-        });
-    }
-}
-
-function drawPhysics() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#0066ff33';
-    ctx.strokeStyle = '#0066ff0a';
-
-    points.forEach((p, i) => {
-        p.x += p.vx;
-        p.y += p.vy;
-
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
-
-        for (let j = i + 1; j < points.length; j++) {
-            const p2 = points[j];
-            const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-            if (dist < 180) {
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y);
-                ctx.lineTo(p2.x, p2.y);
-                ctx.stroke();
-            }
-        }
-    });
-    requestAnimationFrame(drawPhysics);
-}
-
-initPhysics();
-drawPhysics();
-window.onresize = initPhysics;
-
-// 3. SISTEMA DE NOTIFICACIONES (TOAST)
-function showNotify(msg, type = "success") {
-    const toast = document.getElementById('toast-notif');
-    const content = document.getElementById('toast-message');
-    const icon = document.getElementById('toast-icon');
-
-    content.innerText = msg;
+    msgEl.innerText = message;
     icon.className = type === "success" ? "fa-solid fa-circle-check" : "fa-solid fa-triangle-exclamation";
+    bar.style.backgroundColor = type === "success" ? "#34c759" : "#ff3b30";
+
+    toast.classList.remove('notif-hidden');
+    setTimeout(() => toast.classList.add('notif-hidden'), 4500);
+};
+
+// 3. MODO DE AUTENTICACIÓN (LOGIN VS REGISTER)
+let isRegisterMode = false;
+
+const switchAuthMode = () => {
+    isRegisterMode = !isRegisterMode;
     
-    toast.classList.remove('toast-hidden');
-    setTimeout(() => toast.classList.add('toast-hidden'), 4500);
-}
+    // Selectores de UI
+    const title = document.getElementById('form-title');
+    const desc = document.getElementById('form-desc');
+    const btnLabel = document.getElementById('btn-label');
+    const modeBtn = document.getElementById('btn-mode');
+    const hint = document.getElementById('hint-text');
+    const userBox = document.getElementById('box-user');
+    const idLabel = document.getElementById('lbl-id');
 
-// 4. GESTIÓN DE AUTENTICACIÓN
-let isLoginMode = true;
+    // Transición de texto
+    title.innerText = isRegisterMode ? "Crear Cuenta" : "Iniciar Sesión";
+    desc.innerText = isRegisterMode ? "Únete a la red global de SystemCore." : "Introduce tus credenciales autorizadas.";
+    btnLabel.innerText = isRegisterMode ? "REGISTRAR CUENTA" : "ACCEDER AL SISTEMA";
+    modeBtn.innerText = isRegisterMode ? "Iniciar Sesión" : "Crear Cuenta";
+    hint.innerText = isRegisterMode ? "¿Ya tienes una cuenta?" : "¿No tienes acceso todavía?";
+    idLabel.innerText = isRegisterMode ? "Correo Electrónico" : "Email o Usuario";
 
-function switchMode() {
-    isLoginMode = !isLoginMode;
-    const title = document.getElementById('ui-title');
-    const desc = document.getElementById('ui-desc');
-    const btn = document.getElementById('btn-label');
-    const switchTxt = document.getElementById('toggle-text');
-    const switchBtn = document.getElementById('toggle-btn');
+    // Mostrar campo de usuario
+    if (isRegisterMode) {
+        userBox.classList.remove('hidden');
+        userBox.classList.add('animate-pop');
+    } else {
+        userBox.classList.add('hidden');
+    }
+};
 
-    title.innerText = isLoginMode ? "Iniciar Sesión" : "Crear Cuenta";
-    desc.innerText = isLoginMode ? "Panel de acceso para desarrolladores." : "Únete a la infraestructura de Emmanuel.";
-    btn.innerText = isLoginMode ? "ACCEDER" : "REGISTRARSE";
-    switchTxt.innerText = isLoginMode ? "¿No tienes cuenta?" : "¿Ya tienes cuenta?";
-    switchBtn.innerText = isLoginMode ? "Registrarse" : "Iniciar Sesión";
+// 4. LÓGICA DE ENVÍO DE FORMULARIOS
+const handleAuth = async () => {
+    const email = document.getElementById('inp-id').value;
+    const pass = document.getElementById('inp-pass').value;
+    const user = document.getElementById('inp-user').value;
     
-    console.log(`Modo cambiado a: ${isLoginMode ? 'LOGIN' : 'SIGNUP'}`);
-}
+    const btn = document.querySelector('.btn-submit');
 
-function togglePass() {
-    const input = document.getElementById('pass');
-    const icon = document.getElementById('eye-icon');
-    input.type = input.type === 'password' ? 'text' : 'password';
-    icon.classList.toggle('fa-eye-slash');
-}
-
-/**
- * ACCIÓN PRINCIPAL DE ENVÍO
- */
-async function handleAuthAction() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('pass').value;
-    const btn = document.getElementById('btn-submit');
-    const loader = btn.querySelector('.btn-loader');
-
-    if (!email || !password) {
-        return showNotify("Por favor, rellena todos los campos.", "error");
+    // Validación frontal
+    if (!email || !pass || (isRegisterMode && !user)) {
+        return showToast("⚠️ Por favor, completa todos los campos requeridos.", "error");
     }
 
-    // Activamos UI de carga
     btn.disabled = true;
-    loader.classList.remove('hidden');
-
-    const endpoint = isLoginMode ? '/api/auth/signin' : '/api/auth/signup';
+    
+    const endpoint = isRegisterMode ? '/api/v1/auth/register' : '/api/v1/auth/login';
+    const payload = isRegisterMode 
+        ? { user, email, password: pass }
+        : { identity: email, password: pass };
 
     try {
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify(payload)
         });
 
-        const data = await response.json();
+        const result = await response.json();
 
         if (response.ok) {
-            showNotify(data.message);
-            if (isLoginMode) {
-                initApp(data.user);
+            showToast(result.msg);
+            if (isRegisterMode) {
+                switchAuthMode();
             } else {
-                switchMode(); // Cambia a login tras registro exitoso
+                initDashboard(result.payload);
             }
         } else {
-            showNotify(data.message, "error");
+            showToast(result.msg, "error");
         }
     } catch (err) {
-        showNotify("Error de comunicación con el núcleo.", "error");
+        showToast("Error de red: Imposible conectar con el núcleo.", "error");
     } finally {
         btn.disabled = false;
-        loader.classList.add('hidden');
     }
-}
+};
 
-// 5. INICIALIZACIÓN DEL DASHBOARD
-function initApp(user) {
-    document.getElementById('view-auth').classList.add('hidden');
-    document.getElementById('view-app').classList.remove('hidden');
-    
-    // Actualizamos UI con datos del usuario
-    document.getElementById('user-name').innerText = user.username || user.email;
-    document.getElementById('user-initial').innerText = (user.username || user.email)[0].toUpperCase();
-    
-    // Guardamos sesión en LocalStorage
-    localStorage.setItem('dr_session', JSON.stringify(user));
-    console.log(`Sesión iniciada: ${user.uid}`);
-}
+// 5. MOTOR DE BÚSQUEDA DINÁMICA
+let searchTimeout;
+const executeSearch = (query) => {
+    const panel = document.getElementById('search-panel');
+    const userList = document.getElementById('results-users');
+    const loader = document.getElementById('s-loader');
 
-// 6. MENÚS Y MODALES
-function toggleUserMenu() {
-    document.getElementById('user-menu').classList.toggle('menu-hidden');
-}
+    clearTimeout(searchTimeout);
 
-function showModal(id) {
-    document.getElementById(`modal-${id}`).classList.remove('hidden');
-}
+    if (query.length < 1) {
+        panel.classList.add('search-panel-hidden');
+        return;
+    }
 
-function closeModal(id) {
-    document.getElementById(`modal-${id}`).classList.add('hidden');
-}
+    loader.classList.remove('hidden');
 
-/**
- * ACCIÓN DE DESTRUCCIÓN
- */
-async function destroyAccount() {
-    const session = JSON.parse(localStorage.getItem('dr_session'));
-    if (!session) return;
+    searchTimeout = setTimeout(async () => {
+        try {
+            const res = await fetch(`/api/v1/search?q=${encodeURIComponent(query)}`);
+            const json = await res.json();
+            
+            panel.classList.remove('search-panel-hidden');
+            userList.innerHTML = '';
 
-    const confirmDestroy = confirm("¿Estás absolutamente seguro de destruir este nodo?");
-    if (!confirmDestroy) return;
+            if (json.data.users.length > 0) {
+                json.data.users.forEach(u => {
+                    const div = document.createElement('div');
+                    div.className = 'res-card';
+                    div.innerHTML = `<i class="fa-regular fa-circle-user"></i> <span>${u.user}</span>`;
+                    userList.appendChild(div);
+                });
+            } else {
+                userList.innerHTML = '<p class="no-results">Sin coincidencias.</p>';
+            }
 
-    try {
-        const response = await fetch('/api/auth/destroy', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: session.email })
-        });
-
-        if (response.ok) {
-            localStorage.clear();
-            location.reload();
+        } catch (e) {
+            console.error("Critical Search Error");
+        } finally {
+            loader.classList.add('hidden');
         }
-    } catch (e) {
-        showNotify("Error al destruir la instancia.", "error");
-    }
-}
+    }, 400);
+};
 
-// Cierre automático de menús al clickear fuera
+// 6. INICIALIZACIÓN DEL DASHBOARD
+const initDashboard = (data) => {
+    document.getElementById('auth-view').classList.add('hidden');
+    document.getElementById('app-view').classList.remove('hidden');
+    
+    // Inyectar datos del perfil
+    document.getElementById('nav-user-name').innerText = data.user;
+    document.getElementById('nav-user-init').innerText = data.user[0].toUpperCase();
+    document.getElementById('menu-email').innerText = data.email;
+    
+    console.log(`[SYS] Sesión activa: ${data.uid}`);
+};
+
+// 7. INTERACCIONES DE INTERFAZ
+const togglePassView = () => {
+    const inp = document.getElementById('inp-pass');
+    const icon = document.getElementById('eye-icon');
+    const isPass = inp.type === 'password';
+    inp.type = isPass ? 'text' : 'password';
+    icon.className = isPass ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+};
+
+const toggleUserMenu = () => {
+    document.getElementById('user-menu').classList.toggle('menu-hidden');
+};
+
+// Cierre global de modales
 window.addEventListener('click', (e) => {
-    if (!e.target.closest('.nav-user')) {
+    if (!e.target.closest('.user-trigger')) {
+        document.getElementById('user-menu').classList.add('menu-hidden');
+    }
+    if (!e.target.closest('.search-engine')) {
+        document.getElementById('search-panel').classList.add('search-panel-hidden');
+    }
+});
+
+// ESC Key support
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        document.getElementById('search-panel').classList.add('search-panel-hidden');
         document.getElementById('user-menu').classList.add('menu-hidden');
     }
 });
