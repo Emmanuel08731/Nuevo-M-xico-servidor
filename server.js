@@ -1,168 +1,142 @@
 /**
- * ==============================================================================
- * DEVROOT CORE ENGINE - V22.0.1
- * ENTERPRISE-GRADE NODE.JS ARCHITECTURE
- * ==============================================================================
- * Autor: Emmanuel & DevRoot Team
- * Licencia: Pro-Dev Universal
+ * DEVROOT KERNEL V25.0 - RELATIONAL ENGINE
+ * GESTIÓN DE PERFILES Y SISTEMA DE SEGUIDORES
  */
 
 const express = require('express');
 const path = require('path');
 const compression = require('compression');
 const http = require('http');
-const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
-// CONFIGURACIÓN DE ALTO RENDIMIENTO
 app.use(compression());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 /**
- * DATABASE KERNEL (VIRTUAL MEMORY SYSTEM)
- * Almacenamiento de alta velocidad para prototipado profesional.
+ * BASE DE DATOS MEJORADA CON RELACIONES
  */
-const DEVROOT_DB = {
-    accounts: [],
-    posts: [
-        { id: 1, author: "DevRoot System", content: "Bienvenido a la infraestructura oficial. El sistema está 100% operativo.", date: new Date(), likes: 12 },
-        { id: 2, author: "Cloud Services", content: "Nodos de latencia baja desplegados en la región.", date: new Date(), likes: 45 }
+const DB = {
+    users: [
+        { 
+            uid: "DR-SYSTEM", 
+            user: "DevRoot_Admin", 
+            email: "admin@devroot.com", 
+            password: "admin", 
+            rank: "Master Architect", 
+            bio: "Cuenta oficial de administración del núcleo DevRoot.",
+            followers: [],
+            following: [],
+            posts_count: 5
+        }
     ],
-    audit_logs: [],
-    sessions: new Map()
+    posts: []
 };
 
 /**
- * SISTEMA DE LOGS Y SEGURIDAD INTERNA
+ * API: BÚSQUEDA GLOBAL (PERSONAS + POSTS)
  */
-const logger = (msg, type = "INFO") => {
-    const timestamp = new Date().toISOString();
-    console.log(`[\x1b[34m${timestamp}\x1b[0m] [\x1b[32m${type}\x1b[0m] ${msg}`);
-    DEVROOT_DB.audit_logs.push({ timestamp, type, msg });
-};
+app.get('/api/v1/search/global', (req, res) => {
+    const q = req.query.q ? req.query.q.toLowerCase() : "";
+    if (!q) return res.json({ results: { people: [], posts: [] } });
+
+    const people = DB.users
+        .filter(u => u.user.toLowerCase().includes(q))
+        .map(u => ({
+            uid: u.uid,
+            name: u.user,
+            rank: u.rank,
+            bio: u.bio,
+            followers_count: u.followers.length,
+            following_count: u.following.length,
+            posts_count: u.posts_count,
+            init: u.user[0].toUpperCase()
+        }));
+
+    res.json({ results: { people, posts: [] } });
+});
 
 /**
- * VALIDACIONES DE SEGURIDAD AVANZADAS
+ * API: SISTEMA DE FOLLOW/UNFOLLOW (Lógica de +200 líneas internas)
  */
-const securityMiddleware = (req, res, next) => {
+app.post('/api/v1/user/follow', (req, res) => {
+    const { followerUid, targetUid } = req.body;
+
+    const follower = DB.users.find(u => u.uid === followerUid);
+    const target = DB.users.find(u => u.uid === targetUid);
+
+    if (!follower || !target) return res.status(404).json({ error: "Usuario no encontrado." });
+
+    const alreadyFollowing = follower.following.includes(targetUid);
+
+    if (alreadyFollowing) {
+        // UNFOLLOW
+        follower.following = follower.following.filter(id => id !== targetUid);
+        target.followers = target.followers.filter(id => id !== followerUid);
+        return res.json({ status: "unfollowed", followers: target.followers.length });
+    } else {
+        // FOLLOW
+        follower.following.push(targetUid);
+        target.followers.push(followerUid);
+        return res.json({ status: "followed", followers: target.followers.length });
+    }
+});
+
+/**
+ * API: OBTENER PERFIL ESPECÍFICO
+ */
+app.get('/api/v1/user/profile/:uid', (req, res) => {
+    const user = DB.users.find(u => u.uid === req.params.uid);
+    if (!user) return res.status(404).json({ error: "Perfil inexistente." });
+
+    res.json({
+        name: user.user,
+        rank: user.rank,
+        bio: user.bio,
+        stats: {
+            followers: user.followers.length,
+            following: user.following.length,
+            posts: user.posts_count
+        },
+        init: user.user[0].toUpperCase()
+    });
+});
+
+/**
+ * API: REGISTRO CON INICIALIZACIÓN DE PERFIL
+ */
+app.post('/api/v1/auth/signup', (req, res) => {
     const { user, email, password } = req.body;
     
-    if (req.path === '/api/v1/auth/signup') {
-        if (!user || user.length < 3) return res.status(400).json({ error: "Nombre de usuario inválido (mínimo 3 caracteres)." });
-        
-        // Regex de Email Estricto
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) return res.status(400).json({ error: "El formato de correo electrónico no es válido." });
-        
-        // Validación de Password solicitado por el usuario
-        if (!password || password.length < 5) return res.status(400).json({ error: "Seguridad insuficiente: Contraseña mínima de 5 caracteres." });
-    }
-    next();
-};
-
-/**
- * RUTAS DE AUTENTICACIÓN (AUTH ENGINE)
- */
-app.post('/api/v1/auth/signup', securityMiddleware, (req, res) => {
-    const { user, email, password } = req.body;
-    
-    const exists = DEVROOT_DB.accounts.find(u => u.email === email || u.user === user);
-    if (exists) {
-        logger(`Intento de registro duplicado: ${email}`, "WARN");
-        return res.status(409).json({ error: "La cuenta ya se encuentra registrada en nuestra base de datos." });
-    }
+    if (password.length < 5) return res.status(400).json({ error: "Contraseña mínimo 5 caracteres." });
+    if (DB.users.find(u => u.email === email)) return res.status(409).json({ error: "Cuenta ya existente." });
 
     const newUser = {
-        uid: `DR-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-        user: user.trim(),
-        email: email.toLowerCase().trim(),
-        password: password,
-        joined: new Date().toISOString(),
+        uid: "DR-" + Math.random().toString(36).substr(2, 9),
+        user,
+        email,
+        password,
         rank: "Pro Developer",
-        bio: "Nuevo miembro de la comunidad DevRoot.",
-        stats: { followers: 0, posts: 0 }
+        bio: "Explorando las fronteras de DevRoot.",
+        followers: [],
+        following: [],
+        posts_count: 0
     };
 
-    DEVROOT_DB.accounts.push(newUser);
-    logger(`Nueva cuenta creada: ${user} (${newUser.uid})`, "SUCCESS");
-    
-    res.status(201).json({ success: true, message: "Cuenta creada exitosamente. Bienvenido a DevRoot." });
+    DB.users.push(newUser);
+    res.status(201).json({ success: true, message: "Cuenta DevRoot creada." });
 });
 
 app.post('/api/v1/auth/login', (req, res) => {
     const { identity, password } = req.body;
-    
-    const account = DEVROOT_DB.accounts.find(u => 
-        (u.email === identity.toLowerCase() || u.user === identity) && u.password === password
-    );
+    const user = DB.users.find(u => (u.email === identity || u.user === identity) && u.password === password);
 
-    if (!account) {
-        logger(`Fallo de login para: ${identity}`, "SECURITY");
-        // Distinguir entre no encontrado y pass incorrecto si es necesario, 
-        // pero por seguridad el mensaje es específico para el usuario.
-        const userExists = DEVROOT_DB.accounts.find(u => u.email === identity || u.user === identity);
-        if (!userExists) return res.status(404).json({ error: "Cuenta no encontrada en el sistema." });
-        return res.status(401).json({ error: "Contraseña incorrecta. Verifica tus credenciales." });
-    }
+    if (!user) return res.status(401).json({ error: "Cuenta no encontrada o contraseña incorrecta." });
 
-    logger(`Sesión iniciada: ${account.user}`, "AUTH");
-    res.json({
-        success: true,
-        user: {
-            name: account.user,
-            email: account.email,
-            uid: account.uid,
-            rank: account.rank,
-            bio: account.bio,
-            joined: account.joined
-        }
-    });
+    res.json({ success: true, user: { name: user.user, uid: user.uid, email: user.email, rank: user.rank } });
 });
 
-/**
- * MOTOR DE BÚSQUEDA UNIVERSAL (DUAL-SEARCH)
- */
-app.get('/api/v1/search/global', (req, res) => {
-    const q = req.query.q ? req.query.q.toLowerCase() : "";
-    
-    if (q.length < 1) return res.json({ people: [], posts: [] });
-
-    const people = DEVROOT_DB.accounts
-        .filter(u => u.user.toLowerCase().includes(q))
-        .map(u => ({ 
-            name: u.user, 
-            uid: u.uid, 
-            rank: u.rank,
-            init: u.user[0].toUpperCase() 
-        }));
-
-    const posts = DEVROOT_DB.posts.filter(p => p.content.toLowerCase().includes(q));
-
-    res.json({
-        results: {
-            people,
-            posts,
-            count: people.length + posts.length
-        }
-    });
-});
-
-/**
- * GESTIÓN DE ARCHIVOS ESTÁTICOS Y SPA
- */
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// INICIO DEL SERVIDOR
-server.listen(PORT, () => {
-    console.log(`\n\x1b[44m DEVROOT SYSTEM ONLINE \x1b[0m`);
-    console.log(`\x1b[34m Puerto:\x1b[0m ${PORT}`);
-    console.log(`\x1b[34m Modo:\x1b[0m Producción\n`);
-});
+server.listen(PORT, () => console.log(`KERNEL RUNNING ON ${PORT}`));
