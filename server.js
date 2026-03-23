@@ -1,9 +1,8 @@
 /**
  * ==============================================================================
- * DEVROOT CORE ENGINE v6.0.4 - INFRAESTRUCTURA DE ALTO NIVEL
- * ESTADO: PRODUCCIÓN | DIRECTOR DE PROYECTO: EMMANUEL
+ * DEVROOT CORE ENGINE v6.0.4 - SISTEMA DE GESTIÓN DE NODOS
+ * ARQUITECTURA: BACK-END DE ALTA DISPONIBILIDAD
  * ==============================================================================
- * Este motor gestiona la autenticación de nodos y la integridad de datos.
  */
 
 const express = require('express');
@@ -12,21 +11,16 @@ const helmet = require('helmet');
 const compression = require('compression');
 const bcrypt = require('bcryptjs');
 
-// INICIALIZACIÓN DE LA APLICACIÓN
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-/**
- * GESTIÓN DE BASE DE DATOS VOLÁTIL
- * Estructura optimizada para persistencia en sesión actual.
- */
+// BASE DE DATOS EN MEMORIA (ESTRUCTURA VOLÁTIL)
 let usersDB = []; 
-let nodeSessions = new Map();
-let globalSystemLogs = [];
+let activeSessions = new Set();
+let securityAuditTrail = [];
 
 /**
- * CONFIGURACIÓN DE SEGURIDAD AVANZADA (HELMET)
- * Se configura específicamente para permitir recursos externos de fuentes seguras.
+ * MIDDLEWARES DE SEGURIDAD Y OPTIMIZACIÓN
  */
 app.use(helmet({
     contentSecurityPolicy: {
@@ -38,137 +32,115 @@ app.use(helmet({
             imgSrc: ["'self'", "data:", "blob:"],
             connectSrc: ["'self'"]
         }
-    },
-    crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: { policy: "cross-origin" }
+    }
 }));
 
-// OPTIMIZACIÓN DE CARGA
 app.use(compression()); 
-app.use(express.json({ limit: '10mb' })); 
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '50mb' })); 
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 /**
- * SERVICIO DE ARCHIVOS ESTÁTICOS
- * Configuración de caché para optimizar el rendimiento en Render.
+ * CONFIGURACIÓN DE SERVIDOR ESTÁTICO
  */
-const staticConfig = {
+const staticOptions = {
     dotfiles: 'ignore',
     etag: true,
-    extensions: ['html', 'js', 'css'],
     index: "index.html",
-    maxAge: '1d',
+    maxAge: '7d',
     setHeaders: (res, path) => {
-        res.set('X-Powered-By', 'DevRoot Engine v6.0.4');
+        res.set('X-Server-Source', 'DevRoot-Nexus');
     }
 };
 
-app.use(express.static(path.join(__dirname, 'public'), staticConfig));
+app.use(express.static(path.join(__dirname, 'public'), staticOptions));
 
 /**
- * API REST - PROTOCOLO DE SEGURIDAD
+ * RUTAS DE LA API DE AUTENTICACIÓN
  */
 
-// REGISTRO DE NUEVO ACCESO
+// REGISTRO DE NUEVA UNIDAD DE ACCESO
 app.post('/api/auth/register', async (req, res) => {
     const { email, password } = req.body;
 
-    // Validación de entrada estricta
     if (!email || !password) {
-        return res.status(400).json({ success: false, error: "Campos de entrada requeridos faltantes." });
+        return res.status(400).json({ success: false, error: "Datos de entrada incompletos." });
     }
 
     if (password.length < 8) {
-        return res.status(400).json({ success: false, error: "La seguridad requiere al menos 8 caracteres." });
+        return res.status(400).json({ success: false, error: "La política de seguridad requiere 8+ caracteres." });
     }
 
-    const duplicate = usersDB.find(u => u.email === email);
-    if (duplicate) {
-        return res.status(409).json({ success: false, error: "Identidad ya vinculada a un nodo existente." });
+    const collision = usersDB.find(u => u.email === email);
+    if (collision) {
+        return res.status(409).json({ success: false, error: "El identificador ya está en uso." });
     }
 
     try {
         const salt = await bcrypt.genSalt(12);
         const hashedPassword = await bcrypt.hash(password, salt);
         
-        const nodeIdentity = {
-            id: `UID-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        const newNode = {
+            id: `NODE-${Date.now()}`,
             email: email,
             password: hashedPassword,
-            status: "online",
-            joined: new Date().toISOString()
+            status: "standby",
+            created: new Date().toISOString()
         };
 
-        usersDB.push(nodeIdentity);
-        globalSystemLogs.push(`[SISTEMA] Registro exitoso: ${email}`);
+        usersDB.push(newNode);
+        securityAuditTrail.push(`[SISTEMA] Registro exitoso: ${email}`);
         
-        return res.status(201).json({ success: true, message: "Nodo creado satisfactoriamente." });
+        return res.status(201).json({ success: true, message: "Registro completado." });
     } catch (err) {
-        return res.status(500).json({ success: false, error: "Fallo crítico en el proceso de encriptación." });
+        return res.status(500).json({ success: false, error: "Error en el módulo de encriptación." });
     }
 });
 
-// LOGIN Y SINCRONIZACIÓN
+// LOGIN Y ACCESO AL DASHBOARD
 app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
 
     const user = usersDB.find(u => u.email === email);
     if (!user) {
-        return res.status(401).json({ success: false, error: "Las credenciales no coinciden con ningún nodo." });
+        return res.status(401).json({ success: false, error: "Credenciales de acceso inválidas." });
     }
 
     try {
-        const isAuthorized = await bcrypt.compare(password, user.password);
-        if (!isAuthorized) {
-            return res.status(401).json({ success: false, error: "Llave de seguridad incorrecta." });
+        const valid = await bcrypt.compare(password, user.password);
+        if (!valid) {
+            return res.status(401).json({ success: false, error: "La llave de seguridad no coincide." });
         }
 
-        const sessionID = `SESS-${Math.random().toString(36).substring(2, 15)}`;
-        nodeSessions.set(sessionID, email);
-        
-        globalSystemLogs.push(`[ACCESO] Sincronización completa: ${email}`);
+        const sessionToken = `TOKEN-${Math.random().toString(36).substr(2, 10)}`;
+        activeSessions.add(sessionToken);
         
         return res.json({ 
             success: true, 
-            user: { email: user.email, sessionToken: sessionID } 
+            user: { email: user.email, token: sessionToken } 
         });
     } catch (err) {
-        return res.status(500).json({ success: false, error: "Error de servidor durante el login." });
+        return res.status(500).json({ success: false, error: "Error interno del servidor." });
     }
 });
 
-// PROTOCOLO DE ELIMINACIÓN PERMANENTE
+// ELIMINACIÓN DE REGISTROS (PURGA)
 app.post('/api/auth/delete', (req, res) => {
     const { email } = req.body;
-    const initialSize = usersDB.length;
-    
+    const prevLen = usersDB.length;
     usersDB = usersDB.filter(u => u.email !== email);
 
-    if (usersDB.length < initialSize) {
-        globalSystemLogs.push(`[SISTEMA] Nodo purgado: ${email}`);
-        return res.json({ success: true, message: "Datos eliminados permanentemente." });
+    if (usersDB.length < prevLen) {
+        securityAuditTrail.push(`[PURGA] Nodo eliminado: ${email}`);
+        return res.json({ success: true });
     }
     
-    return res.status(404).json({ success: false, error: "No se encontró el nodo solicitado." });
+    return res.status(404).json({ success: false, error: "Nodo no localizado." });
 });
 
-/**
- * MANEJO DE RUTAS NO ENCONTRADAS (404)
- */
-app.use((req, res) => {
-    res.status(404).send(`
-        <div style="text-align:center; padding: 50px; font-family: sans-serif;">
-            <h1>Error 404</h1>
-            <p>El nodo solicitado no existe en la infraestructura DevRoot.</p>
-        </div>
-    `);
-});
-
-// INICIO DEL SERVIDOR
+// INICIO DEL SERVICIO
 app.listen(PORT, () => {
-    console.log("--------------------------------------------------");
-    console.log(`| DEVROOT ENGINE v6.0.4 IS NOW DEPLOYED        |`);
-    console.log(`| LISTENING ON PORT: ${PORT}                      |`);
-    console.log(`| READY FOR INCOMING CONNECTIONS               |`);
-    console.log("--------------------------------------------------");
+    console.log("==========================================");
+    console.log(`| DEVROOT ENGINE v6.0.4 ONLINE          |`);
+    console.log(`| PUERTO ACTIVO: ${PORT}                  |`);
+    console.log("==========================================");
 });
