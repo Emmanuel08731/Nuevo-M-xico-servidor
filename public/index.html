@@ -3,85 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevRoot | Dashboard Director</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>DevRoot | Emmanuel Store Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="toast" class="toast-hidden"></div>
-
-    <div id="auth-screen" class="full-page">
-        <div class="auth-card">
-            <div class="auth-brand">
-                <h1>Dev<span>Root</span></h1>
-                <p>Infraestructura Digital v6.0</p>
-            </div>
-            <div class="auth-fields">
-                <h2 id="auth-title">Iniciar Sesión</h2>
-                <div class="field"><i class="fa-solid fa-at"></i><input type="email" id="email" placeholder="Correo"></div>
-                <div class="field"><i class="fa-solid fa-key"></i><input type="password" id="pass" placeholder="Contraseña"></div>
-                <button onclick="runAuth()" id="btn-auth">Conectar</button>
-                <p class="switcher" onclick="switchAuth()">¿Necesitas una cuenta? <span>Regístrate</span></p>
-            </div>
+    <div id="toast-container">
+        <div id="toast" class="toast-hidden">
+            <i class="fa-solid fa-bell"></i>
+            <span id="toast-msg">Mensaje del sistema</span>
         </div>
     </div>
 
-    <div id="dashboard" class="hidden">
-        <nav class="glass-nav">
-            <div class="nav-left">
-                <div class="nav-logo">Dev<span>Root</span></div>
-            </div>
-            <div class="nav-right">
-                <div class="user-profile" onclick="toggleDrop()">
-                    <span id="display-name">Emmanuel</span>
-                    <div class="avatar-circle">E</div>
+    <section id="auth-screen" class="full-viewport">
+        <div class="auth-card animate-fade-in">
+            <div class="auth-brand-side">
+                <div class="brand-content">
+                    <h1>Dev<span>Root</span></h1>
+                    <p>Infraestructura Digital v6.0.4</p>
+                    <div class="status-pill">SISTEMA ONLINE</div>
                 </div>
-                <div id="user-drop" class="drop-hidden">
-                    <div class="drop-info">
+                <div class="brand-footer">
+                    <span>© 2026 EMMANUEL DIRECTOR</span>
+                </div>
+            </div>
+            <div class="auth-form-side">
+                <div class="form-header">
+                    <h2 id="auth-title">Iniciar Sesión</h2>
+                    <p>Introduce tus credenciales para conectar al nodo.</p>
+                </div>
+                <div class="form-body">
+                    <div class="input-field">
+                        <label>Correo Electrónico</label>
+                        <div class="input-wrapper">
+                            <i class="fa-regular fa-envelope"></i>
+                            <input type="email" id="email" placeholder="ejemplo@devroot.com">
+                        </div>
+                    </div>
+                    <div class="input-field">
+                        <label>Llave de Acceso</label>
+                        <div class="input-wrapper">
+                            <i class="fa-regular fa-lock"></i>
+                            <input type="password" id="pass" placeholder="••••••••">
+                        </div>
+                    </div>
+                    <button onclick="handleAuthAction()" id="btn-auth" class="btn-primary">Sincronizar Nodo</button>
+                    <div class="form-footer">
+                        <p id="switch-text">¿No eres miembro aún? <span onclick="toggleAuthMode()">Crea una cuenta</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="dashboard" class="hidden dashboard-layout">
+        <header class="main-header">
+            <div class="header-left">
+                <div class="nav-logo">Dev<span>Root</span></div>
+                <div class="version-tag">v6.0</div>
+            </div>
+            <div class="header-right">
+                <div class="user-control" onclick="toggleDropdown()">
+                    <span id="nav-user-name">Emmanuel</span>
+                    <div class="user-avatar">E</div>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </div>
+                <div id="user-dropdown" class="drop-hidden animate-slide-down">
+                    <div class="drop-header">
                         <strong id="drop-user">Emmanuel</strong>
                         <p>Director de Proyectos</p>
                     </div>
-                    <button onclick="openSettings()"><i class="fa-solid fa-sliders"></i> Configuración</button>
-                    <button onclick="exit()" class="danger-text"><i class="fa-solid fa-power-off"></i> Cerrar Sesión</button>
+                    <ul class="drop-list">
+                        <li onclick="openModal('config-modal')"><i class="fa-solid fa-sliders"></i> Configuración</li>
+                        <li onclick="logout()" class="danger-item"><i class="fa-solid fa-power-off"></i> Cerrar Sesión</li>
+                    </ul>
                 </div>
             </div>
-        </nav>
+        </header>
 
-        <main class="app-layout">
-            <aside class="sidebar">
-                <button class="active"><i class="fa-solid fa-house"></i> Feed Principal</button>
-                <button><i class="fa-solid fa-rocket"></i> VibeBlox</button>
-                <button><i class="fa-solid fa-server"></i> Emerald Hosting</button>
-            </aside>
-
-            <section class="main-feed">
-                <div class="embed-empty">
-                    <div class="embed-icon"><i class="fa-solid fa-layer-group"></i></div>
-                    <h3>No hay publicaciones todavía</h3>
-                    <p>Cuando el Director publique algo, aparecerá en este nodo central.</p>
+        <div class="app-body">
+            <aside class="sidebar-nav">
+                <div class="nav-links">
+                    <button class="nav-btn active"><i class="fa-solid fa-house"></i> Feed Principal</button>
+                    <button class="nav-btn" onclick="msg('Acceso a VibeBlox bloqueado...')"><i class="fa-solid fa-shirt"></i> VibeBlox Store</button>
+                    <button class="nav-btn" onclick="msg('Conectando a Emerald...')"><i class="fa-solid fa-server"></i> Emerald Hosting</button>
+                    <button class="nav-btn" onclick="msg('Cargando Vexo Bot...')"><i class="fa-solid fa-robot"></i> Vexo Bot</button>
                 </div>
-            </section>
-
-            <aside class="status-bar">
-                <div class="status-card">
-                    <h4>Estado del Sistema</h4>
-                    <div class="status-item"><span class="dot online"></span> Nodo: Operativo</div>
-                    <div class="status-item"><span class="dot online"></span> Database: Conectada</div>
+                <div class="sidebar-footer">
+                    <p>Estado del Nodo: <span>Activo</span></p>
                 </div>
             </aside>
-        </main>
-    </div>
 
-    <div id="modal-settings" class="modal-hidden">
-        <div class="modal-box">
-            <h3>Gestión de Cuenta</h3>
-            <p>Ajustes avanzados para tu perfil.</p>
-            <div class="danger-box">
-                <p>Eliminar permanentemente tu acceso al nodo.</p>
-                <button onclick="destroyAccount()">Eliminar Cuenta</button>
+            <main class="feed-area">
+                <div class="feed-container animate-fade-in">
+                    <div class="embed-card">
+                        <div class="embed-header">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span>PUBLICACIÓN DEL DIRECTOR</span>
+                        </div>
+                        <div class="embed-body">
+                            <div class="empty-state">
+                                <div class="pulse-circle">
+                                    <i class="fa-regular fa-folder-open"></i>
+                                </div>
+                                <h3>No hay publicaciones todavía</h3>
+                                <p>El flujo de datos está en espera. Las actualizaciones del Director Emmanuel aparecerán en este bloque.</p>
+                            </div>
+                        </div>
+                        <div class="embed-footer">
+                            <span>Sincronizado hace: 1m</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <aside class="stats-sidebar">
+                <div class="card-stat">
+                    <h4>Actividad del Nodo</h4>
+                    <div class="log-list">
+                        <div class="log-item"><span>14:00</span> Login Emmanuel</div>
+                        <div class="log-item"><span>13:45</span> Database OK</div>
+                        <div class="log-item"><span>12:30</span> DevRoot v6.0.4 Online</div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <div id="config-modal" class="modal-overlay hidden">
+            <div class="modal-box animate-pop-in">
+                <div class="modal-header">
+                    <h3>Gestión de Perfil</h3>
+                    <button onclick="closeModal('config-modal')"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-content">
+                    <div class="settings-group">
+                        <label>Zona de Peligro</label>
+                        <p>Eliminar tu cuenta borrará permanentemente tu acceso al nodo DevRoot.</p>
+                        <button onclick="confirmDeleteAccount()" class="btn-danger">Eliminar Cuenta</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeModal('config-modal')" class="btn-ghost">Regresar</button>
+                </div>
             </div>
-            <button class="close-btn" onclick="closeSettings()">Regresar</button>
         </div>
     </div>
 
