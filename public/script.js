@@ -1,65 +1,128 @@
-let isLogin = true;
-let currentUser = null;
+/**
+ * DEVROOT INTERFACE LOGIC v6.0.4
+ * DIRECTOR: EMMANUEL
+ */
 
+let isLoginMode = true;
+let sessionUser = null;
+
+// SISTEMA DE NOTIFICACIONES (TOAST)
 function msg(text) {
     const toast = document.getElementById('toast');
-    toast.innerText = text;
+    const toastMsg = document.getElementById('toast-msg');
+    
+    toastMsg.innerText = text;
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3000);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3500);
 }
 
-function switchAuth() {
-    isLogin = !isLogin;
-    document.getElementById('auth-title').innerText = isLogin ? "Iniciar Sesión" : "Crear Perfil";
-    document.getElementById('btn-auth').innerText = isLogin ? "Conectar" : "Inicializar";
+// CAMBIO DE MODO: LOGIN / REGISTRO
+function toggleAuthMode() {
+    isLoginMode = !isLoginMode;
+    const title = document.getElementById('auth-title');
+    const btn = document.getElementById('btn-auth');
+    const switchText = document.getElementById('switch-text');
+    
+    if (isLoginMode) {
+        title.innerText = "Iniciar Sesión";
+        btn.innerText = "Sincronizar Nodo";
+        switchText.innerHTML = '¿No eres miembro aún? <span onclick="toggleAuthMode()">Crea una cuenta</span>';
+    } else {
+        title.innerText = "Crear Cuenta";
+        btn.innerText = "Inicializar Nodo";
+        switchText.innerHTML = '¿Ya tienes acceso? <span onclick="toggleAuthMode()">Inicia sesión</span>';
+    }
 }
 
-async function runAuth() {
+// ACCIÓN DE AUTENTICACIÓN
+async function handleAuthAction() {
     const email = document.getElementById('email').value;
     const pass = document.getElementById('pass').value;
-    const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+    const url = isLoginMode ? '/api/auth/login' : '/api/auth/register';
 
-    if(!email || !pass) return msg("Completa todos los campos");
+    if (!email || !pass) return msg("Identidad incompleta");
 
-    const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ email, password: pass, username: "Emmanuel Director" })
-    });
-
-    const data = await res.json();
-
-    if(res.ok) {
-        if(isLogin) {
-            currentUser = data.user;
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-            document.getElementById('display-name').innerText = data.user.name;
-            document.getElementById('drop-user').innerText = data.user.name;
-            msg("Nodo Conectado Correctamente");
-        } else {
-            msg("Perfil creado en la base de datos");
-            switchAuth();
-        }
-    } else {
-        msg(data.error || "Error de conexión");
-    }
-}
-
-function toggleDrop() { document.getElementById('user-drop').classList.toggle('drop-hidden'); }
-function openSettings() { document.getElementById('modal-settings').classList.remove('modal-hidden'); toggleDrop(); }
-function closeSettings() { document.getElementById('modal-settings').classList.add('modal-hidden'); }
-
-async function destroyAccount() {
-    if(confirm("¿Eliminar perfil de DevRoot permanentemente?")) {
-        await fetch('/api/auth/delete', {
+    try {
+        const response = await fetch(url, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email: currentUser.email })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                email, 
+                password: pass, 
+                username: email.split('@')[0] 
+            })
         });
-        msg("Cuenta eliminada del sistema");
-        setTimeout(() => location.reload(), 2000);
+
+        const data = await response.json();
+
+        if (response.ok) {
+            if (isLoginMode) {
+                sessionUser = data.user;
+                msg(`Bienvenido, Director ${data.user.name}`);
+                launchDashboard();
+            } else {
+                msg("Nodo registrado correctamente");
+                toggleAuthMode();
+            }
+        } else {
+            msg(data.error || "Falla en el protocolo");
+        }
+    } catch (err) {
+        msg("Error crítico de conexión");
     }
 }
 
-function exit() { location.reload(); }
+// LANZAR EL DASHBOARD
+function launchDashboard() {
+    document.getElementById('auth-screen').classList.add('hidden');
+    const dash = document.getElementById('dashboard');
+    dash.classList.remove('hidden');
+    
+    document.getElementById('nav-user-name').innerText = sessionUser.name;
+    document.getElementById('drop-user').innerText = sessionUser.name;
+}
+
+// GESTIÓN DE MENÚ DESPLEGABLE
+function toggleDropdown() {
+    document.getElementById('user-dropdown').classList.toggle('drop-hidden');
+}
+
+// GESTIÓN DE MODALES
+function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+    if (id === 'config-modal') toggleDropdown();
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+}
+
+// ELIMINAR CUENTA
+async function confirmDeleteAccount() {
+    if (confirm("¿Estás seguro de eliminar permanentemente este nodo?")) {
+        const response = await fetch('/api/auth/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: sessionUser.email })
+        });
+        
+        if (response.ok) {
+            msg("Nodo eliminado. Reiniciando...");
+            setTimeout(() => logout(), 2000);
+        }
+    }
+}
+
+function logout() {
+    location.reload();
+}
+
+// CERRAR DROPDOWN AL HACER CLICK AFUERA
+window.onclick = function(event) {
+    if (!event.target.closest('.user-control')) {
+        document.getElementById('user-dropdown').classList.add('drop-hidden');
+    }
+}
