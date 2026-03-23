@@ -3,170 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Core Platform | High Performance UI</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+    <title>Platform Pro | Sistema de Gestión</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    
-    <div id="notif-system" class="notif-hidden">
-        <div class="notif-content">
-            <div id="notif-bar"></div>
-            <i id="notif-icon" class="fa-solid fa-circle-info"></i>
-            <span id="notif-msg">Inicializando sistema...</span>
+
+    <div id="alert-container"></div>
+
+    <div id="screen-loader">
+        <div class="loader-content">
+            <div class="logo-text">System<span>Pro</span></div>
+            <div class="progress-bar"><span></span></div>
         </div>
     </div>
 
-    <div id="global-loader">
-        <div class="loader-box">
-            <div class="spinner"></div>
-            <h1 class="loader-logo">System<span>Core</span></h1>
-        </div>
-    </div>
-
-    <section id="auth-view">
-        <div class="auth-container animate-fade-up">
-            <div class="auth-panel">
-                <div class="panel-header">
-                    <h2 class="logo">System<span>Core</span></h2>
-                    <p>Acceso a la infraestructura global de datos.</p>
+    <section id="auth-section">
+        <div class="glass-card animate-entry">
+            <div class="auth-visual">
+                <div class="visual-top">
+                    <h1>System<span>Pro</span></h1>
+                    <p>La nueva era de la gestión digital.</p>
                 </div>
-                <div class="panel-footer">
-                    <div class="status-dot"></div>
-                    <span>Servidores Operativos</span>
+                <div class="visual-bottom">
+                    <div class="badge">V15.0 FAST</div>
                 </div>
             </div>
 
-            <div class="auth-content">
-                <div class="form-container">
-                    <div class="form-header">
-                        <h3 id="form-title">Iniciar Sesión</h3>
-                        <p id="form-desc">Introduce tus credenciales autorizadas.</p>
-                    </div>
+            <div class="auth-fields">
+                <div id="form-box">
+                    <header>
+                        <h2 id="ui-title">Bienvenido</h2>
+                        <p id="ui-subtitle">Introduce tus datos para continuar.</p>
+                    </header>
 
-                    <div class="form-body">
-                        <div class="input-wrapper hidden" id="box-user">
+                    <div class="input-stack">
+                        <div class="field hidden" id="field-user">
                             <i class="fa-regular fa-user"></i>
-                            <input type="text" id="inp-user" placeholder=" " autocomplete="off">
-                            <label>Nombre de Usuario</label>
-                            <div class="input-line"></div>
+                            <input type="text" id="in-user" placeholder=" " autocomplete="off">
+                            <label>Usuario</label>
                         </div>
 
-                        <div class="input-wrapper">
+                        <div class="field">
                             <i class="fa-regular fa-envelope"></i>
-                            <input type="text" id="inp-id" placeholder=" " autocomplete="off">
+                            <input type="text" id="in-id" placeholder=" " autocomplete="off">
                             <label id="lbl-id">Email o Usuario</label>
-                            <div class="input-line"></div>
                         </div>
 
-                        <div class="input-wrapper">
+                        <div class="field">
                             <i class="fa-regular fa-lock"></i>
-                            <input type="password" id="inp-pass" placeholder=" " autocomplete="off">
-                            <label>Contraseña Maestra</label>
-                            <div class="input-line"></div>
-                            <button class="btn-toggle-pass" onclick="togglePassView()">
-                                <i id="eye-icon" class="fa-regular fa-eye"></i>
-                            </button>
+                            <input type="password" id="in-pass" placeholder=" " autocomplete="off">
+                            <label>Contraseña</label>
+                            <button class="toggle-eye" onclick="togglePass()"><i class="fa-regular fa-eye"></i></button>
                         </div>
-
-                        <button class="btn-submit" onclick="handleAuth()">
-                            <span id="btn-label">ACCEDER AL SISTEMA</span>
-                            <div class="btn-spinner hidden"></div>
-                        </button>
                     </div>
 
-                    <div class="form-footer">
-                        <span id="hint-text">¿No tienes acceso todavía?</span>
-                        <button onclick="switchAuthMode()" id="btn-mode">Crear Cuenta</button>
-                    </div>
+                    <button class="btn-action" onclick="submitAuth()">
+                        <span id="btn-text">INICIAR SESIÓN</span>
+                        <div class="spinner hidden"></div>
+                    </button>
+
+                    <footer>
+                        <span id="foot-hint">¿No tienes una cuenta?</span>
+                        <button onclick="toggleMode()" id="btn-switch">Crear Cuenta</button>
+                    </footer>
                 </div>
             </div>
         </div>
     </section>
 
-    <main id="app-view" class="hidden">
-        <nav class="top-nav">
-            <div class="nav-wrapper">
-                <div class="nav-left">
-                    <h1 class="nav-logo">System<span>Core</span></h1>
-                    
-                    <div class="search-engine">
-                        <div class="search-input-group">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            <input type="text" id="search-input" placeholder="Buscar usuarios o contenido..." oninput="executeSearch(this.value)">
-                            <div class="search-loader hidden" id="s-loader"></div>
-                        </div>
-
-                        <div id="search-panel" class="search-panel-hidden">
-                            <div class="search-section">
-                                <header>USUARIOS REGISTRADOS</header>
-                                <div id="results-users" class="results-list">
-                                    </div>
-                            </div>
-                            <div class="search-section">
-                                <header>PUBLICACIONES</header>
-                                <div id="results-posts" class="results-list">
-                                    </div>
-                            </div>
-                            <div class="search-footer">
-                                Presiona ESC para cerrar
-                            </div>
-                        </div>
-                    </div>
+    <main id="app-section" class="hidden">
+        <nav class="header-nav">
+            <div class="nav-container">
+                <div class="brand">System<span>Pro</span></div>
+                
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="search-in" placeholder="Buscar personas..." oninput="doSearch(this.value)">
+                    <div id="search-drop" class="drop-hidden"></div>
                 </div>
 
-                <div class="nav-right">
-                    <div class="nav-actions">
-                        <button class="btn-icon"><i class="fa-regular fa-bell"></i></button>
-                        <div class="user-trigger" onclick="toggleUserMenu()">
-                            <div class="user-meta">
-                                <span id="nav-user-name">Usuario</span>
-                                <small>Nivel 1</small>
-                            </div>
-                            <div class="user-badge" id="nav-user-init">U</div>
-                            
-                            <div id="user-menu" class="menu-hidden">
-                                <div class="menu-info">
-                                    <p id="menu-email">invitado@core.com</p>
-                                </div>
-                                <ul>
-                                    <li><i class="fa-solid fa-sliders"></i> Preferencias</li>
-                                    <li class="danger" onclick="location.reload()">
-                                        <i class="fa-solid fa-power-off"></i> Finalizar Sesión
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
+                <div class="user-control" onclick="toggleMenu()">
+                    <div class="avatar" id="u-init">U</div>
+                    <div class="user-data">
+                        <span id="u-name">Usuario</span>
+                        <small>Online</small>
+                    </div>
+                    <i class="fa-solid fa-chevron-down"></i>
+
+                    <div id="drop-menu" class="drop-hidden">
+                        <ul>
+                            <li onclick="location.reload()"><i class="fa-solid fa-power-off"></i> Salir</li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <div class="app-body">
-            <aside class="sidebar">
-                <ul>
-                    <li class="active"><i class="fa-solid fa-house"></i> Inicio</li>
-                    <li><i class="fa-solid fa-compass"></i> Explorar</li>
-                    <li><i class="fa-solid fa-bookmark"></i> Guardados</li>
-                </ul>
-            </aside>
-
-            <section class="content-feed">
-                <div id="feed-container">
-                    <div class="empty-feed animate-pop">
-                        <div class="empty-visual">
-                            <div class="pulse-ring"></div>
-                            <i class="fa-regular fa-comment-dots"></i>
-                        </div>
-                        <h3>No hay publicaciones</h3>
-                        <p>El sistema no ha detectado actividad reciente en el servidor global.</p>
-                        <button class="btn-refresh" onclick="location.reload()">Actualizar Feed</button>
+        <section class="main-content">
+            <div class="feed-wrapper">
+                <div class="empty-box animate-pop">
+                    <div class="icon-wrap">
+                        <i class="fa-regular fa-folder-open"></i>
                     </div>
+                    <h2>No hay publicaciones</h2>
+                    <p>El contenido aparecerá aquí cuando esté disponible.</p>
                 </div>
-            </section>
-        </div>
+            </div>
+        </section>
     </main>
 
     <script src="script.js"></script>
