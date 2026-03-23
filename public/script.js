@@ -1,179 +1,155 @@
 /**
- * DEVROOT INTERFACE LOGIC v6.0.4
- * GESTIÓN DINÁMICA DE NODOS
+ * DEVROOT INTERFACE CONTROL v6.0.4
  */
 
-// 1. MOTOR DE PARTÍCULAS (CANVAS PHYSICS)
+// 1. MOTOR DE RED (Fondo de Partículas)
 const canvas = document.getElementById('particle-net');
 const ctx = canvas.getContext('2d');
-let dots = [];
+let particles = [];
 
 function initCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    dots = [];
+    particles = [];
     for (let i = 0; i < 80; i++) {
-        dots.push({
+        particles.push({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            vx: (Math.random() - 0.5) * 0.5,
-            vy: (Math.random() - 0.5) * 0.5,
-            size: Math.random() * 2 + 1
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: (Math.random() - 0.5) * 0.4,
+            size: Math.random() * 2 + 0.5
         });
     }
 }
 
-function drawParticles() {
+function drawNet() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#0066ff";
-    ctx.globalAlpha = 0.2;
+    ctx.fillStyle = '#0066ff';
+    ctx.strokeStyle = '#0066ff0a';
 
-    dots.forEach(dot => {
-        dot.x += dot.vx;
-        dot.y += dot.vy;
-        if (dot.x < 0 || dot.x > canvas.width) dot.vx *= -1;
-        if (dot.y < 0 || dot.y > canvas.height) dot.vy *= -1;
+    particles.forEach((p, i) => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
 
         ctx.beginPath();
-        ctx.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
-    });
 
-    requestAnimationFrame(drawParticles);
+        // Dibujar líneas entre partículas cercanas
+        for (let j = i + 1; j < particles.length; j++) {
+            const p2 = particles[j];
+            const dx = p.x - p2.x;
+            const dy = p.y - p2.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 150) {
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+            }
+        }
+    });
+    requestAnimationFrame(drawNet);
 }
 
 window.addEventListener('resize', initCanvas);
 initCanvas();
-drawParticles();
+drawNet();
 
-// 2. SISTEMA DE NOTIFICACIONES (TOAST)
-function notify(title, msg, type = "info") {
-    const toast = document.getElementById('toast-notif');
-    const tTitle = document.getElementById('toast-title');
-    const tBody = document.getElementById('toast-body');
-    
-    tTitle.innerText = title;
-    tBody.innerText = msg;
-    
+// 2. SISTEMA DE NOTIFICACIONES
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-msg').innerText = msg;
     toast.classList.remove('toast-hidden');
-    
-    setTimeout(() => {
-        toast.classList.add('toast-hidden');
-    }, 4000);
+    setTimeout(() => toast.classList.add('toast-hidden'), 4000);
 }
 
-// 3. LÓGICA DE AUTENTICACIÓN
-let isLoginMode = true;
+// 3. GESTIÓN DE AUTENTICACIÓN
+let isLogin = true;
 let currentUser = null;
 
-function switchAuthMode() {
-    isLoginMode = !isLoginMode;
-    const title = document.getElementById('auth-title-text');
-    const btn = document.getElementById('btn-label');
-    const link = document.getElementById('auth-link');
-    const switchP = document.getElementById('auth-switch-p');
+function switchMode() {
+    isLogin = !isLogin;
+    document.querySelector('.auth-header h2').innerText = isLogin ? "Acceso al Nodo" : "Crear Nodo";
+    document.getElementById('btn-text').innerText = isLogin ? "Conectar" : "Inicializar";
+    document.getElementById('mode-text').innerHTML = isLogin ? 
+        '¿No tienes cuenta? <span onclick="switchMode()" id="switch-link">Registrar ahora</span>' : 
+        '¿Ya tienes acceso? <span onclick="switchMode()" id="switch-link">Volver al login</span>';
+}
 
-    if (isLoginMode) {
-        title.innerText = "Bienvenido al Nodo";
-        btn.innerText = "Iniciar Sesión";
-        switchP.innerHTML = '¿Aún no tienes un nodo? <span onclick="switchAuthMode()" id="auth-link">Registrar Acceso</span>';
+function togglePassView() {
+    const input = document.getElementById('password');
+    const icon = document.getElementById('eye-icon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
     } else {
-        title.innerText = "Crear Nuevo Acceso";
-        btn.innerText = "Inicializar Nodo";
-        switchP.innerHTML = '¿Ya tienes un nodo activo? <span onclick="switchAuthMode()" id="auth-link">Volver al Login</span>';
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
     }
 }
 
-function togglePassword() {
-    const passInput = document.getElementById('pass-in');
-    const eyeIcon = document.getElementById('pass-eye');
-    if (passInput.type === 'password') {
-        passInput.type = 'text';
-        eyeIcon.classList.replace('fa-eye', 'fa-eye-slash');
-    } else {
-        passInput.type = 'password';
-        eyeIcon.classList.replace('fa-eye-slash', 'fa-eye');
-    }
-}
+async function handleAuth() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
 
-async function processAuth() {
-    const email = document.getElementById('email-in').value;
-    const password = document.getElementById('pass-in').value;
-    const url = isLoginMode ? '/api/auth/login' : '/api/auth/register';
-
-    if (!email || !password) return notify("Error", "Completa todos los campos obligatorios.");
+    if (!email || !password) return showToast("Faltan credenciales.");
 
     try {
-        const response = await fetch(url, {
+        const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
 
-        const data = await response.json();
-
-        if (response.ok) {
-            if (isLoginMode) {
+        const data = await res.json();
+        if (res.ok) {
+            if (isLogin) {
                 currentUser = data.user;
-                notify("Sincronizado", "Acceso concedido al servidor.");
+                showToast("Conexión segura establecida.");
                 launchDashboard();
             } else {
-                notify("Éxito", "Nodo registrado. Ahora puedes iniciar sesión.");
-                switchAuthMode();
+                showToast("Nodo registrado. Inicia sesión.");
+                switchMode();
             }
         } else {
-            notify("Acceso Denegado", data.error);
+            showToast(data.error);
         }
     } catch (err) {
-        notify("Fallo de Red", "No se pudo conectar con el motor DevRoot.");
+        showToast("Fallo de conexión.");
     }
 }
 
-// 4. TRANSICIÓN AL DASHBOARD
 function launchDashboard() {
-    document.getElementById('auth-gateway').classList.add('hidden');
-    document.getElementById('main-dashboard').classList.remove('hidden');
-    document.getElementById('user-name-display').innerText = currentUser.email;
-    document.getElementById('avatar-char').innerText = currentUser.email[0].toUpperCase();
+    document.getElementById('login-screen').classList.replace('screen-active', 'hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    document.getElementById('display-user').innerText = currentUser.email;
+    document.getElementById('user-initial').innerText = currentUser.email[0].toUpperCase();
 }
 
-// 5. GESTIÓN DE UI DASHBOARD
-function toggleUserDropdown() {
-    document.getElementById('user-dropdown').classList.toggle('drop-hidden');
-}
+// 4. CONTROL DE DASHBOARD
+function toggleUserMenu() { document.getElementById('user-menu').classList.toggle('menu-hidden'); }
+function showModal(id) { document.getElementById(id).classList.remove('hidden'); toggleUserMenu(); }
+function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-function showModal(id) {
-    document.getElementById(id).classList.remove('hidden');
-    toggleUserDropdown();
-}
-
-function hideModal(id) {
-    document.getElementById(id).classList.add('hidden');
-}
-
-async function initiateAccountDestruction() {
-    if (confirm("¿Estás absolutamente seguro de purgar este nodo?")) {
-        const res = await fetch('/api/auth/delete', {
+async function deleteAccount() {
+    if (confirm("¿Estás seguro de purgar permanentemente este nodo?")) {
+        await fetch('/api/auth/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: currentUser.email })
         });
-        
-        if (res.ok) {
-            notify("Purga Completa", "El nodo ha sido eliminado.");
-            setTimeout(() => location.reload(), 2000);
-        }
+        location.reload();
     }
 }
 
-function logoutProcedure() {
-    notify("Desconexión", "Cerrando sesión segura...");
-    setTimeout(() => location.reload(), 1500);
-}
-
-// Cerrar dropdown si se hace click fuera
-window.onclick = function(event) {
-    if (!event.target.closest('.user-profile-btn')) {
-        document.getElementById('user-dropdown').classList.add('drop-hidden');
+// Cerrar dropdown si se clickea fuera
+window.onclick = (e) => {
+    if (!e.target.closest('.nav-user')) {
+        document.getElementById('user-menu').classList.add('menu-hidden');
     }
 }
