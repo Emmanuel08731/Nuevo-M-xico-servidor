@@ -1,113 +1,152 @@
 /**
- * ==========================================================
- * DEVROOT CORE ENGINE - v6.0.4
- * INFRAESTRUCTURA DE ALTO RENDIMIENTO
- * ==========================================================
+ * ==============================================================================
+ * DEVROOT CORE ENGINE v6.0.4 - ENTERPRISE EDITION
+ * AUTHOR: EMMANUEL | DIGITAL PROJECTS
+ * ==============================================================================
  */
+
 const express = require('express');
 const path = require('path');
 const helmet = require('helmet');
 const compression = require('compression');
 const bcrypt = require('bcryptjs');
+const morgan = require('morgan');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// BASE DE DATOS EN MEMORIA VOLÁTIL
+// --- BASE DE DATOS VOLÁTIL (ESTRUCTURA DE ALTA DISPONIBILIDAD) ---
 let usersDB = []; 
-let accessLogs = [];
+let sessionRegistry = new Map();
+let systemAuditLogs = [];
 
-// MIDDLEWARES DE OPTIMIZACIÓN
-app.use(compression());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// SEGURIDAD DE CABECERAS
+/**
+ * CONFIGURACIÓN DE MIDDLEWARES
+ * Optimizando para Render y despliegue rápido.
+ */
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+            scriptSrc: ["'self'", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
             styleSrc: ["'self'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
             fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
-            imgSrc: ["'self'", "data:"],
-        },
-    },
+            imgSrc: ["'self'", "data:", "https://images.rbxcdn.com"],
+            connectSrc: ["'self'"]
+        }
+    }
 }));
 
-// SERVIDOR DE ARCHIVOS ESTÁTICOS
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(compression()); // Comprime respuestas para carga instantánea
+app.use(express.json()); // Parseo de JSON
+app.use(express.urlencoded({ extended: true })); // Parseo de formularios
+app.use(morgan('dev')); // Logs de consola profesionales
+
+// --- SERVICIO DE ACTIVOS ESTÁTICOS ---
+const staticOptions = {
+    dotfiles: 'ignore',
+    etag: true,
+    index: "index.html",
+    maxAge: '1d',
+    redirect: false,
+    setHeaders: (res, path) => {
+        res.set('x-timestamp', Date.now());
+    }
+};
+
+app.use(express.static(path.join(__dirname, 'public'), staticOptions));
 
 /**
- * ENDPOINTS DE AUTENTICACIÓN
+ * PROTOCOLO DE AUTENTICACIÓN AVANZADA
  */
 
 // REGISTRO DE NUEVOS NODOS
 app.post('/api/auth/register', async (req, res) => {
     const { email, password } = req.body;
-    
-    if (!email || !password) {
-        return res.status(400).json({ error: "Credenciales incompletas" });
+
+    // Validación de integridad
+    if (!email || !password || password.length < 6) {
+        return res.status(400).json({ 
+            success: false, 
+            error: "La contraseña debe tener al menos 6 caracteres." 
+        });
     }
 
-    const userExists = usersDB.find(u => u.email === email);
-    if (userExists) {
-        return res.status(409).json({ error: "El nodo ya existe en la red" });
+    const collision = usersDB.find(u => u.email === email);
+    if (collision) {
+        return res.status(409).json({ 
+            success: false, 
+            error: "Conflicto: El email ya está vinculado a un nodo activo." 
+        });
     }
 
     try {
         const salt = await bcrypt.genSalt(12);
         const hashedPassword = await bcrypt.hash(password, salt);
         
-        usersDB.push({
-            id: Date.now(),
+        const newUser = {
+            id: `node_${Date.now()}`,
             email: email,
             password: hashedPassword,
-            createdAt: new Date()
-        });
+            status: "active",
+            createdAt: new Date().toISOString()
+        };
 
-        res.status(201).json({ success: true, message: "Nodo inicializado" });
+        usersDB.push(newUser);
+        systemAuditLogs.push(`[REG] Nuevo nodo creado: ${email} a las ${new Date().toISOString()}`);
+        
+        res.status(201).json({ success: true, message: "Nodo inicializado con éxito." });
     } catch (err) {
-        res.status(500).json({ error: "Fallo en el protocolo de cifrado" });
+        res.status(500).json({ success: false, error: "Error interno en el módulo de cifrado." });
     }
 });
 
-// ACCESO AL DASHBOARD
+// LOGIN Y ACCESO MAESTRO
 app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
 
     const user = usersDB.find(u => u.email === email);
     if (!user) {
-        return res.status(401).json({ error: "Identidad no encontrada" });
+        return res.status(401).json({ success: false, error: "Credenciales de acceso no válidas." });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-        return res.status(401).json({ error: "Llave de acceso incorrecta" });
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+        return res.status(401).json({ success: false, error: "Llave de acceso incorrecta." });
     }
 
-    accessLogs.push({ user: email, time: new Date() });
-    res.json({ success: true, user: { email: user.email } });
+    // Registro de sesión
+    const token = `session_${Math.random().toString(36).substr(2, 9)}`;
+    sessionRegistry.set(token, email);
+    
+    systemAuditLogs.push(`[LOG] Acceso concedido a: ${email}`);
+    
+    res.json({ 
+        success: true, 
+        user: { email: user.email, sessionToken: token } 
+    });
 });
 
-// ELIMINACIÓN PERMANENTE
+// DESTRUCCIÓN DE REGISTROS (CONFIGURACIÓN)
 app.post('/api/auth/delete', (req, res) => {
     const { email } = req.body;
-    const initialSize = usersDB.length;
+    const initialCount = usersDB.length;
     usersDB = usersDB.filter(u => u.email !== email);
 
-    if (usersDB.length < initialSize) {
-        return res.json({ success: true });
+    if (usersDB.length < initialCount) {
+        systemAuditLogs.push(`[DEL] Nodo destruido: ${email}`);
+        return res.json({ success: true, message: "Registro eliminado permanentemente." });
     }
-    res.status(404).json({ error: "No se pudo localizar el nodo para destrucción" });
+    res.status(404).json({ success: false, error: "No se encontró el nodo especificado." });
 });
 
-// MANEJO DE ERRORES GLOBALES
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Error interno en el núcleo DevRoot');
-});
-
+/**
+ * LANZAMIENTO DEL SISTEMA
+ */
 app.listen(PORT, () => {
-    console.log(`[DEVROOT] Sistema operando en puerto: ${PORT}`);
+    console.log("-----------------------------------------");
+    console.log(`| DEVROOT ENGINE v6.0.4 IS ONLINE       |`);
+    console.log(`| PORT: ${PORT}                            |`);
+    console.log(`| STATUS: SECURE & STABLE               |`);
+    console.log("-----------------------------------------");
 });
