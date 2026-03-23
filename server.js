@@ -1,8 +1,7 @@
 /**
  * ==============================================================================
- * DEVROOT CORE ENGINE - V10.0.4
- * AUTHOR: EMMANUEL
- * DESCRIPTION: SISTEMA DE GESTIÓN DE IDENTIDAD Y NODOS DE DATOS
+ * CENTRAL CORE PLATFORM - V11.0.0
+ * SISTEMA DE GESTIÓN DE CONTENIDO Y USUARIOS
  * ==============================================================================
  */
 
@@ -10,180 +9,106 @@ const express = require('express');
 const path = require('path');
 const helmet = require('helmet');
 const compression = require('compression');
-const morgan = require('morgan');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-/**
- * CONFIGURACIÓN DE SEGURIDAD Y RENDIMIENTO
- * Optimizado para despliegue en Render/Vercel
- */
-app.use(helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false
-}));
-app.use(compression());
-app.use(express.json({ limit: '10mb' }));
+// Configuración de Seguridad Básica (Sin dependencias externas pesadas)
+app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan('dev'));
+app.use(compression());
 
 /**
- * DATABASE EMULATOR (PERSISTENCIA VOLÁTIL)
- * Estructura de datos optimizada para búsqueda rápida
+ * ALMACENAMIENTO DINÁMICO
  */
-const DATA_KERNEL = {
-    users: [],
-    logs: [],
-    sessions: new Map(),
-    stats: {
-        total_requests: 0,
-        failed_auths: 0,
-        successful_registrations: 0
+const DATABASE = {
+    accounts: [], // Estructura: { user, email, pass, id }
+    posts: [],    // Estructura: { id, author, content, date }
+    analytics: {
+        searches: 0,
+        access_logs: []
     }
 };
 
-/**
- * SERVIDOR DE ARCHIVOS ESTÁTICOS
- */
-app.use(express.static(path.join(__dirname, 'public'), {
-    maxAge: '1d',
-    setHeaders: (res, path) => {
-        res.set('X-Server-Source', 'DevRoot-Node-Core');
-    }
-}));
+app.use(express.static(path.join(__dirname, 'public')));
 
 /**
- * MIDDLEWARE: AUDITORÍA DE ACCESO
+ * ENDPOINTS DE BÚSQUEDA (SEARCH ENGINE)
  */
-app.use((req, res, next) => {
-    DATA_KERNEL.stats.total_requests++;
-    const logEntry = {
-        timestamp: new Date().toISOString(),
-        method: req.method,
-        path: req.path,
-        ip: req.ip
-    };
-    DATA_KERNEL.logs.push(logEntry);
-    if (DATA_KERNEL.logs.length > 100) DATA_KERNEL.logs.shift();
-    next();
-});
+app.get('/api/search', (req, res) => {
+    const query = req.query.q ? req.query.q.toLowerCase() : '';
+    DATABASE.analytics.searches++;
 
-/**
- * ENDPOINT: REGISTRO DE USUARIO (POST /api/auth/signup)
- */
-app.post('/api/auth/signup', (req, res) => {
-    const { email, password, username } = req.body;
+    // Búsqueda en Usuarios
+    const filteredUsers = DATABASE.accounts.filter(u => 
+        u.user.toLowerCase().includes(query)
+    ).map(u => ({ user: u.user, id: u.id }));
 
-    // Validación de integridad de datos
-    if (!email || !password) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "Error Crítico: El payload está incompleto." 
-        });
-    }
+    // Búsqueda en Publicaciones (Actualmente vacías)
+    const filteredPosts = DATABASE.posts.filter(p => 
+        p.content.toLowerCase().includes(query)
+    );
 
-    // Verificación de duplicados
-    const userExists = DATA_KERNEL.users.find(u => u.email === email);
-    if (userExists) {
-        return res.status(409).json({ 
-            success: false, 
-            message: "Conflicto: La identidad ya existe en el núcleo." 
-        });
-    }
-
-    // Inserción en el núcleo
-    const newUser = {
-        uid: `DBX-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-        email: email.toLowerCase(),
-        password: password, // En producción usar bcrypt
-        username: username || email.split('@')[0],
-        createdAt: new Date().toISOString(),
-        role: "DEVELOPER"
-    };
-
-    DATA_KERNEL.users.push(newUser);
-    DATA_KERNEL.stats.successful_registrations++;
-
-    console.log(`[AUTH] Registro exitoso: ${newUser.uid}`);
-
-    return res.status(201).json({
-        success: true,
-        message: "Nodo de usuario creado correctamente.",
-        redirect: "/login"
+    res.json({
+        users: filteredUsers,
+        posts: filteredPosts,
+        count: filteredUsers.length + filteredPosts.length
     });
 });
 
 /**
- * ENDPOINT: ACCESO AL SISTEMA (POST /api/auth/signin)
+ * SISTEMA DE REGISTRO (SIGNUP)
  */
-app.post('/api/auth/signin', (req, res) => {
-    const { email, password } = req.body;
+app.post('/api/auth/register', (req, res) => {
+    const { user, email, password } = req.body;
 
-    const user = DATA_KERNEL.users.find(u => 
-        u.email === email.toLowerCase() && u.password === password
-    );
-
-    if (!user) {
-        DATA_KERNEL.stats.failed_auths++;
-        return res.status(401).json({ 
-            success: false, 
-            message: "Denegado: Credenciales no válidas." 
-        });
+    if (!user || !email || !password) {
+        return res.status(400).json({ success: false, msg: "Todos los campos son obligatorios." });
     }
 
-    // Generación de sesión ficticia
-    const sessionToken = `SES-${Date.now()}-${user.uid}`;
-    DATA_KERNEL.sessions.set(sessionToken, user.uid);
+    const exists = DATABASE.accounts.find(a => a.email === email || a.user === user);
+    if (exists) {
+        return res.status(409).json({ success: false, msg: "El usuario o email ya están en uso." });
+    }
 
-    return res.json({
+    const newAccount = {
+        id: Date.now(),
+        user: user.trim(),
+        email: email.toLowerCase().trim(),
+        password: password, // En producción usar hashing
+        joined: new Date().toISOString()
+    };
+
+    DATABASE.accounts.push(newAccount);
+    console.log(`[SYSTEM] Nueva cuenta: ${newAccount.user}`);
+
+    res.status(201).json({ success: true, msg: "Registro completado con éxito." });
+});
+
+/**
+ * SISTEMA DE ACCESO (LOGIN)
+ */
+app.post('/api/auth/login', (req, res) => {
+    const { identity, password } = req.body; // identity puede ser user o email
+
+    const account = DATABASE.accounts.find(a => 
+        (a.email === identity || a.user === identity) && a.password === password
+    );
+
+    if (!account) {
+        return res.status(401).json({ success: false, msg: "Credenciales inválidas." });
+    }
+
+    res.json({
         success: true,
-        message: "Acceso autorizado.",
         user: {
-            email: user.email,
-            username: user.username,
-            uid: user.uid,
-            token: sessionToken
+            username: account.user,
+            email: account.email,
+            id: account.id
         }
     });
 });
 
-/**
- * ENDPOINT: ELIMINAR CUENTA (POST /api/auth/destroy)
- */
-app.post('/api/auth/destroy', (req, res) => {
-    const { email, token } = req.body;
-
-    const initialCount = DATA_KERNEL.users.length;
-    DATA_KERNEL.users = DATA_KERNEL.users.filter(u => u.email !== email);
-
-    if (DATA_KERNEL.users.length < initialCount) {
-        return res.json({ 
-            success: true, 
-            message: "Instancia de usuario destruida permanentemente." 
-        });
-    }
-
-    return res.status(404).json({ 
-        success: false, 
-        message: "Error: No se encontró la instancia para destruir." 
-    });
-});
-
-/**
- * MANEJADOR DE ERRORES 404
- */
-app.use((req, res) => {
-    res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-/**
- * INICIALIZACIÓN DEL KERNEL
- */
 app.listen(PORT, () => {
-    console.log(`\n\x1b[34m------------------------------------------\x1b[0m`);
-    console.log(`\x1b[1m DEVROOT SERVER v10.0.4 IS RUNNING\x1b[0m`);
-    console.log(`\x1b[32m PORT: ${PORT}\x1b[0m`);
-    console.log(`\x1b[32m DATE: ${new Date().toLocaleString()}\x1b[0m`);
-    console.log(`\x1b[34m------------------------------------------\x1b[0m\n`);
+    console.log(`\nCORE ENGINE ONLINE ON PORT ${PORT}\n`);
 });
