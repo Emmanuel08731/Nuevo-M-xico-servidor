@@ -1,172 +1,216 @@
 /**
- * SYSTEM PRO - FRONTEND CONTROLLER
- * SPEED: ULTRA FAST
+ * DEVROOT MASTER CONTROLLER
+ * V22.0.1 - INDUSTRIAL LOGIC
  */
 
-// 1. CARGADOR INICIAL
-window.addEventListener('DOMContentLoaded', () => {
-    const bar = document.querySelector('.progress-bar span');
+// 1. CARGA DEL ENTORNO
+window.addEventListener('load', () => {
+    const bar = document.querySelector('.loader-bar span');
     bar.style.width = '100%';
     
     setTimeout(() => {
-        document.getElementById('screen-loader').style.opacity = '0';
-        setTimeout(() => document.getElementById('screen-loader').style.display = 'none', 600);
-    }, 800);
+        document.getElementById('loading-screen').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('loading-screen').style.display = 'none';
+        }, 800);
+    }, 1200);
 });
 
-// 2. SISTEMA DE ALERTAS (TOASTS)
+// 2. SISTEMA DE TOASTS
 function notify(msg, type = "success") {
-    const container = document.getElementById('alert-container');
+    const wrapper = document.getElementById('toast-wrapper');
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerHTML = `
         <i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-circle-exclamation'}"></i>
         <span>${msg}</span>
     `;
+    wrapper.appendChild(toast);
     
-    container.appendChild(toast);
-    
-    // Eliminar automáticamente
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(-20px)';
         setTimeout(() => toast.remove(), 400);
-    }, 3500);
+    }, 4000);
 }
 
-// 3. CAMBIO DE MODO (LOGIN / REGISTRO)
-let isLogin = true;
+// 3. CONTROL DE AUTENTICACIÓN
+let isLoginMode = true;
 
-function toggleMode() {
-    isLogin = !isLogin;
-    
+function switchAuth() {
+    isLoginMode = !isLoginMode;
     const ui = {
-        title: document.getElementById('ui-title'),
-        sub: document.getElementById('ui-subtitle'),
-        btn: document.getElementById('btn-text'),
-        hint: document.getElementById('foot-hint'),
-        switch: document.getElementById('btn-switch'),
-        userField: document.getElementById('field-user'),
-        lblId: document.getElementById('lbl-id')
+        title: document.getElementById('auth-title'),
+        sub: document.getElementById('auth-subtitle'),
+        label: document.getElementById('btn-label'),
+        hint: document.getElementById('footer-hint'),
+        btn: document.getElementById('footer-btn'),
+        userWrap: document.getElementById('wrap-user'),
+        idLabel: document.getElementById('lbl-id')
     };
 
-    if (!isLogin) {
-        ui.title.innerText = "Crear Cuenta";
-        ui.sub.innerText = "Únete a la plataforma profesional.";
-        ui.btn.innerText = "REGISTRAR CUENTA";
-        ui.hint.innerText = "¿Ya tienes cuenta?";
-        ui.switch.innerText = "Iniciar Sesión";
-        ui.userField.classList.remove('hidden');
-        ui.lblId.innerText = "Correo Electrónico";
+    if (isLoginMode) {
+        ui.title.innerText = "Iniciar Sesión";
+        ui.sub.innerText = "Accede a tu panel de control maestro.";
+        ui.label.innerText = "ACCEDER AL ENTORNO";
+        ui.hint.innerText = "¿No tienes acceso todavía?";
+        ui.btn.innerText = "Crear Cuenta";
+        ui.userWrap.classList.add('hidden');
+        ui.idLabel.innerText = "Email o Usuario";
     } else {
-        ui.title.innerText = "Bienvenido";
-        ui.sub.innerText = "Introduce tus datos para continuar.";
-        ui.btn.innerText = "INICIAR SESIÓN";
-        ui.hint.innerText = "¿No tienes cuenta?";
-        ui.switch.innerText = "Crear Cuenta";
-        ui.userField.classList.add('hidden');
-        ui.lblId.innerText = "Email o Usuario";
+        ui.title.innerText = "Registro DevRoot";
+        ui.sub.innerText = "Únete a la infraestructura global.";
+        ui.label.innerText = "CREAR IDENTIDAD";
+        ui.hint.innerText = "¿Ya eres miembro?";
+        ui.btn.innerText = "Iniciar Sesión";
+        ui.userWrap.classList.remove('hidden');
+        ui.idLabel.innerText = "Correo Electrónico";
     }
 }
 
-// 4. ENVÍO DE DATOS AL NÚCLEO
-async function submitAuth() {
+async function handleAuth() {
     const user = document.getElementById('in-user').value;
     const identity = document.getElementById('in-id').value;
     const pass = document.getElementById('in-pass').value;
-    const btn = document.querySelector('.btn-action');
-    const spinner = btn.querySelector('.spinner');
+    const btn = document.querySelector('.btn-main');
+    const spinner = document.querySelector('.btn-spinner');
 
-    // Validación frontal rápida
-    if (!identity || !pass || (!isLogin && !user)) {
-        return notify("Completa todos los campos.", "error");
+    if (!identity || !pass || (!isLoginMode && !user)) {
+        return notify("Por favor, completa todos los campos requeridos.", "error");
     }
 
-    if (!isLogin && pass.length < 5) {
-        return notify("Contraseña mínima: 5 caracteres.", "error");
+    if (!isLoginMode && pass.length < 5) {
+        return notify("Seguridad insuficiente: Mínimo 5 caracteres.", "error");
     }
 
     // Bloqueo de UI
     btn.disabled = true;
     spinner.classList.remove('hidden');
 
-    const path = isLogin ? '/api/v1/auth/login' : '/api/v1/auth/signup';
-    const payload = isLogin ? { identity, password: pass } : { user, email: identity, password: pass };
+    const endpoint = isLoginMode ? '/api/v1/auth/login' : '/api/v1/auth/signup';
+    const payload = isLoginMode ? { identity, password: pass } : { user, email: identity, password: pass };
 
     try {
-        const res = await fetch(path, {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        const data = await res.json();
+        const data = await response.json();
 
-        if (res.ok) {
-            if (isLogin) {
-                notify("¡Acceso autorizado!");
-                startDashboard(data.user);
+        if (response.ok) {
+            if (isLoginMode) {
+                notify("Credenciales aceptadas.");
+                startApp(data.user);
             } else {
                 notify(data.message);
-                toggleMode();
+                switchAuth();
             }
         } else {
-            // El servidor ahora envía errores específicos como "Cuenta no encontrada"
-            notify(data.error || "Error en la solicitud.", "error");
+            notify(data.error || "Error de comunicación.", "error");
         }
     } catch (e) {
-        notify("No hay conexión con el servidor.", "error");
+        notify("Error de conexión con el núcleo DevRoot.", "error");
     } finally {
         btn.disabled = false;
         spinner.classList.add('hidden');
     }
 }
 
-// 5. MOTOR DE BÚSQUEDA INSTANTÁNEO
-async function doSearch(val) {
-    const drop = document.getElementById('search-drop');
-    if (val.length < 2) {
-        drop.classList.add('drop-hidden');
+// 4. MOTOR DE BÚSQUEDA DUAL
+async function searchGlobal(val) {
+    const panel = document.getElementById('search-results-panel');
+    const pList = document.getElementById('res-people-list');
+    
+    if (val.length < 1) {
+        panel.classList.add('results-hidden');
         return;
     }
 
     try {
-        const res = await fetch(`/api/v1/search?q=${val}`);
+        const res = await fetch(`/api/v1/search/global?q=${encodeURIComponent(val)}`);
         const { results } = await res.json();
 
-        drop.innerHTML = "";
-        if (results.length > 0) {
-            drop.classList.remove('drop-hidden');
-            results.forEach(r => {
+        panel.classList.remove('results-hidden');
+        pList.innerHTML = "";
+
+        if (results.people.length > 0) {
+            results.people.forEach(p => {
                 const item = document.createElement('div');
-                item.className = 'search-res';
-                item.innerHTML = `<i class="fa-regular fa-user"></i> ${r.name}`;
-                drop.appendChild(item);
+                item.className = 'res-person';
+                item.onclick = () => openProfile(p);
+                item.innerHTML = `
+                    <div class="r-avatar">${p.init}</div>
+                    <div class="r-info">
+                        <strong>${p.name}</strong>
+                        <small style="display:block; font-size:10px; color:#999">${p.rank}</small>
+                    </div>
+                `;
+                pList.appendChild(item);
             });
         } else {
-            drop.classList.add('drop-hidden');
+            pList.innerHTML = '<div class="empty-res">Sin personas encontradas</div>';
         }
-    } catch (e) { console.error("Search failed"); }
+    } catch (e) { console.error("Search Fail"); }
 }
 
-// 6. DASHBOARD
-function startDashboard(user) {
-    document.getElementById('auth-section').classList.add('hidden');
-    document.getElementById('app-section').classList.remove('hidden');
-    document.getElementById('u-name').innerText = user.name;
-    document.getElementById('u-init').innerText = user.name[0].toUpperCase();
+// 5. GESTIÓN DE PERFILES
+function openProfile(data) {
+    const modal = document.getElementById('profile-modal');
+    document.getElementById('p-modal-name').innerText = data.name;
+    document.getElementById('p-modal-init').innerText = data.init;
+    document.getElementById('p-modal-rank').innerText = data.rank;
+    modal.classList.remove('modal-hidden');
 }
 
-function togglePass() {
-    const inp = document.getElementById('in-pass');
-    inp.type = inp.type === 'password' ? 'text' : 'password';
+function closeProfile() {
+    document.getElementById('profile-modal').classList.add('modal-hidden');
 }
 
-function toggleMenu() {
-    document.getElementById('drop-menu').classList.toggle('drop-hidden');
+// 6. INICIALIZAR DASHBOARD
+function startApp(user) {
+    document.getElementById('view-auth').classList.add('hidden');
+    document.getElementById('view-app').classList.remove('hidden');
+    
+    document.getElementById('nav-username').innerText = user.name;
+    document.getElementById('nav-avatar').innerText = user.name[0].toUpperCase();
+    document.getElementById('nav-rank').innerText = user.rank;
+    document.getElementById('drop-email').innerText = user.email;
+    
+    // Simular carga de posts
+    setTimeout(() => {
+        const feed = document.getElementById('main-feed');
+        feed.innerHTML = `
+            <div class="skeleton-post animate-pop" style="border-left: 5px solid var(--primary)">
+                <h3>Actualización del Sistema</h3>
+                <p>Bienvenido de nuevo, ${user.name}. Tu entorno de desarrollo está listo para trabajar.</p>
+                <small>Publicado por DevRoot Engine</small>
+            </div>
+        `;
+    }, 2000);
 }
 
-// Cierre de clics externos
+// 7. INTERACCIONES UI GENERALES
+function togglePassView() {
+    const p = document.getElementById('in-pass');
+    const i = document.getElementById('eye-icon');
+    p.type = p.type === 'password' ? 'text' : 'password';
+    i.className = p.type === 'password' ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
+}
+
+function toggleUserMenu() {
+    document.getElementById('user-dropdown').classList.toggle('drop-hidden');
+}
+
 window.onclick = (e) => {
-    if (!e.target.closest('.user-control')) document.getElementById('drop-menu').classList.add('drop-hidden');
+    if (!e.target.closest('.user-trigger')) document.getElementById('user-dropdown').classList.add('drop-hidden');
+    if (!e.target.closest('.search-engine')) document.getElementById('search-results-panel').classList.add('results-hidden');
+};
+
+window.onkeydown = (e) => {
+    if (e.key === 'Escape') {
+        closeProfile();
+        document.getElementById('search-results-panel').classList.add('results-hidden');
+    }
 };
