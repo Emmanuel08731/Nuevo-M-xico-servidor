@@ -3,135 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevRoot | Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <title>DevRoot | Dashboard de Gestión</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <canvas id="canvas-particles"></canvas>
+    <canvas id="particle-net"></canvas>
 
-    <div id="toast-wrapper">
-        <div id="toast-element" class="toast-hidden">
-            <div class="toast-icon"><i class="fa-solid fa-shield-halved"></i></div>
-            <div class="toast-body">
-                <span id="toast-message">Inicializando...</span>
+    <div id="notification-center">
+        <div id="toast-notif" class="toast-hidden">
+            <div class="toast-bar"></div>
+            <div class="toast-content">
+                <i id="toast-icon" class="fa-solid fa-circle-info"></i>
+                <div class="toast-text">
+                    <strong id="toast-title">Notificación</strong>
+                    <p id="toast-body">Mensaje del sistema...</p>
+                </div>
             </div>
         </div>
     </div>
 
-    <section id="auth-container" class="full-page-flex">
-        <div class="auth-card animate-pop-in">
-            <div class="auth-hero">
-                <div class="hero-inner">
-                    <h1 class="brand-logo">Dev<span>Root</span></h1>
-                    <p class="brand-desc">Plataforma de gestión de infraestructura y activos digitales.</p>
+    <section id="auth-gateway" class="view-active">
+        <div class="auth-box animate-pop">
+            <div class="auth-branding">
+                <div class="logo-wrapper">
+                    <h1 class="logo-text">Dev<span>Root</span></h1>
+                    <div class="logo-glow"></div>
                 </div>
-                <div class="hero-footer">
-                    <span class="version-badge">v6.0.4 stable</span>
-                </div>
+                <p class="logo-tagline">Infraestructura Web Inteligente</p>
+                <div class="badge-v">v6.0.4 stable</div>
             </div>
 
-            <div class="auth-form-area">
-                <div class="form-context">
-                    <h2 id="auth-title">Iniciar Sesión</h2>
-                    <p class="sub-text">Ingrese sus credenciales de acceso al nodo.</p>
-                    
-                    <div class="input-field">
+            <div class="auth-inputs">
+                <div class="auth-header">
+                    <h2 id="auth-title-text">Bienvenido al Nodo</h2>
+                    <p>Introduce las credenciales de seguridad.</p>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-container">
                         <i class="fa-regular fa-envelope"></i>
-                        <input type="email" id="user-email" placeholder=" " required>
-                        <label>Dirección de Email</label>
-                        <div class="focus-line"></div>
+                        <input type="email" id="email-in" placeholder=" " required>
+                        <label>Correo Electrónico</label>
                     </div>
+                </div>
 
-                    <div class="input-field">
+                <div class="form-group">
+                    <div class="input-container">
                         <i class="fa-regular fa-lock"></i>
-                        <input type="password" id="user-pass" placeholder=" " required>
+                        <input type="password" id="pass-in" placeholder=" " required>
                         <label>Contraseña Maestra</label>
-                        <div class="focus-line"></div>
+                        <div class="eye-toggle" onclick="togglePassword()">
+                            <i id="pass-eye" class="fa-regular fa-eye"></i>
+                        </div>
                     </div>
+                </div>
 
-                    <button id="auth-btn" class="btn-main-action" onclick="runAuthentication()">
-                        <span>Conectar al Sistema</span>
-                        <div class="ripple-effect"></div>
-                    </button>
+                <button id="main-auth-btn" class="btn-primary-action" onclick="processAuth()">
+                    <span id="btn-label">Iniciar Sesión</span>
+                    <div class="btn-loader hidden"></div>
+                </button>
 
-                    <div class="auth-switcher">
-                        <p>¿Aún no tiene un nodo activo? <span onclick="toggleAuthMode()" id="mode-trigger">Registrar Nuevo Acceso</span></p>
-                    </div>
+                <div class="auth-footer">
+                    <p id="auth-switch-p">¿Aún no tienes un nodo? <span onclick="switchAuthMode()" id="auth-link">Registrar Acceso</span></p>
                 </div>
             </div>
         </div>
     </section>
 
-    <main id="dashboard-app" class="hidden-view">
-        <header class="navbar-glass">
-            <div class="nav-content">
-                <div class="nav-left">
-                    <div class="nav-brand">Dev<span>Root</span></div>
-                </div>
-                
-                <div class="nav-right">
-                    <div class="user-control-pill" onclick="toggleDropdown()">
-                        <div class="user-meta">
-                            <span id="display-email">usuario@devroot.com</span>
-                        </div>
-                        <div class="user-icon-circle" id="user-initial">U</div>
-                        <i class="fa-solid fa-angle-down"></i>
+    <div id="main-dashboard" class="hidden dashboard-wrapper">
+        <nav class="top-nav">
+            <div class="nav-left">
+                <div class="nav-logo">Dev<span>Root</span></div>
+            </div>
+            
+            <div class="nav-right">
+                <div class="user-profile-btn" onclick="toggleUserDropdown()">
+                    <div class="user-avatar" id="avatar-char">U</div>
+                    <div class="user-details">
+                        <span id="user-name-display">Cargando...</span>
                     </div>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </div>
 
-                    <div id="dropdown-menu" class="dropdown-hidden animate-slide-down">
-                        <div class="drop-section-head">Configuración de Sesión</div>
-                        <ul class="drop-options">
-                            <li onclick="openConfigModal()"><i class="fa-solid fa-gear"></i> Ajustes del Perfil</li>
-                            <li onclick="location.reload()" class="logout-opt"><i class="fa-solid fa-power-off"></i> Finalizar Conexión</li>
-                        </ul>
+                <div id="user-dropdown" class="drop-hidden animate-slide-in">
+                    <div class="drop-header">Perfil de Acceso</div>
+                    <ul class="drop-menu">
+                        <li onclick="showModal('settings-modal')"><i class="fa-solid fa-sliders"></i> Ajustes del Nodo</li>
+                        <li onclick="logoutProcedure()" class="danger-li"><i class="fa-solid fa-power-off"></i> Cerrar Sesión</li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="dashboard-body">
+            <main class="content-view">
+                <div class="feed-card animate-fade-up">
+                    <div class="card-header-bar">
+                        <div class="dot red"></div>
+                        <div class="dot yellow"></div>
+                        <div class="dot green"></div>
+                        <span>SISTEMA DE FEED</span>
+                    </div>
+                    <div class="card-inner">
+                        <div class="empty-state-visual">
+                            <div class="radar-effect">
+                                <div class="ping"></div>
+                                <i class="fa-solid fa-cloud"></i>
+                            </div>
+                            <h3>No hay publicaciones todavía</h3>
+                            <p>El flujo de datos está en espera de nuevas actualizaciones.</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div id="settings-modal" class="modal-overlay hidden">
+            <div class="modal-content animate-zoom">
+                <div class="modal-top">
+                    <h3>Gestión de Seguridad</h3>
+                    <button class="close-btn" onclick="hideModal('settings-modal')">&times;</button>
+                </div>
+                <div class="modal-mid">
+                    <div class="settings-block danger">
+                        <div class="block-info">
+                            <h4>Zona de Purga</h4>
+                            <p>Esta acción eliminará permanentemente su nodo de acceso y todas las credenciales vinculadas en DevRoot.</p>
+                        </div>
+                        <button class="btn-danger-long" onclick="initiateAccountDestruction()">
+                            Eliminar Nodo Permanentemente
+                        </button>
                     </div>
                 </div>
             </div>
-        </header>
-
-        <div class="app-layout">
-            <section class="main-content">
-                <div class="empty-feed-card animate-fade-up">
-                    <div class="card-header">
-                        <i class="fa-solid fa-network-wired"></i>
-                        <span>CANAL DE DATOS</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="empty-animation">
-                            <div class="radar-ping"></div>
-                            <i class="fa-solid fa-inbox"></i>
-                        </div>
-                        <h3>No hay publicaciones todavía</h3>
-                    </div>
-                </div>
-            </section>
         </div>
-
-        <div id="modal-settings" class="modal-backdrop hidden-view">
-            <div class="modal-box animate-zoom-in">
-                <div class="modal-head">
-                    <h3>Gestión del Nodo</h3>
-                    <button class="btn-close" onclick="closeConfigModal()"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                <div class="modal-body">
-                    <div class="settings-card">
-                        <div class="s-info">
-                            <h4>Protocolo de Eliminación</h4>
-                            <p>Esta acción removerá su email y contraseña de la base de datos de DevRoot permanentemente.</p>
-                        </div>
-                        <div class="danger-zone-box">
-                            <button class="btn-delete-node" onclick="initiateNodeDestruction()">Destruir Nodo de Acceso</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-secondary" onclick="closeConfigModal()">Regresar</button>
-                </div>
-            </div>
-        </div>
-    </main>
+    </div>
 
     <script src="script.js"></script>
 </body>
