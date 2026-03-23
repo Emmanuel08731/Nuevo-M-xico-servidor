@@ -1,9 +1,7 @@
 /**
- * ==============================================================================
- * DEVROOT CORE SYSTEM v7.0.0
- * ARCHITECTURE: NODE.JS + EXPRESS + BCRYPT
- * DEVELOPER: EMMANUEL
- * ==============================================================================
+ * DEVROOT CORE ENGINE v7.5.0
+ * SISTEMA DE GESTIÓN DE IDENTIDAD DIGITAL
+ * DESARROLLADO PARA: EMMANUEL
  */
 
 const express = require('express');
@@ -15,133 +13,64 @@ const bcrypt = require('bcryptjs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuración de la Variable de Entorno de Render
-const DATABASE_URL = process.env.DATABASE_URL;
-
-/**
- * MIDDLEWARES DE ALTO RENDIMIENTO
- */
-app.use(helmet({
-    contentSecurityPolicy: false, // Permitir fuentes externas de Google
-    crossOriginEmbedderPolicy: false
-}));
-
+// Configuración de Seguridad para Render
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/**
- * SISTEMA DE PERSISTENCIA TEMPORAL (DATABASE EMULATOR)
- * En producción, aquí se usaría la variable DATABASE_URL con un pool de Postgres.
- */
-let userDatabase = []; 
-let serverLogs = [
-    { timestamp: new Date(), event: "SISTEMA INICIALIZADO", status: "OK" }
-];
+// Simulación de Base de Datos (Se recomienda PostgreSQL con la URL de Render para persistencia)
+let userStore = []; 
 
-/**
- * SERVIDOR DE ARCHIVOS ESTÁTICOS CON CABECERAS DE SEGURIDAD
- */
-app.use(express.static(path.join(__dirname, 'public'), {
-    maxAge: '31d',
-    setHeaders: (res) => {
-        res.set('X-Powered-By', 'DevRoot-Engine-v7');
-        res.set('X-Content-Type-Options', 'nosniff');
-    }
-}));
+app.use(express.static(path.join(__dirname, 'public')));
 
-/**
- * CONTROLADOR DE AUTENTICACIÓN: REGISTRO
- */
+// --- RUTAS DE AUTENTICACIÓN ---
+
+// 1. REGISTRO (CREAR CUENTA)
 app.post('/api/auth/register', async (req, res) => {
     const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ success: false, error: "Faltan datos." });
+
+    const exists = userStore.find(u => u.email === email);
+    if (exists) return res.status(400).json({ success: false, error: "El correo ya existe." });
 
     try {
-        if (!email || !password) {
-            return res.status(400).json({ success: false, error: "Todos los campos son obligatorios." });
-        }
-
-        const userExists = userDatabase.find(u => u.email === email);
-        if (userExists) {
-            return res.status(409).json({ success: false, error: "El correo ya está en uso." });
-        }
-
-        // Encriptación de alto nivel (12 rounds)
-        const salt = await bcrypt.genSalt(12);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        const newUser = {
-            id: `UID-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-            email: email,
-            password: hashedPassword,
-            joined: new Date().toISOString()
-        };
-
-        userDatabase.push(newUser);
-        serverLogs.push({ timestamp: new Date(), event: `REGISTRO: ${email}`, status: "SUCCESS" });
-
-        return res.status(201).json({ 
-            success: true, 
-            message: "Cuenta creada correctamente." 
-        });
-
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ success: false, error: "Fallo interno en el núcleo de seguridad." });
+        const hash = await bcrypt.hash(password, 10);
+        userStore.push({ email, hash, id: Date.now() });
+        console.log(`[SISTEMA] Nueva cuenta creada: ${email}`);
+        return res.status(201).json({ success: true, message: "Cuenta creada correctamente." });
+    } catch (e) {
+        return res.status(500).json({ success: false, error: "Error de encriptación." });
     }
 });
 
-/**
- * CONTROLADOR DE AUTENTICACIÓN: LOGIN
- */
+// 2. LOGIN (INICIAR SESIÓN)
 app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
+    const user = userStore.find(u => u.email === email);
 
-    try {
-        const user = userDatabase.find(u => u.email === email);
-        if (!user) {
-            return res.status(401).json({ success: false, error: "Usuario no encontrado." });
-        }
+    if (!user) return res.status(401).json({ success: false, error: "Usuario no encontrado." });
 
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(401).json({ success: false, error: "Contraseña incorrecta." });
-        }
+    const valid = await bcrypt.compare(password, user.hash);
+    if (!valid) return res.status(401).json({ success: false, error: "Contraseña incorrecta." });
 
-        serverLogs.push({ timestamp: new Date(), event: `LOGIN: ${email}`, status: "SUCCESS" });
-
-        return res.json({ 
-            success: true, 
-            message: "Sesión iniciada correctamente.",
-            userData: { email: user.email, id: user.id }
-        });
-
-    } catch (err) {
-        return res.status(500).json({ success: false, error: "Error en el proceso de autenticación." });
-    }
+    console.log(`[SISTEMA] Sesión iniciada: ${email}`);
+    return res.json({ 
+        success: true, 
+        message: "Sesión iniciada correctamente.", 
+        user: { email: user.email } 
+    });
 });
 
-/**
- * CONTROLADOR: ELIMINAR CUENTA
- */
-app.post('/api/auth/delete-account', (req, res) => {
+// 3. ELIMINAR CUENTA
+app.post('/api/auth/delete', (req, res) => {
     const { email } = req.body;
-    const initialCount = userDatabase.length;
-    userDatabase = userDatabase.filter(u => u.email !== email);
-
-    if (userDatabase.length < initialCount) {
-        serverLogs.push({ timestamp: new Date(), event: `CUENTA ELIMINADA: ${email}`, status: "WARNING" });
-        return res.json({ success: true, message: "Cuenta eliminada del sistema." });
-    }
-    
-    return res.status(404).json({ success: false, error: "No se encontró el perfil." });
+    userStore = userStore.filter(u => u.email !== email);
+    res.json({ success: true, message: "Cuenta eliminada del servidor." });
 });
 
-/**
- * INICIO DEL SERVIDOR
- */
 app.listen(PORT, () => {
-    console.log("------------------------------------------");
-    console.log(`| DEVROOT v7.0 | ONLINE EN PUERTO: ${PORT} |`);
-    console.log("------------------------------------------");
+    console.log(`\n==========================================`);
+    console.log(`  DEVROOT SERVER ONLINE | PUERTO: ${PORT}`);
+    console.log(`==========================================\n`);
 });
