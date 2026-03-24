@@ -1,146 +1,166 @@
 /**
- * DEVROOT ENGINE V25 - CORE LOGIC
- * SISTEMA DE REGISTRO DINÁMICO & BÚSQUEDA
+ * DEVROOT CORE ENGINE V27
+ * SISTEMA PROFESIONAL DE CUENTAS Y SEGUIDORES
  */
 
-"use strict";
-
-const SocialEngine = (() => {
-    // ESTADO DE LA APP
-    const state = {
-        currentUser: null,
+const DevRoot = {
+    // ESTADO GLOBAL
+    state: {
+        me: null,
         users: [
-            { id: 101, name: 'Emmanuel Store', bio: 'Ofreciendo los mejores bots de Discord.', followers: 1500, following: 20, color: '#0062ff' },
-            { id: 102, name: 'VibeBlox_Admin', bio: 'Dueño de la colección tactical gear.', followers: 890, following: 400, color: '#ff4757' },
-            { id: 103, name: 'Roblox_Scripter', bio: 'Programador Luau avanzado.', followers: 3200, following: 100, color: '#2ecc71' }
+            { id: 1, name: "Emmanuel Store", bio: "Dueño y Fundador", followers: 5800, color: "#0066ff" },
+            { id: 2, name: "VexoBot", bio: "Inteligencia Artificial", followers: 920, color: "#ff4757" },
+            { id: 3, name: "Roblox_King", bio: "Creador de Mapas", followers: 15400, color: "#2ecc71" }
         ],
-        view: 'feed'
-    };
+        posts: []
+    },
 
-    // --- MANEJO DE VISTAS ---
-    const navigate = (viewId) => {
-        document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
-        document.getElementById(viewId).classList.remove('hidden');
-        document.getElementById(viewId).classList.add('animate-pop');
-        window.scrollTo(0,0);
-    };
+    init() {
+        console.log("Emmanuel Social System cargado...");
+        this.bindEvents();
+    },
 
-    // --- SISTEMA DE REGISTRO (SIGN UP) ---
-    const handleRegister = () => {
-        const name = document.getElementById('reg-name').value;
-        const email = document.getElementById('reg-email').value;
-        const pass = document.getElementById('reg-pass').value;
-        const bio = document.getElementById('reg-bio').value;
+    bindEvents() {
+        // Cerrar menús al hacer click fuera
+        window.addEventListener('click', (e) => {
+            if (!e.target.closest('.user-menu-trigger')) {
+                document.getElementById('acc-dropdown').style.display = 'none';
+            }
+        });
+    },
 
-        if (!name || !email || !pass) return alert("Completa los campos obligatorios");
+    // 1. REGISTRO DE CUENTA
+    createAccount() {
+        const nameInput = document.getElementById('reg-name');
+        const name = nameInput.value.trim();
 
-        // Creamos el objeto del nuevo usuario
-        const newUser = {
+        if (name.length < 3) return alert("El nombre es muy corto.");
+
+        // Crear objeto usuario
+        this.state.me = {
             id: Date.now(),
             name: name,
-            bio: bio || 'Nuevo desarrollador en DevRoot',
+            bio: "Nuevo desarrollador en DevRoot",
             followers: 0,
             following: 0,
-            color: '#' + Math.floor(Math.random()*16777215).toString(16)
+            color: "#" + Math.floor(Math.random()*16777215).toString(16)
         };
 
-        // Guardamos y entramos
-        state.users.push(newUser);
-        state.currentUser = newUser;
-        
-        launchApp();
-    };
+        // UI Transition
+        document.getElementById('auth-wall').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('auth-wall').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            this.updateNavbar();
+            this.renderFeed();
+        }, 500);
+    },
 
-    const launchApp = () => {
-        document.getElementById('auth-container').classList.add('hidden');
-        document.getElementById('main-app').classList.remove('hidden');
-        
-        // Actualizar UI del Navbar
-        document.getElementById('nav-user-av').innerText = state.currentUser.name[0];
-        document.getElementById('nav-user-name').innerText = state.currentUser.name;
-        
-        renderFeed();
-    };
+    updateNavbar() {
+        document.getElementById('nav-user-name').innerText = this.state.me.name;
+        document.getElementById('nav-av-icon').innerText = this.state.me.name[0].toUpperCase();
+        document.getElementById('nav-av-icon').style.background = this.state.me.color;
+    },
 
-    // --- BÚSQUEDA EN TIEMPO REAL ---
-    const searchUsers = (query) => {
-        const box = document.getElementById('search-res-box');
-        if (!query) return box.style.display = 'none';
+    // 2. SISTEMA DE SEGUIDORES (REAL)
+    follow(userId) {
+        const user = this.state.users.find(u => u.id === userId);
+        if (user) {
+            user.followers++;
+            this.state.me.following++;
+            
+            // Efecto visual
+            const btn = event.target;
+            btn.innerText = "Siguiendo";
+            btn.style.background = "#e2e8f0";
+            btn.style.color = "#1a202c";
+            btn.disabled = true;
 
-        const filtered = state.users.filter(u => u.name.toLowerCase().includes(query.toLowerCase()));
-        
-        if (filtered.length > 0) {
-            box.innerHTML = filtered.map(u => `
-                <div class="res-item" onclick="SocialEngine.openProfile(${u.id})">
-                    <div class="av-mini" style="background:${u.color}">${u.name[0]}</div>
+            console.log(`Siguiendo a ${user.name}. Nuevos seguidores: ${user.followers}`);
+        }
+    },
+
+    // 3. VISTA DE PERFIL (DERECHA)
+    showMyProfile() {
+        const main = document.getElementById('main-content');
+        main.innerHTML = `
+            <div class="card" style="padding:0; overflow:hidden; animation: fadeIn 0.5s ease;">
+                <div class="profile-hero"></div>
+                <div class="profile-body">
+                    <div class="avatar-xl" style="background:${this.state.me.color}">
+                        ${this.state.me.name[0].toUpperCase()}
+                    </div>
+                    <h1 style="font-weight:800; font-size:1.8rem;">${this.state.me.name}</h1>
+                    <p style="color:#718096; margin-top:5px;">${this.state.me.bio}</p>
+                    
+                    <div class="stat-group">
+                        <div class="stat-box">
+                            <b id="my-followers">${this.state.me.followers}</b>
+                            <span>Seguidores</span>
+                        </div>
+                        <div class="stat-box">
+                            <b>${this.state.me.following}</b>
+                            <span>Siguiendo</span>
+                        </div>
+                    </div>
+
+                    <button class="btn-p" style="margin-top:25px; width:100%;" onclick="alert('Modo edición próximamente')">
+                        Editar Perfil Profesional
+                    </button>
+                </div>
+            </div>
+        `;
+        document.getElementById('acc-dropdown').style.display = 'none';
+    },
+
+    // 4. FEED PRINCIPAL
+    renderFeed() {
+        const main = document.getElementById('main-content');
+        let usersHTML = this.state.users.map(u => `
+            <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; gap:15px; align-items:center;">
+                    <div class="nav-avatar" style="background:${u.color}; width:50px; height:50px; font-size:1.2rem;">
+                        ${u.name[0]}
+                    </div>
                     <div>
-                        <div style="font-weight:700; font-size:0.9rem">${u.name}</div>
-                        <div style="font-size:0.7rem; color:gray">Ver Perfil</div>
+                        <h4 style="font-weight:800;">${u.name}</h4>
+                        <p style="font-size:0.8rem; color:gray;">${u.followers} seguidores • ${u.bio}</p>
                     </div>
                 </div>
-            `).join('');
-            box.style.display = 'block';
-        } else {
-            box.innerHTML = '<div style="padding:15px; font-size:0.8rem; color:gray">Sin resultados</div>';
-            box.style.display = 'block';
+                <button class="btn-p" style="padding:8px 20px; font-size:0.8rem;" onclick="DevRoot.follow(${u.id})">
+                    Seguir
+                </button>
+            </div>
+        `).join('');
+
+        main.innerHTML = `
+            <h2 style="margin-bottom:20px; font-weight:800;">Sugerencias para ti</h2>
+            ${usersHTML}
+        `;
+    },
+
+    // UI UTILS
+    toggleDropdown() {
+        const d = document.getElementById('acc-dropdown');
+        d.style.display = d.style.display === 'block' ? 'none' : 'block';
+    },
+
+    search(query) {
+        const res = document.getElementById('search-results');
+        if (query.length < 1) {
+            res.style.display = 'none';
+            return;
         }
-    };
-
-    // --- PERFILES ---
-    const openProfile = (id) => {
-        const user = state.users.find(u => u.id === id);
-        if (!user) return;
-
-        const profileHTML = `
-            <div class="prof-header"></div>
-            <div class="prof-content">
-                <div class="prof-av-large" style="background:${user.color}">${user.name[0]}</div>
-                <h2 style="font-size:2rem; font-weight:800">${user.name}</h2>
-                <p style="color:var(--text-gray); margin-bottom:20px">${user.bio}</p>
-                <button class="btn-follow-action" onclick="this.innerText='Siguiendo'">Seguir</button>
-                <div class="prof-stats">
-                    <div class="stat-unit"><strong>${user.followers}</strong><span>Seguidores</span></div>
-                    <div class="stat-unit"><strong>${user.following}</strong><span>Siguiendo</span></div>
-                </div>
+        
+        const filtered = this.state.users.filter(u => u.name.toLowerCase().includes(query.toLowerCase()));
+        res.innerHTML = filtered.map(u => `
+            <div class="menu-link" onclick="alert('Viendo a ${u.name}')">
+                <div class="nav-avatar" style="background:${u.color}; width:25px; height:25px; font-size:0.7rem;">${u.name[0]}</div>
+                ${u.name}
             </div>
-        `;
-        document.getElementById('profile-view').innerHTML = profileHTML;
-        document.getElementById('search-res-box').style.display = 'none';
-        navigate('profile-view');
-    };
+        `).join('') || '<div class="menu-link">No hay resultados</div>';
+        res.style.display = 'block';
+    }
+};
 
-    const renderFeed = () => {
-        const feed = document.getElementById('feed-view');
-        feed.innerHTML = `
-            <div class="card animate-pop" style="text-align:center; padding:80px 20px">
-                <i class="fa-solid fa-wind" style="font-size:3rem; opacity:0.1; margin-bottom:20px; display:block"></i>
-                <h3 style="font-weight:800">Tu muro está listo, ${state.currentUser.name}</h3>
-                <p style="color:var(--text-gray)">Usa el buscador para conectar con otros desarrolladores.</p>
-            </div>
-        `;
-    };
-
-    // EXPOSICIÓN PÚBLICA
-    return {
-        toggleAuth: (mode) => {
-            if (mode === 'signup') {
-                document.getElementById('login-form').classList.add('hidden');
-                document.getElementById('signup-form').classList.remove('hidden');
-                document.getElementById('signup-form').classList.add('animate-right');
-            } else {
-                document.getElementById('signup-form').classList.add('hidden');
-                document.getElementById('login-form').classList.remove('hidden');
-                document.getElementById('login-form').classList.add('animate-left');
-            }
-        },
-        register: handleRegister,
-        login: () => {
-             // Simulación de login rápido
-             state.currentUser = state.users[0];
-             launchApp();
-        },
-        search: searchUsers,
-        openProfile: openProfile,
-        navigate: navigate
-    };
-})();
+window.onload = () => DevRoot.init();
