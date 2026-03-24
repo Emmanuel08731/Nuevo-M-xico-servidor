@@ -3,78 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevRoot | Emmanuel Store</title>
+    <title>Emmanuel Store | Red Global</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <section id="auth-wall">
-        <div class="glass-card animate-pop">
-            <h1 class="logo">Dev<span>Root</span></h1>
+    <div id="toast-container"></div>
 
-            <div id="login-view">
-                <p class="subtitle">Bienvenido de nuevo</p>
-                <div class="input-box">
-                    <i class="fa-solid fa-user"></i>
-                    <input type="text" id="l-user" placeholder="Usuario">
+    <section id="auth-wall">
+        <div class="auth-box animate-pop">
+            <h1 class="logo">Dev<span>Root</span></h1>
+            
+            <div id="view-login">
+                <div class="header-auth">
+                    <h2>Bienvenido</h2>
+                    <p>Ingresa a tu cuenta global</p>
                 </div>
-                <div class="input-box">
-                    <i class="fa-solid fa-lock"></i>
-                    <input type="password" id="l-pass" placeholder="Contraseña">
+                <div class="form">
+                    <div class="field"><i class="fa-solid fa-user"></i><input type="text" id="l-user" placeholder="Usuario"></div>
+                    <div class="field"><i class="fa-solid fa-lock"></i><input type="password" id="l-pass" placeholder="Contraseña"></div>
+                    <button onclick="App.auth('login')" class="btn-primary">Iniciar Sesión</button>
+                    <p class="footer-auth">¿No tienes cuenta? <a href="javascript:void(0)" onclick="App.switch('reg')">Regístrate gratis</a></p>
                 </div>
-                <button onclick="App.auth('login')" class="btn-main">Entrar</button>
-                <p class="switch-txt">¿No tienes cuenta? <a href="#" onclick="App.switch('register')">Créala aquí</a></p>
             </div>
 
-            <div id="register-view" class="hidden">
-                <p class="subtitle">Crear nueva cuenta</p>
-                <div class="input-box">
-                    <i class="fa-solid fa-user"></i>
-                    <input type="text" id="r-user" placeholder="Nombre de usuario">
+            <div id="view-reg" class="hidden">
+                <div class="header-auth">
+                    <h2>Crear Cuenta</h2>
+                    <p>Únete a la base de datos de Emmanuel</p>
                 </div>
-                <div class="input-box">
-                    <i class="fa-solid fa-envelope"></i>
-                    <input type="email" id="r-email" placeholder="Tu Gmail">
+                <div class="form">
+                    <div class="field"><i class="fa-solid fa-id-card"></i><input type="text" id="r-user" placeholder="Nombre de usuario"></div>
+                    <div class="field"><i class="fa-solid fa-envelope"></i><input type="email" id="r-email" placeholder="Correo Gmail"></div>
+                    <div class="field"><i class="fa-solid fa-key"></i><input type="password" id="r-pass" placeholder="Crea una contraseña"></div>
+                    <button onclick="App.auth('register')" class="btn-primary">Registrarme Ahora</button>
+                    <p class="footer-auth">¿Ya eres miembro? <a href="javascript:void(0)" onclick="App.switch('login')">Entrar</a></p>
                 </div>
-                <div class="input-box">
-                    <i class="fa-solid fa-lock"></i>
-                    <input type="password" id="r-pass" placeholder="Contraseña">
-                </div>
-                <button onclick="App.auth('register')" class="btn-main">Registrarme</button>
-                <p class="switch-txt">¿Ya tienes cuenta? <a href="#" onclick="App.switch('login')">Inicia sesión</a></p>
             </div>
         </div>
     </section>
 
     <main id="app-wall" class="hidden">
-        <nav class="navbar">
-            <div class="nav-inner">
-                <div class="logo-s">Dev<span>Root</span></div>
-                <div class="search-box">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" placeholder="Buscar usuarios..." oninput="App.search(this.value)">
-                    <div id="search-res" class="search-drop"></div>
-                </div>
-                <div class="user-menu">
-                    <div class="trigger" onclick="App.toggleMenu()">
-                        <span id="nav-name">User</span>
-                        <div id="nav-av" class="av">?</div>
+        <nav class="top-nav">
+            <div class="nav-content">
+                <div class="brand">Dev<span>Root</span></div>
+                
+                <div class="search-bar">
+                    <div class="search-input">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" placeholder="Buscar usuarios en Postgres..." oninput="App.search(this.value)">
                     </div>
-                    <div id="drop-menu" class="dropdown">
-                        <div class="drop-item"><i class="fa-regular fa-user"></i> Perfil</div>
-                        <div class="drop-item"><i class="fa-solid fa-gear"></i> Configuración</div>
-                        <div class="drop-item logout" onclick="location.reload()"><i class="fa-solid fa-power-off"></i> Cerrar Sesión</div>
+                    <div id="search-results" class="search-results hidden"></div>
+                </div>
+
+                <div class="user-profile">
+                    <div class="profile-btn" onclick="App.toggleMenu()">
+                        <span id="nav-user">Cargando...</span>
+                        <div id="nav-avatar" class="avatar-circle">?</div>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    
+                    <div id="user-menu" class="dropdown hidden">
+                        <div class="dropdown-header"><p id="menu-user-id"></p></div>
+                        <div class="drop-link"><i class="fa-regular fa-circle-user"></i> Ver Perfil</div>
+                        <div class="drop-link"><i class="fa-solid fa-shield-halved"></i> Seguridad</div>
+                        <div class="drop-link logout" onclick="location.reload()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión</div>
                     </div>
                 </div>
             </div>
         </nav>
-        <div class="main-content">
-            <div class="empty-state">
-                <i class="fa-regular fa-folder-open"></i>
-                <p>Todavía no hay publicaciones.</p>
+
+        <section class="main-container">
+            <div class="feed">
+                <div class="welcome-card animate-slide">
+                    <i class="fa-solid fa-cloud-bolt"></i>
+                    <h2>Sistema Activo</h2>
+                    <p>Bienvenido, <span id="welcome-user"></span>. Estás conectado a la red global de Emmanuel Store.</p>
+                </div>
+                <div class="empty-state">
+                    <i class="fa-solid fa-newspaper"></i>
+                    <p>No hay publicaciones nuevas en la base de datos.</p>
+                </div>
             </div>
-        </div>
+        </section>
     </main>
 
     <script src="script.js"></script>
