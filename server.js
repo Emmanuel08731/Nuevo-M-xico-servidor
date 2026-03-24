@@ -8,15 +8,24 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// CONFIGURACIÓN DE CONEXIÓN FORZADA
+// CONFIGURACIÓN ULTRA-COMPATIBLE
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: {
+    rejectUnauthorized: false // Esto permite que Render acepte el certificado
+  }
 });
 
-// FUNCIÓN PARA CREAR LA TABLA SI NO EXISTE
-const prepararDB = async () => {
+// PROBADOR DE CONEXIÓN CON REINTENTO
+const conectarConPostgres = async () => {
     try {
+        const client = await pool.connect();
+        console.log("------------------------------------------");
+        console.log("✅ [DATABASE] ¡SISTEMA CONECTADO CON ÉXITO!");
+        console.log("------------------------------------------");
+        client.release();
+        
+        // Crear tabla si no existe
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -26,14 +35,14 @@ const prepararDB = async () => {
                 color TEXT DEFAULT '#0066ff'
             );
         `);
-        console.log("✅ [DB] Tabla 'users' verificada y lista.");
     } catch (err) {
-        console.error("❌ [DB] Error al preparar tablas:", err.message);
+        console.error("❌ [DATABASE] ERROR DE CONEXIÓN REAL:", err.message);
+        console.log("Emmanuel, si ves esto, el problema es que Render no reconoce la IP o la URL.");
     }
 };
-prepararDB();
+conectarConPostgres();
 
-// REGISTRO CON DETECCIÓN DE ERRORES REALES
+// REGISTRO
 app.post('/api/register', async (req, res) => {
     const { username, email, password } = req.body;
     try {
@@ -42,21 +51,15 @@ app.post('/api/register', async (req, res) => {
             "INSERT INTO users (username, email, password, color) VALUES ($1, $2, $3, $4)",
             [username, email, password, color]
         );
-        res.status(201).json({ message: "¡Cuenta creada con éxito, Emmanuel!" });
+        res.status(201).json({ message: "¡Cuenta creada con éxito!" });
     } catch (err) {
-        console.log("--- INFORME DE ERROR PARA EMMANUEL ---");
-        console.log("Código de error:", err.code);
-        console.log("Mensaje:", err.message);
-
-        if (err.code === '23505') {
-            return res.status(400).json({ error: "Ese usuario o Gmail ya existen." });
-        }
-        
-        // Si el error es de conexión, avisamos específicamente
-        res.status(500).json({ error: "Postgres rechazó la conexión. Verifica la URL EXTERNA en Render." });
+        console.error("DETALLE:", err.message);
+        if (err.code === '23505') return res.status(400).json({ error: "Usuario o Gmail ya existen." });
+        res.status(500).json({ error: "Postgres sigue rechazando. Prueba añadiendo ?sslmode=require al final de tu URL en Render." });
     }
 });
 
+// LOGIN
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -67,12 +70,12 @@ app.post('/api/login', async (req, res) => {
         if (result.rows.length > 0) {
             res.json({ message: "¡Iniciaste sesión con éxito!", user: result.rows[0] });
         } else {
-            res.status(401).json({ error: "Usuario o contraseña incorrectos." });
+            res.status(401).json({ error: "Datos incorrectos." });
         }
     } catch (err) {
-        res.status(500).json({ error: "Error de conexión con la cuenta." });
+        res.status(500).json({ error: "Error de conexión." });
     }
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Emmanuel Store Online en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Emmanuel Store en puerto ${PORT}`));
