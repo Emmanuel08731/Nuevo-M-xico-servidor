@@ -3,150 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevRoot | Emmanuel Store Network</title>
+    <title>DevRoot | Emmanuel Store Official</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <section id="auth-wall">
-        <div class="auth-container animate-slide">
-            <h1 class="logo-title">Dev<span>Root</span></h1>
-            
-            <div id="login-form">
-                <p style="color:var(--text-light); margin-bottom:30px; font-weight:500;">Inicia sesión en tu cuenta de desarrollador.</p>
-                
-                <div class="input-group">
-                    <label><i class="fa-regular fa-user"></i> Usuario o Gmail</label>
-                    <input type="text" id="log-user" placeholder="ejemplo@gmail.com">
-                </div>
+        <div class="auth-gradient"></div>
+        <div class="auth-card animate-pop">
+            <header class="auth-header">
+                <h1 class="brand-logo">Dev<span>Root</span></h1>
+                <p id="auth-subtitle">Conecta con la red de desarrolladores de Emmanuel</p>
+            </header>
 
-                <div class="input-group">
-                    <label><i class="fa-solid fa-lock"></i> Contraseña</label>
+            <div id="login-container">
+                <div class="field-group">
+                    <label><i class="fa-regular fa-envelope"></i> Usuario o Gmail</label>
+                    <input type="text" id="log-user" placeholder="nombre@gmail.com" autocomplete="off">
+                </div>
+                <div class="field-group">
+                    <label><i class="fa-solid fa-shield-halved"></i> Contraseña Maestra</label>
                     <input type="password" id="log-pass" placeholder="••••••••">
                 </div>
-
-                <button class="btn-main" onclick="App.login()">Entrar al Sistema</button>
-
-                <p style="margin-top:25px; font-size:0.85rem; font-weight:600;">
-                    ¿No tienes cuenta? 
-                    <span style="color:var(--brand); cursor:pointer;" onclick="App.switchAuth('signup')">Crear cuenta / Cerrar anterior</span>
-                </p>
+                <button class="btn-primary-full" onclick="App.login()">
+                    <span>Entrar al Sistema</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                <footer class="auth-footer">
+                    ¿No tienes una cuenta real? <button onclick="App.switchAuth('signup')">Regístrate aquí</button>
+                </footer>
             </div>
 
-            <div id="signup-form" class="hidden">
-                <p style="color:var(--text-light); margin-bottom:30px; font-weight:500;">Únete a la red global de Emmanuel.</p>
-                
-                <div class="input-group">
-                    <label>Nombre de Usuario</label>
-                    <input type="text" id="reg-user" placeholder="Nombre_Real">
+            <div id="signup-container" class="hidden">
+                <div class="field-grid">
+                    <div class="field-group">
+                        <label>Nombre de Usuario</label>
+                        <input type="text" id="reg-user" placeholder="Ej: Emmanuel_Node">
+                    </div>
+                    <div class="field-group">
+                        <label>Correo Electrónico</label>
+                        <input type="email" id="reg-mail" placeholder="dev@gmail.com">
+                    </div>
                 </div>
-
-                <div class="input-group">
-                    <label>Correo Electrónico (Gmail)</label>
-                    <input type="email" id="reg-mail" placeholder="correo@gmail.com">
-                </div>
-
-                <div class="input-group">
-                    <label>Especialidad en Programación</label>
+                <div class="field-group">
+                    <label>Especialidad Técnica</label>
                     <select id="reg-spec">
-                        <option value="Node.js Developer">Node.js Developer</option>
-                        <option value="Discord Bot Maker">Discord Bot Maker</option>
+                        <option value="Node.js Expert">Node.js Expert</option>
+                        <option value="Discord Bot Developer">Discord Bot Developer</option>
+                        <option value="Web & Database Dev">Web & Database Dev</option>
                         <option value="Roblox Scripter">Roblox Scripter</option>
-                        <option value="Web Designer">Web Designer</option>
                     </select>
                 </div>
-
-                <div class="input-group">
-                    <label>Contraseña Maestra</label>
+                <div class="field-group">
+                    <label>Crear Contraseña</label>
                     <input type="password" id="reg-pass" placeholder="Mínimo 8 caracteres">
                 </div>
-
-                <button class="btn-main" style="background:var(--brand);" onclick="App.register()">Registrarme Ahora</button>
-
-                <p style="margin-top:25px; font-size:0.85rem; font-weight:600;">
-                    ¿Ya eres miembro? 
-                    <span style="color:var(--text); cursor:pointer;" onclick="App.switchAuth('login')">Volver al Inicio</span>
-                </p>
+                <button class="btn-primary-full btn-success" id="reg-btn" onclick="App.register()">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Crear Cuenta en Render</span>
+                </button>
+                <footer class="auth-footer">
+                    ¿Ya eres miembro? <button onclick="App.switchAuth('login')">Volver al inicio</button>
+                </footer>
             </div>
         </div>
     </section>
 
     <main id="main-app" class="hidden">
         
-        <nav class="nav">
-            <div class="nav-inner">
-                <div class="logo-title" style="font-size:1.8rem; margin:0; cursor:pointer;" onclick="App.renderView('inicio')">
-                    Dev<span>Root</span>
+        <nav class="top-nav">
+            <div class="nav-container">
+                <div class="nav-left">
+                    <div class="app-logo" onclick="App.renderView('inicio')">Dev<span>Root</span></div>
                 </div>
 
-                <div class="search-box">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="global-search" placeholder="Buscar usuarios registrados..." oninput="App.handleSearch(this.value)">
-                    
-                    <div id="search-results" class="animate-pop">
+                <div class="nav-center">
+                    <div class="global-search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="main-search" placeholder="Buscar por nombre de usuario..." oninput="App.search(this.value)">
+                        
+                        <div id="search-dropdown" class="search-results-panel animate-pop">
+                            <div class="search-loader hidden"><i class="fa-solid fa-circle-notch fa-spin"></i> Buscando...</div>
+                            <div id="results-content"></div>
                         </div>
+                    </div>
                 </div>
 
-                <div class="profile-zone" onclick="App.toggleMenu()">
-                    <span id="nav-user-name" style="font-weight:800; font-size:0.9rem; color:var(--text);">Cargando...</span>
-                    <div class="av-nav" id="nav-av">?</div>
-                    
-                    <div id="acc-dropdown" class="dropdown animate-pop">
-                        <div class="drop-item" onclick="App.renderView('perfil')">
-                            <i class="fa-regular fa-circle-user"></i> Mi Perfil Profesional
+                <div class="nav-right">
+                    <div class="nav-actions">
+                        <button class="icon-btn"><i class="fa-regular fa-bell"></i><span class="dot"></span></button>
+                        <button class="icon-btn"><i class="fa-regular fa-comment-dots"></i></button>
+                    </div>
+                    <div class="user-profile-trigger" onclick="App.toggleMenu()">
+                        <div class="user-info-text">
+                            <span id="nav-display-name">Emmanuel</span>
+                            <small>En línea</small>
                         </div>
-                        <div class="drop-item">
-                            <i class="fa-solid fa-gear"></i> Configuración de Cuenta
-                        </div>
-                        <div class="drop-item" style="color:var(--brand); border-top:1px solid var(--border); margin-top:10px;" onclick="location.reload()">
-                            <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                        <div class="user-avatar" id="nav-avatar-circle">E</div>
+                        
+                        <div id="user-dropdown" class="dropdown-menu">
+                            <div class="menu-header">
+                                <p>Configuración de Cuenta</p>
+                            </div>
+                            <ul class="menu-list">
+                                <li onclick="App.renderView('perfil')"><i class="fa-regular fa-circle-user"></i> Mi Perfil</li>
+                                <li><i class="fa-solid fa-chart-line"></i> Estadísticas</li>
+                                <li><i class="fa-solid fa-sliders"></i> Preferencias</li>
+                                <li class="logout-item" onclick="location.reload()"><i class="fa-solid fa-power-off"></i> Cerrar Sesión</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <div class="layout">
+        <div class="main-layout">
             
-            <aside>
-                <div class="card" style="padding:15px;">
-                    <div class="drop-item" onclick="App.renderView('inicio')">
-                        <i class="fa-solid fa-house"></i> Inicio
-                    </div>
-                    <div class="drop-item" onclick="App.renderView('tendencias')">
-                        <i class="fa-solid fa-fire-flame-curved"></i> Tendencias
-                    </div>
-                    <div class="drop-item" onclick="App.renderView('proyectos')">
-                        <i class="fa-solid fa-code-branch"></i> Proyectos
-                    </div>
-                </div>
+            <aside class="left-sidebar">
+                <div class="sidebar-sticky">
+                    <nav class="side-menu">
+                        <button class="side-link active" onclick="App.renderView('inicio')">
+                            <i class="fa-solid fa-house"></i> <span>Feed Principal</span>
+                        </button>
+                        <button class="side-link" onclick="App.renderView('tendencias')">
+                            <i class="fa-solid fa-fire-flame-curved"></i> <span>Tendencias</span>
+                        </button>
+                        <button class="side-link" onclick="App.renderView('proyectos')">
+                            <i class="fa-solid fa-code-branch"></i> <span>Mis Proyectos</span>
+                        </button>
+                        <button class="side-link" onclick="App.renderView('perfil')">
+                            <i class="fa-regular fa-id-badge"></i> <span>Perfil Profesional</span>
+                        </button>
+                    </nav>
 
-                <div class="card" style="background:var(--surface); border:none;">
-                    <h4 style="font-size:0.8rem; font-weight:800; color:var(--text-light); text-transform:uppercase; margin-bottom:15px;">Explorar</h4>
-                    <p style="font-size:0.85rem; font-weight:600; color:var(--text);">Conecta con otros programadores en la red oficial.</p>
+                    <div class="sidebar-card">
+                        <h5>Emmanuel Store</h5>
+                        <p>Soporte disponible a partir de las 3:00 PM entre semana.</p>
+                        <button class="btn-outline-sm">Contactar</button>
+                    </div>
                 </div>
             </aside>
 
-            <section id="main-content">
+            <section class="central-feed" id="dynamic-content">
                 </section>
 
-            <aside>
-                <div class="card">
-                    <h4 style="font-weight:800; margin-bottom:20px;">Sugerencias para ti</h4>
-                    <div id="right-recommendations">
+            <aside class="right-sidebar">
+                <div class="widget-card">
+                    <h4>Sugerencias de seguimiento</h4>
+                    <p class="widget-subtitle">Usuarios reales registrados</p>
+                    <div id="global-recommendations" class="rec-list">
                         </div>
                 </div>
 
-                <div class="card" style="border-left: 4px solid var(--brand);">
-                    <h4 style="font-weight:800; margin-bottom:10px;">Emmanuel Store News</h4>
-                    <p style="font-size:0.8rem; color:var(--text-light); line-height:1.5;">
-                        Versión 5.0: Ahora los datos se guardan en la nube. ¡Busca a tus amigos por su nombre de usuario!
-                    </p>
+                <div class="widget-card premium-card">
+                    <h4>DevRoot Pro</h4>
+                    <p>Accede a funciones exclusivas y bases de datos ilimitadas.</p>
+                    <button class="btn-white-sm">Mejorar Ahora</button>
                 </div>
 
-                <footer style="padding:0 10px; font-size:0.7rem; color:var(--text-light); font-weight:700;">
-                    &copy; 2026 DEVROOT NETWORK - EMMANUEL STORE
+                <footer class="app-footer">
+                    <div class="footer-links">
+                        <a>Privacidad</a> • <a>Términos</a> • <a>Cookies</a>
+                    </div>
+                    <p>© 2026 DevRoot Network by Emmanuel</p>
                 </footer>
             </aside>
 
