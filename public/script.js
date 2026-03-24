@@ -1,218 +1,234 @@
 /**
- * ==============================================================================
- * DEVROOT ONYX CLIENT CONTROLLER
- * V40.0.1 - ADVANCED SOCIAL LOGIC
- * ==============================================================================
+ * GLOBAL CORE INTERFACE ENGINE
+ * V20.0.1 - INDUSTRIAL GRADE
  */
 
-// ESTADO GLOBAL DE LA APLICACIÓN
+"use strict";
+
 const STATE = {
-    me: null,          // Mi usuario logueado
-    activeProfile: null, // Usuario que estoy viendo
-    isAuth: false
+    user: null,
+    authMode: 'login',
+    searchTimer: null,
+    activeProfile: null
 };
 
-/**
- * MOTOR DE NOTIFICACIONES (TOASTS)
- */
-const toast = (msg, type = 'success') => {
-    const t = document.createElement('div');
-    t.style.cssText = `
-        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-        background: #000; color: #fff; padding: 16px 32px; border-radius: 50px;
-        font-weight: 700; z-index: 10000; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-        animation: toastIn 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
-    `;
-    t.innerText = msg;
-    document.body.appendChild(t);
-    setTimeout(() => {
-        t.style.opacity = '0';
-        setTimeout(() => t.remove(), 500);
-    }, 3000);
-};
+// 1. BOOT SEQUENCE
+window.addEventListener('DOMContentLoaded', () => {
+    console.log("[CORE] System Boot Sequence Started...");
+    
+    const fill = document.getElementById('track-fill');
+    const status = document.getElementById('track-status');
+    const steps = [
+        { p: 15, t: "Initializing SSL Handshake..." },
+        { p: 40, t: "Mapping Database Relays..." },
+        { p: 75, t: "Syncing User Matrix..." },
+        { p: 100, t: "Ready for Input." }
+    ];
 
-/**
- * FUNCIÓN: BÚSQUEDA UNIVERSAL (AL DAR ENTER)
- */
-async function executeSearch(query) {
-    const overlay = document.getElementById('search-results-overlay');
-    const container = document.getElementById('search-res-list');
-
-    if (query.length < 1) {
-        overlay.style.display = 'none';
-        return;
-    }
-
-    try {
-        const response = await fetch(`/api/v1/search/universal?q=${encodeURIComponent(query)}`);
-        const { results } = await response.json();
-
-        overlay.style.display = 'block';
-        container.innerHTML = "";
-
-        if (results.people.length === 0) {
-            container.innerHTML = `<p style="padding: 20px; text-align:center; color:#999; font-weight:600;">No se encontraron personas.</p>`;
-            return;
-        }
-
-        results.people.forEach(user => {
-            const el = document.createElement('div');
-            el.className = 'res-card';
-            el.onclick = () => loadFullProfile(user.uid);
-            el.innerHTML = `
-                <div class="res-avatar">${user.init}</div>
-                <div>
-                    <strong style="display:block">${user.name}</strong>
-                    <small style="color:#888; font-weight:700">${user.rank}</small>
-                </div>
-            `;
-            container.appendChild(el);
-        });
-    } catch (err) {
-        console.error("Kernel Search Error:", err);
-    }
-}
-
-/**
- * FUNCIÓN: CARGA COMPLETA DE PERFIL (LAYER 1)
- */
-async function loadFullProfile(uid) {
-    const modal = document.getElementById('onyx-profile-modal');
-    modal.style.display = 'flex';
-    document.getElementById('profile-shell-main').style.opacity = '0.5';
-
-    try {
-        const response = await fetch(`/api/v1/user/full-profile/${uid}`);
-        const data = await response.json();
-
-        STATE.activeProfile = data; // Guardar en estado global
-        
-        // Rellenar UI
-        document.getElementById('p-avatar-box').innerText = data.identity.init;
-        document.getElementById('p-name-txt').innerText = data.identity.name;
-        document.getElementById('p-rank-txt').innerText = data.identity.rank;
-        document.getElementById('p-bio-txt').innerText = data.identity.bio;
-        
-        // Stats
-        document.getElementById('stat-followers').innerText = data.stats.followers;
-        document.getElementById('stat-following').innerText = data.stats.following;
-        document.getElementById('stat-posts').innerText = data.stats.posts;
-
-        updateFollowButtonUI();
-        document.getElementById('profile-shell-main').style.opacity = '1';
-    } catch (err) {
-        toast("Error al conectar con el nodo de perfil.", "error");
-        closeProfileModal();
-    }
-}
-
-/**
- * FUNCIÓN: MOSTRAR LISTADOS (LAYER 2)
- */
-function openSocialList(type) {
-    const layer = document.getElementById('onyx-list-layer');
-    const title = document.getElementById('layer-title-txt');
-    const container = document.getElementById('layer-scroll-box');
-
-    if (!STATE.activeProfile) return;
-
-    layer.style.display = 'flex';
-    title.innerText = type === 'followers' ? 'Seguidores' : 'Siguiendo';
-    container.innerHTML = "";
-
-    const users = type === 'followers' 
-        ? STATE.activeProfile.social.followers_list 
-        : STATE.activeProfile.social.following_list;
-
-    if (users.length === 0) {
-        container.innerHTML = `<p style="margin-top:40px; text-align:center; color:#ccc; font-weight:800;">No hay registros todavía.</p>`;
-        return;
-    }
-
-    users.forEach(u => {
-        const item = document.createElement('div');
-        item.className = 'list-item';
-        item.onclick = () => {
-            closeListLayer();
-            loadFullProfile(u.uid);
-        };
-        item.innerHTML = `
-            <div class="res-avatar" style="width:35px; height:35px; font-size:0.8rem">${u.init}</div>
-            <div>
-                <strong style="display:block; font-size:0.9rem">${u.name}</strong>
-                <small style="color:#aaa; font-weight:700; font-size:0.7rem">${u.rank}</small>
-            </div>
-        `;
-        container.appendChild(item);
+    steps.forEach((step, idx) => {
+        setTimeout(() => {
+            fill.style.width = `${step.p}%`;
+            status.innerText = step.t;
+            if(step.p === 100) endBoot();
+        }, (idx + 1) * 450);
     });
+});
+
+function endBoot() {
+    const overlay = document.getElementById('boot-sequencer');
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 600);
 }
 
-/**
- * FUNCIÓN: LÓGICA DE SEGUIMIENTO REAL
- */
-async function toggleFollowAction() {
-    if (!STATE.me) {
-        toast("Inicia sesión para interactuar.");
-        return;
+// 2. AUTHENTICATION LOGIC
+function swapAuthMode() {
+    STATE.authMode = STATE.authMode === 'login' ? 'signup' : 'login';
+    
+    const ui = {
+        header: document.getElementById('auth-header'),
+        sub: document.querySelector('.auth-sub'),
+        btn: document.getElementById('auth-trigger'),
+        footText: document.getElementById('foot-text'),
+        footBtn: document.getElementById('foot-btn'),
+        userWrap: document.getElementById('wrap-user'),
+        lblMain: document.getElementById('lbl-main')
+    };
+
+    if(STATE.authMode === 'signup') {
+        ui.header.innerText = "Crear Cuenta";
+        ui.sub.innerText = "Únete a la infraestructura global de Global Core.";
+        ui.btn.innerHTML = "<span>REGISTRARSE</span>";
+        ui.footText.innerText = "¿Ya eres miembro?";
+        ui.footBtn.innerText = "Inicia sesión";
+        ui.userWrap.classList.remove('hidden');
+        ui.lblMain.innerText = "Correo Electrónico";
+    } else {
+        ui.header.innerText = "Iniciar Sesión";
+        ui.sub.innerText = "Ingresa tus datos para acceder al panel central.";
+        ui.btn.innerHTML = "<span>ACCEDER AL CORE</span>";
+        ui.footText.innerText = "¿No tienes cuenta?";
+        ui.footBtn.innerText = "Crear una ahora";
+        ui.userWrap.classList.add('hidden');
+        ui.lblMain.innerText = "Correo o Usuario";
+    }
+}
+
+async function runAuth() {
+    const credential = document.getElementById('auth-credential').value.trim();
+    const secret = document.getElementById('auth-secret').value;
+    const username = document.getElementById('reg-username').value.trim();
+    const btn = document.getElementById('auth-trigger');
+
+    if(!credential || !secret || (STATE.authMode === 'signup' && !username)) {
+        return pushAlert("Por favor, rellena todos los campos de identidad.");
     }
 
-    const targetUid = STATE.activeProfile.identity.uid;
-    const btn = document.getElementById('follow-main-btn');
     btn.disabled = true;
+    
+    const endpoint = STATE.authMode === 'login' ? '/api/v1/identity/login' : '/api/v1/identity/register';
+    const payload = STATE.authMode === 'login' 
+        ? { credential, secret } 
+        : { username, email: credential, password: secret };
 
     try {
-        const response = await fetch('/api/v1/social/toggle-follow', {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ myUid: STATE.me.uid, targetUid: targetUid })
+            body: JSON.stringify(payload)
         });
-        const data = await response.json();
 
-        if (response.ok) {
-            // Recargar datos para refrescar listas y números
-            await loadFullProfile(targetUid);
-            toast(data.status === 'followed' ? "Siguiendo con éxito" : "Has dejado de seguir");
+        const result = await response.json();
+
+        if(!response.ok) throw new Error(result.error);
+
+        if(STATE.authMode === 'signup') {
+            pushAlert("Cuenta creada con éxito. Ya puedes entrar.");
+            swapAuthMode();
+        } else {
+            STATE.user = result.data;
+            enterDashboard();
         }
-    } catch (err) {
-        toast("Error de red social.", "error");
+
+    } catch(err) {
+        pushAlert(err.message);
     } finally {
         btn.disabled = false;
     }
 }
 
-/**
- * UI HELPERS
- */
-function updateFollowButtonUI() {
-    const btn = document.getElementById('follow-main-btn');
-    if (!STATE.me || STATE.me.uid === STATE.activeProfile.identity.uid) {
-        btn.style.display = 'none';
+// 3. DASHBOARD OPERATIONS
+function enterDashboard() {
+    document.getElementById('auth-layer').classList.add('hidden');
+    document.getElementById('core-dashboard').classList.remove('dashboard-hidden');
+    
+    // UI Update
+    document.getElementById('top-name').innerText = STATE.user.name;
+    document.getElementById('top-role').innerText = STATE.user.role;
+    const av = document.getElementById('top-avatar');
+    av.innerText = STATE.user.name[0].toUpperCase();
+    av.style.background = STATE.user.color;
+}
+
+async function processGlobalSearch(q) {
+    const dropdown = document.getElementById('results-dropdown');
+    const list = document.getElementById('results-list');
+
+    if(q.length < 2) {
+        dropdown.classList.add('drop-hidden');
         return;
     }
+
+    clearTimeout(STATE.searchTimer);
+    STATE.searchTimer = setTimeout(async () => {
+        try {
+            const res = await fetch(`/api/v1/directory/search?q=${encodeURIComponent(q)}`);
+            const data = await res.json();
+
+            list.innerHTML = "";
+            dropdown.classList.remove('drop-hidden');
+
+            if(data.items.length === 0) {
+                list.innerHTML = '<div class="no-results">No se hallaron coincidencias.</div>';
+                return;
+            }
+
+            data.items.forEach(user => {
+                const item = document.createElement('div');
+                item.className = 'result-item';
+                item.innerHTML = `
+                    <div class="r-av" style="background:${user.hex_theme}">${user.handle[0].toUpperCase()}</div>
+                    <div class="r-info">
+                        <strong>${user.handle}</strong>
+                        <small>${user.badge_type}</small>
+                    </div>
+                `;
+                item.onclick = () => openProfile(user);
+                list.appendChild(item);
+            });
+        } catch(e) { console.error("Search Error"); }
+    }, 400);
+}
+
+// 4. PROFILE MODAL CONTROLS
+function openProfile(u) {
+    const modal = document.getElementById('modal-profile');
+    modal.classList.remove('modal-hidden');
+
+    document.getElementById('p-name').innerText = u.handle || u.name;
+    document.getElementById('p-role').innerText = u.badge_type || u.role;
+    document.getElementById('p-bio').innerText = u.bio_content || u.bio || "Sin descripción.";
     
-    btn.style.display = 'block';
-    const amIFollowing = STATE.activeProfile.social.followers_list.some(u => u.uid === STATE.me.uid);
+    const av = document.getElementById('p-avatar');
+    av.innerText = (u.handle || u.name)[0].toUpperCase();
+    av.style.background = u.hex_theme || u.color;
+
+    document.getElementById('m-followers').innerText = u.stats?.followers || 0;
+    document.getElementById('m-following').innerText = u.stats?.following || 0;
+
+    STATE.activeProfile = u;
+}
+
+function closeProfile() {
+    document.getElementById('modal-profile').classList.add('modal-hidden');
+}
+
+// 5. UTILITIES
+function pushAlert(msg) {
+    const bridge = document.getElementById('alert-bridge');
+    const toast = document.createElement('div');
+    toast.className = 'core-toast';
+    toast.innerText = msg;
+    bridge.appendChild(toast);
     
-    if (amIFollowing) {
-        btn.innerText = "Dejar de Seguir";
-        btn.className = "btn-social unfollow";
+    setTimeout(() => toast.classList.add('toast-show'), 100);
+    setTimeout(() => {
+        toast.classList.remove('toast-show');
+        setTimeout(() => toast.remove(), 400);
+    }, 4000);
+}
+
+function togglePass() {
+    const input = document.getElementById('auth-secret');
+    const icon = document.getElementById('eye-icon');
+    if(input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
     } else {
-        btn.innerText = "Seguir Usuario";
-        btn.className = "btn-social follow";
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
     }
 }
 
-function closeProfileModal() {
-    document.getElementById('onyx-profile-modal').style.display = 'none';
-    closeListLayer();
+function toggleUserDropdown() {
+    document.getElementById('user-menu').classList.toggle('menu-hidden');
 }
 
-function closeListLayer() {
-    document.getElementById('onyx-list-layer').style.display = 'none';
-}
-
-// EVENT LISTENERS DE CIERRE
+// Global click closer
 window.onclick = (e) => {
-    if (e.target.id === 'onyx-profile-modal') closeProfileModal();
-    if (!e.target.closest('.search-container')) document.getElementById('search-results-overlay').style.display = 'none';
+    if(!e.target.closest('.user-pill')) {
+        document.getElementById('user-menu').classList.add('menu-hidden');
+    }
+    if(!e.target.closest('.search-box')) {
+        document.getElementById('results-dropdown').classList.add('drop-hidden');
+    }
 };
