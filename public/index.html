@@ -3,99 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Core | Infrastructure</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <title>Global Core | Infrastructure</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <canvas id="bg-particles"></canvas>
-    <div id="system-toaster"></div>
+    <div id="alert-bridge"></div>
 
-    <div id="system-loader">
-        <div class="loader-content">
-            <h1 class="logo-glitch">Dev<span>Root</span></h1>
-            <div class="progress-container"><div id="bar-fill"></div></div>
-            <span id="load-msg">Verificando Kernels...</span>
+    <div id="boot-sequencer">
+        <div class="sequencer-box">
+            <h1 class="logo-static">Global<span>Core</span></h1>
+            <div class="track-line"><div id="track-fill"></div></div>
+            <p id="track-status">Cargando módulos de red...</p>
         </div>
     </div>
 
-    <section id="gateway-auth" class="visible">
-        <div class="gate-card">
-            <div class="gate-info">
-                <div class="brand">Dev<span>Root</span></div>
-                <div class="info-body">
-                    <h2>Gestión de Infraestructura Centralizada.</h2>
-                    <p>Acceso restringido a terminales autorizadas.</p>
+    <section id="auth-layer" class="layer-visible">
+        <div class="glass-container">
+            <div class="side-visual">
+                <div class="v-top">
+                    <div class="logo">Global<span>Core</span></div>
                 </div>
-                <div class="info-footer">
-                    <span class="status"><i class="fa-solid fa-circle-check"></i> SYSTEM READY</span>
+                <div class="v-mid">
+                    <h2>Gestión de infraestructura a escala global.</h2>
+                    <p>Únete a la red descentralizada de desarrolladores.</p>
+                </div>
+                <div class="v-low">
+                    <div class="status-indicator">
+                        <span class="pulse"></span> SISTEMA OPERATIVO
+                    </div>
                 </div>
             </div>
 
-            <div class="gate-form">
-                <div class="form-wrap">
-                    <h3 id="gate-title">Identificación</h3>
-                    <div class="inputs">
-                        <div class="field hidden" id="field-user">
-                            <label>Identificador</label>
-                            <input type="text" id="in-user" placeholder="Usuario">
+            <div class="side-form">
+                <div class="form-scaffold">
+                    <h3 id="auth-header">Iniciar Sesión</h3>
+                    <p class="auth-sub">Ingresa tus datos para acceder al panel central.</p>
+
+                    <div class="group-fields">
+                        <div class="input-wrap hidden" id="wrap-user">
+                            <label>Identificador Único</label>
+                            <div class="input-inner">
+                                <i class="fa-regular fa-user"></i>
+                                <input type="text" id="reg-username" placeholder="ej. Usuario_01">
+                            </div>
                         </div>
-                        <div class="field">
-                            <label id="lbl-id">Credencial</label>
-                            <input type="text" id="in-identity" placeholder="Email o Usuario">
+
+                        <div class="input-wrap">
+                            <label id="lbl-main">Correo Electrónico</label>
+                            <div class="input-inner">
+                                <i class="fa-regular fa-envelope"></i>
+                                <input type="text" id="auth-credential" placeholder="email@ecnhaca.site">
+                            </div>
                         </div>
-                        <div class="field">
-                            <label>Clave</label>
-                            <div class="pass-box">
-                                <input type="password" id="in-pass" placeholder="••••••••">
-                                <i class="fa-regular fa-eye" onclick="toggleSecret()"></i>
+
+                        <div class="input-wrap">
+                            <label>Clave de Acceso</label>
+                            <div class="input-inner">
+                                <i class="fa-solid fa-lock"></i>
+                                <input type="password" id="auth-secret" placeholder="••••••••">
+                                <button type="button" class="eye-toggle" onclick="togglePass()">
+                                    <i class="fa-regular fa-eye" id="eye-icon"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
-                    <button class="btn-primary" onclick="processAuth()">
-                        <span id="btn-label">ACCEDER</span>
+
+                    <button class="btn-execute" id="auth-trigger" onclick="runAuth()">
+                        <span>ACCEDER AL CORE</span>
+                        <div class="loader-dots hidden"></div>
                     </button>
-                    <div class="switcher">
-                        <span id="sw-text">¿Sin registros?</span>
-                        <button onclick="toggleGateMode()" id="sw-btn">Crear Identidad</button>
+
+                    <div class="form-footer">
+                        <span id="foot-text">¿No tienes cuenta?</span>
+                        <button onclick="swapAuthMode()" id="foot-btn">Crear una ahora</button>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <main id="app-shell" class="hidden">
-        <nav class="shell-nav">
-            <div class="nav-content">
-                <div class="brand">Dev<span>Root</span></div>
-                <div class="search-engine">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="global-q" placeholder="Buscar identidades..." onkeyup="searchCore(this.value)">
-                    <div id="search-results" class="hidden"></div>
-                </div>
-                <div class="user-meta" onclick="toggleDrop()">
-                    <div id="u-av" class="avatar-sm">?</div>
-                    <div class="u-text">
-                        <strong id="u-name">Admin</strong>
-                        <small id="u-status">Standard</small>
+    <main id="core-dashboard" class="dashboard-hidden">
+        <nav class="top-bridge">
+            <div class="bridge-container">
+                <div class="b-logo">Global<span>Core</span></div>
+                
+                <div class="b-search">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="global-query" placeholder="Buscar en la infraestructura..." onkeyup="processGlobalSearch(this.value)">
+                        
+                        <div id="results-dropdown" class="drop-hidden">
+                            <div class="drop-label">DIRECTORIO DE USUARIOS</div>
+                            <div id="results-list"></div>
+                        </div>
                     </div>
-                    <div id="drop-menu" class="hidden">
-                        <button onclick="location.reload()">Desconectar</button>
+                </div>
+
+                <div class="b-user">
+                    <div class="user-pill" onclick="toggleUserDropdown()">
+                        <div class="u-avatar" id="top-avatar">?</div>
+                        <div class="u-info">
+                            <span id="top-name">Usuario</span>
+                            <small id="top-role">Member</small>
+                        </div>
+                        <i class="fa-solid fa-angle-down"></i>
+
+                        <div id="user-menu" class="menu-hidden">
+                            <div class="menu-item" onclick="openProfile(STATE.user.uid)"><i class="fa-regular fa-circle-user"></i> Perfil</div>
+                            <div class="menu-item"><i class="fa-solid fa-gear"></i> Ajustes</div>
+                            <hr>
+                            <div class="menu-item exit" onclick="location.reload()"><i class="fa-solid fa-power-off"></i> Salir</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <div class="shell-content">
-            <div class="empty-layout">
-                <i class="fa-solid fa-server"></i>
-                <h2>Panel de Control Vacío</h2>
-                <p>Busca otros usuarios para integrarlos a tu red de trabajo.</p>
+        <section class="core-body">
+            <div class="body-grid">
+                <aside class="body-nav">
+                    <div class="nav-card">
+                        <div class="nav-link active"><i class="fa-solid fa-house"></i> Inicio</div>
+                        <div class="nav-link"><i class="fa-solid fa-fire"></i> Tendencias</div>
+                        <div class="nav-link"><i class="fa-solid fa-bookmark"></i> Guardados</div>
+                    </div>
+                </aside>
+
+                <div class="body-feed">
+                    <div class="feed-empty">
+                        <i class="fa-solid fa-microchip"></i>
+                        <h3>Sin actividad reciente</h3>
+                        <p>Tu feed principal está vacío. Busca usuarios para ver sus actualizaciones.</p>
+                        <button onclick="document.getElementById('global-query').focus()">Explorar Directorio</button>
+                    </div>
+                </div>
+
+                <aside class="body-stats">
+                    <div class="stats-card">
+                        <h4>Estado Global</h4>
+                        <div class="stat-line"><span>PostgreSQL</span> <span class="online">ONLINE</span></div>
+                        <div class="stat-line"><span>Uptime</span> <span>99.9%</span></div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+    </main>
+
+    <div id="modal-profile" class="modal-hidden">
+        <div class="modal-backdrop" onclick="closeProfile()"></div>
+        <div class="modal-view">
+            <div class="v-banner" id="p-banner"></div>
+            <div class="v-content">
+                <div class="v-avatar" id="p-avatar">?</div>
+                <h2 id="p-name">Username</h2>
+                <span class="p-role" id="p-role">Member</span>
+                <p class="p-bio" id="p-bio">...</p>
+                
+                <div class="p-metrics">
+                    <div class="m-item"><strong id="m-followers">0</strong><span>Seguidores</span></div>
+                    <div class="m-item"><strong id="m-following">0</strong><span>Siguiendo</span></div>
+                </div>
+
+                <div class="v-actions">
+                    <button class="btn-follow" id="btn-follow-action" onclick="handleFollow()">Seguir</button>
+                    <button class="btn-message">Mensaje</button>
+                </div>
             </div>
         </div>
-    </main>
+    </div>
 
     <script src="script.js"></script>
 </body>
