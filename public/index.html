@@ -4,178 +4,119 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Global Core | Infrastructure</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div id="alert-bridge"></div>
+    <div id="system-toaster-bridge"></div>
 
-    <div id="boot-sequencer">
-        <div class="sequencer-box">
-            <h1 class="logo-static">Global<span>Core</span></h1>
-            <div class="track-line"><div id="track-fill"></div></div>
-            <p id="track-status">Cargando módulos de red...</p>
+    <div id="boot-overlay">
+        <div class="boot-container">
+            <h1 class="core-logo">Global<span>Core</span></h1>
+            <div class="progress-bar"><div id="progress-fill"></div></div>
+            <p id="boot-status">Inicializando Red...</p>
         </div>
     </div>
 
-    <section id="auth-layer" class="layer-visible">
-        <div class="glass-container">
-            <div class="side-visual">
-                <div class="v-top">
-                    <div class="logo">Global<span>Core</span></div>
+    <section id="access-layer" class="layer-active">
+        <div class="auth-box">
+            <div class="auth-visual">
+                <div class="v-content">
+                    <div class="logo-sm">Global<span>Core</span></div>
+                    <h2>Infraestructura Centralizada de Datos.</h2>
+                    <p>Accede a la red global de control y gestión.</p>
                 </div>
-                <div class="v-mid">
-                    <h2>Gestión de infraestructura a escala global.</h2>
-                    <p>Únete a la red descentralizada de desarrolladores.</p>
-                </div>
-                <div class="v-low">
-                    <div class="status-indicator">
-                        <span class="pulse"></span> SISTEMA OPERATIVO
-                    </div>
-                </div>
+                <div class="v-status"><span class="pulse"></span> SISTEMA ACTIVO</div>
             </div>
 
-            <div class="side-form">
-                <div class="form-scaffold">
-                    <h3 id="auth-header">Iniciar Sesión</h3>
-                    <p class="auth-sub">Ingresa tus datos para acceder al panel central.</p>
-
-                    <div class="group-fields">
-                        <div class="input-wrap hidden" id="wrap-user">
-                            <label>Identificador Único</label>
-                            <div class="input-inner">
+            <div class="auth-form">
+                <div class="form-inner">
+                    <h3 id="form-title">Bienvenido</h3>
+                    <div class="inputs-group">
+                        <div class="field hidden" id="field-username">
+                            <label>Nombre de Usuario</label>
+                            <div class="input-ctrl">
                                 <i class="fa-regular fa-user"></i>
-                                <input type="text" id="reg-username" placeholder="ej. Usuario_01">
+                                <input type="text" id="in-username" placeholder="Usuario">
                             </div>
                         </div>
-
-                        <div class="input-wrap">
-                            <label id="lbl-main">Correo Electrónico</label>
-                            <div class="input-inner">
+                        <div class="field">
+                            <label id="lbl-cred">Correo Electrónico</label>
+                            <div class="input-ctrl">
                                 <i class="fa-regular fa-envelope"></i>
-                                <input type="text" id="auth-credential" placeholder="email@ecnhaca.site">
+                                <input type="text" id="in-cred" placeholder="email@ecnhaca.site">
                             </div>
                         </div>
-
-                        <div class="input-wrap">
-                            <label>Clave de Acceso</label>
-                            <div class="input-inner">
+                        <div class="field">
+                            <label>Clave Maestra</label>
+                            <div class="input-ctrl">
                                 <i class="fa-solid fa-lock"></i>
-                                <input type="password" id="auth-secret" placeholder="••••••••">
-                                <button type="button" class="eye-toggle" onclick="togglePass()">
-                                    <i class="fa-regular fa-eye" id="eye-icon"></i>
-                                </button>
+                                <input type="password" id="in-pass" placeholder="••••••••">
                             </div>
                         </div>
                     </div>
-
-                    <button class="btn-execute" id="auth-trigger" onclick="runAuth()">
-                        <span>ACCEDER AL CORE</span>
-                        <div class="loader-dots hidden"></div>
+                    <button class="btn-primary" onclick="handleAuthAction()">
+                        <span id="btn-text">ACCEDER</span>
                     </button>
-
-                    <div class="form-footer">
-                        <span id="foot-text">¿No tienes cuenta?</span>
-                        <button onclick="swapAuthMode()" id="foot-btn">Crear una ahora</button>
+                    <div class="form-toggle">
+                        <span id="toggle-msg">¿No tienes cuenta?</span>
+                        <button onclick="switchMode()" id="toggle-btn">Regístrate</button>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <main id="core-dashboard" class="dashboard-hidden">
-        <nav class="top-bridge">
-            <div class="bridge-container">
-                <div class="b-logo">Global<span>Core</span></div>
-                
-                <div class="b-search">
-                    <div class="search-box">
+    <main id="core-app" class="hidden">
+        <nav class="core-nav">
+            <div class="nav-container">
+                <div class="nav-brand">Global<span>Core</span></div>
+                <div class="nav-search">
+                    <div class="search-ctrl">
                         <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" id="global-query" placeholder="Buscar en la infraestructura..." onkeyup="processGlobalSearch(this.value)">
-                        
-                        <div id="results-dropdown" class="drop-hidden">
-                            <div class="drop-label">DIRECTORIO DE USUARIOS</div>
-                            <div id="results-list"></div>
-                        </div>
+                        <input type="text" placeholder="Buscar identidades..." onkeyup="searchIdentities(this.value)">
+                        <div id="search-drop" class="hidden"></div>
                     </div>
                 </div>
-
-                <div class="b-user">
-                    <div class="user-pill" onclick="toggleUserDropdown()">
-                        <div class="u-avatar" id="top-avatar">?</div>
-                        <div class="u-info">
-                            <span id="top-name">Usuario</span>
-                            <small id="top-role">Member</small>
-                        </div>
-                        <i class="fa-solid fa-angle-down"></i>
-
-                        <div id="user-menu" class="menu-hidden">
-                            <div class="menu-item" onclick="openProfile(STATE.user.uid)"><i class="fa-regular fa-circle-user"></i> Perfil</div>
-                            <div class="menu-item"><i class="fa-solid fa-gear"></i> Ajustes</div>
-                            <hr>
-                            <div class="menu-item exit" onclick="location.reload()"><i class="fa-solid fa-power-off"></i> Salir</div>
-                        </div>
+                <div class="nav-user" onclick="toggleMenu()">
+                    <div class="u-avatar" id="nav-av">?</div>
+                    <div class="u-meta">
+                        <strong id="nav-name">Admin</strong>
+                        <small id="nav-role">Standard</small>
+                    </div>
+                    <div id="user-menu" class="hidden">
+                        <button onclick="openMyProfile()">Perfil</button>
+                        <button onclick="location.reload()">Cerrar Sesión</button>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <section class="core-body">
-            <div class="body-grid">
-                <aside class="body-nav">
-                    <div class="nav-card">
-                        <div class="nav-link active"><i class="fa-solid fa-house"></i> Inicio</div>
-                        <div class="nav-link"><i class="fa-solid fa-fire"></i> Tendencias</div>
-                        <div class="nav-link"><i class="fa-solid fa-bookmark"></i> Guardados</div>
+        <section class="core-view">
+            <div class="view-grid">
+                <aside class="sidebar-left">
+                    <div class="menu-card">
+                        <div class="m-item active"><i class="fa-solid fa-house"></i> Feed Global</div>
+                        <div class="m-item"><i class="fa-solid fa-chart-line"></i> Estadísticas</div>
+                        <div class="m-item"><i class="fa-solid fa-database"></i> Registros SQL</div>
                     </div>
                 </aside>
 
-                <div class="body-feed">
-                    <div class="feed-empty">
-                        <i class="fa-solid fa-microchip"></i>
-                        <h3>Sin actividad reciente</h3>
-                        <p>Tu feed principal está vacío. Busca usuarios para ver sus actualizaciones.</p>
-                        <button onclick="document.getElementById('global-query').focus()">Explorar Directorio</button>
+                <div class="main-feed">
+                    <div class="post-creator">
+                        <textarea id="post-input" placeholder="¿Qué quieres registrar en el Core?"></textarea>
+                        <div class="creator-actions">
+                            <button class="btn-post" onclick="submitPost()">PUBLICAR</button>
+                        </div>
                     </div>
+                    <div id="feed-container">
+                        </div>
                 </div>
-
-                <aside class="body-stats">
-                    <div class="stats-card">
-                        <h4>Estado Global</h4>
-                        <div class="stat-line"><span>PostgreSQL</span> <span class="online">ONLINE</span></div>
-                        <div class="stat-line"><span>Uptime</span> <span>99.9%</span></div>
-                    </div>
-                </aside>
             </div>
         </section>
     </main>
-
-    <div id="modal-profile" class="modal-hidden">
-        <div class="modal-backdrop" onclick="closeProfile()"></div>
-        <div class="modal-view">
-            <div class="v-banner" id="p-banner"></div>
-            <div class="v-content">
-                <div class="v-avatar" id="p-avatar">?</div>
-                <h2 id="p-name">Username</h2>
-                <span class="p-role" id="p-role">Member</span>
-                <p class="p-bio" id="p-bio">...</p>
-                
-                <div class="p-metrics">
-                    <div class="m-item"><strong id="m-followers">0</strong><span>Seguidores</span></div>
-                    <div class="m-item"><strong id="m-following">0</strong><span>Siguiendo</span></div>
-                </div>
-
-                <div class="v-actions">
-                    <button class="btn-follow" id="btn-follow-action" onclick="handleFollow()">Seguir</button>
-                    <button class="btn-message">Mensaje</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script src="script.js"></script>
 </body>
