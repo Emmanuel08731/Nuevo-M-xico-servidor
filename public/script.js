@@ -1,234 +1,146 @@
 /**
- * GLOBAL CORE INTERFACE ENGINE
- * V20.0.1 - INDUSTRIAL GRADE
+ * DEVROOT ENGINE V25 - CORE LOGIC
+ * SISTEMA DE REGISTRO DINÁMICO & BÚSQUEDA
  */
 
 "use strict";
 
-const STATE = {
-    user: null,
-    authMode: 'login',
-    searchTimer: null,
-    activeProfile: null
-};
-
-// 1. BOOT SEQUENCE
-window.addEventListener('DOMContentLoaded', () => {
-    console.log("[CORE] System Boot Sequence Started...");
-    
-    const fill = document.getElementById('track-fill');
-    const status = document.getElementById('track-status');
-    const steps = [
-        { p: 15, t: "Initializing SSL Handshake..." },
-        { p: 40, t: "Mapping Database Relays..." },
-        { p: 75, t: "Syncing User Matrix..." },
-        { p: 100, t: "Ready for Input." }
-    ];
-
-    steps.forEach((step, idx) => {
-        setTimeout(() => {
-            fill.style.width = `${step.p}%`;
-            status.innerText = step.t;
-            if(step.p === 100) endBoot();
-        }, (idx + 1) * 450);
-    });
-});
-
-function endBoot() {
-    const overlay = document.getElementById('boot-sequencer');
-    overlay.style.opacity = '0';
-    setTimeout(() => overlay.remove(), 600);
-}
-
-// 2. AUTHENTICATION LOGIC
-function swapAuthMode() {
-    STATE.authMode = STATE.authMode === 'login' ? 'signup' : 'login';
-    
-    const ui = {
-        header: document.getElementById('auth-header'),
-        sub: document.querySelector('.auth-sub'),
-        btn: document.getElementById('auth-trigger'),
-        footText: document.getElementById('foot-text'),
-        footBtn: document.getElementById('foot-btn'),
-        userWrap: document.getElementById('wrap-user'),
-        lblMain: document.getElementById('lbl-main')
+const SocialEngine = (() => {
+    // ESTADO DE LA APP
+    const state = {
+        currentUser: null,
+        users: [
+            { id: 101, name: 'Emmanuel Store', bio: 'Ofreciendo los mejores bots de Discord.', followers: 1500, following: 20, color: '#0062ff' },
+            { id: 102, name: 'VibeBlox_Admin', bio: 'Dueño de la colección tactical gear.', followers: 890, following: 400, color: '#ff4757' },
+            { id: 103, name: 'Roblox_Scripter', bio: 'Programador Luau avanzado.', followers: 3200, following: 100, color: '#2ecc71' }
+        ],
+        view: 'feed'
     };
 
-    if(STATE.authMode === 'signup') {
-        ui.header.innerText = "Crear Cuenta";
-        ui.sub.innerText = "Únete a la infraestructura global de Global Core.";
-        ui.btn.innerHTML = "<span>REGISTRARSE</span>";
-        ui.footText.innerText = "¿Ya eres miembro?";
-        ui.footBtn.innerText = "Inicia sesión";
-        ui.userWrap.classList.remove('hidden');
-        ui.lblMain.innerText = "Correo Electrónico";
-    } else {
-        ui.header.innerText = "Iniciar Sesión";
-        ui.sub.innerText = "Ingresa tus datos para acceder al panel central.";
-        ui.btn.innerHTML = "<span>ACCEDER AL CORE</span>";
-        ui.footText.innerText = "¿No tienes cuenta?";
-        ui.footBtn.innerText = "Crear una ahora";
-        ui.userWrap.classList.add('hidden');
-        ui.lblMain.innerText = "Correo o Usuario";
-    }
-}
+    // --- MANEJO DE VISTAS ---
+    const navigate = (viewId) => {
+        document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+        document.getElementById(viewId).classList.remove('hidden');
+        document.getElementById(viewId).classList.add('animate-pop');
+        window.scrollTo(0,0);
+    };
 
-async function runAuth() {
-    const credential = document.getElementById('auth-credential').value.trim();
-    const secret = document.getElementById('auth-secret').value;
-    const username = document.getElementById('reg-username').value.trim();
-    const btn = document.getElementById('auth-trigger');
+    // --- SISTEMA DE REGISTRO (SIGN UP) ---
+    const handleRegister = () => {
+        const name = document.getElementById('reg-name').value;
+        const email = document.getElementById('reg-email').value;
+        const pass = document.getElementById('reg-pass').value;
+        const bio = document.getElementById('reg-bio').value;
 
-    if(!credential || !secret || (STATE.authMode === 'signup' && !username)) {
-        return pushAlert("Por favor, rellena todos los campos de identidad.");
-    }
+        if (!name || !email || !pass) return alert("Completa los campos obligatorios");
 
-    btn.disabled = true;
-    
-    const endpoint = STATE.authMode === 'login' ? '/api/v1/identity/login' : '/api/v1/identity/register';
-    const payload = STATE.authMode === 'login' 
-        ? { credential, secret } 
-        : { username, email: credential, password: secret };
+        // Creamos el objeto del nuevo usuario
+        const newUser = {
+            id: Date.now(),
+            name: name,
+            bio: bio || 'Nuevo desarrollador en DevRoot',
+            followers: 0,
+            following: 0,
+            color: '#' + Math.floor(Math.random()*16777215).toString(16)
+        };
 
-    try {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+        // Guardamos y entramos
+        state.users.push(newUser);
+        state.currentUser = newUser;
+        
+        launchApp();
+    };
 
-        const result = await response.json();
+    const launchApp = () => {
+        document.getElementById('auth-container').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
+        
+        // Actualizar UI del Navbar
+        document.getElementById('nav-user-av').innerText = state.currentUser.name[0];
+        document.getElementById('nav-user-name').innerText = state.currentUser.name;
+        
+        renderFeed();
+    };
 
-        if(!response.ok) throw new Error(result.error);
+    // --- BÚSQUEDA EN TIEMPO REAL ---
+    const searchUsers = (query) => {
+        const box = document.getElementById('search-res-box');
+        if (!query) return box.style.display = 'none';
 
-        if(STATE.authMode === 'signup') {
-            pushAlert("Cuenta creada con éxito. Ya puedes entrar.");
-            swapAuthMode();
-        } else {
-            STATE.user = result.data;
-            enterDashboard();
-        }
-
-    } catch(err) {
-        pushAlert(err.message);
-    } finally {
-        btn.disabled = false;
-    }
-}
-
-// 3. DASHBOARD OPERATIONS
-function enterDashboard() {
-    document.getElementById('auth-layer').classList.add('hidden');
-    document.getElementById('core-dashboard').classList.remove('dashboard-hidden');
-    
-    // UI Update
-    document.getElementById('top-name').innerText = STATE.user.name;
-    document.getElementById('top-role').innerText = STATE.user.role;
-    const av = document.getElementById('top-avatar');
-    av.innerText = STATE.user.name[0].toUpperCase();
-    av.style.background = STATE.user.color;
-}
-
-async function processGlobalSearch(q) {
-    const dropdown = document.getElementById('results-dropdown');
-    const list = document.getElementById('results-list');
-
-    if(q.length < 2) {
-        dropdown.classList.add('drop-hidden');
-        return;
-    }
-
-    clearTimeout(STATE.searchTimer);
-    STATE.searchTimer = setTimeout(async () => {
-        try {
-            const res = await fetch(`/api/v1/directory/search?q=${encodeURIComponent(q)}`);
-            const data = await res.json();
-
-            list.innerHTML = "";
-            dropdown.classList.remove('drop-hidden');
-
-            if(data.items.length === 0) {
-                list.innerHTML = '<div class="no-results">No se hallaron coincidencias.</div>';
-                return;
-            }
-
-            data.items.forEach(user => {
-                const item = document.createElement('div');
-                item.className = 'result-item';
-                item.innerHTML = `
-                    <div class="r-av" style="background:${user.hex_theme}">${user.handle[0].toUpperCase()}</div>
-                    <div class="r-info">
-                        <strong>${user.handle}</strong>
-                        <small>${user.badge_type}</small>
+        const filtered = state.users.filter(u => u.name.toLowerCase().includes(query.toLowerCase()));
+        
+        if (filtered.length > 0) {
+            box.innerHTML = filtered.map(u => `
+                <div class="res-item" onclick="SocialEngine.openProfile(${u.id})">
+                    <div class="av-mini" style="background:${u.color}">${u.name[0]}</div>
+                    <div>
+                        <div style="font-weight:700; font-size:0.9rem">${u.name}</div>
+                        <div style="font-size:0.7rem; color:gray">Ver Perfil</div>
                     </div>
-                `;
-                item.onclick = () => openProfile(user);
-                list.appendChild(item);
-            });
-        } catch(e) { console.error("Search Error"); }
-    }, 400);
-}
+                </div>
+            `).join('');
+            box.style.display = 'block';
+        } else {
+            box.innerHTML = '<div style="padding:15px; font-size:0.8rem; color:gray">Sin resultados</div>';
+            box.style.display = 'block';
+        }
+    };
 
-// 4. PROFILE MODAL CONTROLS
-function openProfile(u) {
-    const modal = document.getElementById('modal-profile');
-    modal.classList.remove('modal-hidden');
+    // --- PERFILES ---
+    const openProfile = (id) => {
+        const user = state.users.find(u => u.id === id);
+        if (!user) return;
 
-    document.getElementById('p-name').innerText = u.handle || u.name;
-    document.getElementById('p-role').innerText = u.badge_type || u.role;
-    document.getElementById('p-bio').innerText = u.bio_content || u.bio || "Sin descripción.";
-    
-    const av = document.getElementById('p-avatar');
-    av.innerText = (u.handle || u.name)[0].toUpperCase();
-    av.style.background = u.hex_theme || u.color;
+        const profileHTML = `
+            <div class="prof-header"></div>
+            <div class="prof-content">
+                <div class="prof-av-large" style="background:${user.color}">${user.name[0]}</div>
+                <h2 style="font-size:2rem; font-weight:800">${user.name}</h2>
+                <p style="color:var(--text-gray); margin-bottom:20px">${user.bio}</p>
+                <button class="btn-follow-action" onclick="this.innerText='Siguiendo'">Seguir</button>
+                <div class="prof-stats">
+                    <div class="stat-unit"><strong>${user.followers}</strong><span>Seguidores</span></div>
+                    <div class="stat-unit"><strong>${user.following}</strong><span>Siguiendo</span></div>
+                </div>
+            </div>
+        `;
+        document.getElementById('profile-view').innerHTML = profileHTML;
+        document.getElementById('search-res-box').style.display = 'none';
+        navigate('profile-view');
+    };
 
-    document.getElementById('m-followers').innerText = u.stats?.followers || 0;
-    document.getElementById('m-following').innerText = u.stats?.following || 0;
+    const renderFeed = () => {
+        const feed = document.getElementById('feed-view');
+        feed.innerHTML = `
+            <div class="card animate-pop" style="text-align:center; padding:80px 20px">
+                <i class="fa-solid fa-wind" style="font-size:3rem; opacity:0.1; margin-bottom:20px; display:block"></i>
+                <h3 style="font-weight:800">Tu muro está listo, ${state.currentUser.name}</h3>
+                <p style="color:var(--text-gray)">Usa el buscador para conectar con otros desarrolladores.</p>
+            </div>
+        `;
+    };
 
-    STATE.activeProfile = u;
-}
-
-function closeProfile() {
-    document.getElementById('modal-profile').classList.add('modal-hidden');
-}
-
-// 5. UTILITIES
-function pushAlert(msg) {
-    const bridge = document.getElementById('alert-bridge');
-    const toast = document.createElement('div');
-    toast.className = 'core-toast';
-    toast.innerText = msg;
-    bridge.appendChild(toast);
-    
-    setTimeout(() => toast.classList.add('toast-show'), 100);
-    setTimeout(() => {
-        toast.classList.remove('toast-show');
-        setTimeout(() => toast.remove(), 400);
-    }, 4000);
-}
-
-function togglePass() {
-    const input = document.getElementById('auth-secret');
-    const icon = document.getElementById('eye-icon');
-    if(input.type === 'password') {
-        input.type = 'text';
-        icon.classList.replace('fa-eye', 'fa-eye-slash');
-    } else {
-        input.type = 'password';
-        icon.classList.replace('fa-eye-slash', 'fa-eye');
-    }
-}
-
-function toggleUserDropdown() {
-    document.getElementById('user-menu').classList.toggle('menu-hidden');
-}
-
-// Global click closer
-window.onclick = (e) => {
-    if(!e.target.closest('.user-pill')) {
-        document.getElementById('user-menu').classList.add('menu-hidden');
-    }
-    if(!e.target.closest('.search-box')) {
-        document.getElementById('results-dropdown').classList.add('drop-hidden');
-    }
-};
+    // EXPOSICIÓN PÚBLICA
+    return {
+        toggleAuth: (mode) => {
+            if (mode === 'signup') {
+                document.getElementById('login-form').classList.add('hidden');
+                document.getElementById('signup-form').classList.remove('hidden');
+                document.getElementById('signup-form').classList.add('animate-right');
+            } else {
+                document.getElementById('signup-form').classList.add('hidden');
+                document.getElementById('login-form').classList.remove('hidden');
+                document.getElementById('login-form').classList.add('animate-left');
+            }
+        },
+        register: handleRegister,
+        login: () => {
+             // Simulación de login rápido
+             state.currentUser = state.users[0];
+             launchApp();
+        },
+        search: searchUsers,
+        openProfile: openProfile,
+        navigate: navigate
+    };
+})();
