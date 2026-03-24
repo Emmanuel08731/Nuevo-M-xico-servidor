@@ -8,62 +8,71 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// CONFIGURACIÓN ELITE PARA RENDER
+// CONFIGURACIÓN DE CONEXIÓN FORZADA
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false // <--- ESTO ES VITAL PARA RENDER
-  },
-  max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  ssl: { rejectUnauthorized: false }
 });
 
-// PROBADOR DE CONEXIÓN INICIAL
-pool.connect((err, client, release) => {
-  if (err) {
-    return console.error('❌ ERROR CRÍTICO DE CONEXIÓN:', err.stack);
-  }
-  console.log('✅ [POSTGRES] EMMANUEL, LA BASE DE DATOS ESTÁ LISTA');
-  release();
-});
+// FUNCIÓN PARA CREAR LA TABLA SI NO EXISTE
+const prepararDB = async () => {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                color TEXT DEFAULT '#0066ff'
+            );
+        `);
+        console.log("✅ [DB] Tabla 'users' verificada y lista.");
+    } catch (err) {
+        console.error("❌ [DB] Error al preparar tablas:", err.message);
+    }
+};
+prepararDB();
 
-// REGISTRO
+// REGISTRO CON DETECCIÓN DE ERRORES REALES
 app.post('/api/register', async (req, res) => {
-  const { username, email, password } = req.body;
-  try {
-    const color = "#" + Math.floor(Math.random()*16777215).toString(16);
-    await pool.query(
-      "INSERT INTO users (username, email, password, color) VALUES ($1, $2, $3, $4)",
-      [username, email, password, color]
-    );
-    res.status(201).json({ message: "¡Cuenta creada con éxito!" });
-  } catch (err) {
-    console.error("LOG DE ERROR:", err.message);
-    if (err.code === '23505') {
-        return res.status(400).json({ error: "Este usuario o Gmail ya están registrados." });
+    const { username, email, password } = req.body;
+    try {
+        const color = "#" + Math.floor(Math.random()*16777215).toString(16);
+        await pool.query(
+            "INSERT INTO users (username, email, password, color) VALUES ($1, $2, $3, $4)",
+            [username, email, password, color]
+        );
+        res.status(201).json({ message: "¡Cuenta creada con éxito, Emmanuel!" });
+    } catch (err) {
+        console.log("--- INFORME DE ERROR PARA EMMANUEL ---");
+        console.log("Código de error:", err.code);
+        console.log("Mensaje:", err.message);
+
+        if (err.code === '23505') {
+            return res.status(400).json({ error: "Ese usuario o Gmail ya existen." });
+        }
+        
+        // Si el error es de conexión, avisamos específicamente
+        res.status(500).json({ error: "Postgres rechazó la conexión. Verifica la URL EXTERNA en Render." });
     }
-    res.status(500).json({ error: "Error de base de datos. Revisa la URL externa en Render." });
-  }
 });
 
-// LOGIN
 app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
-  try {
-    const result = await pool.query(
-      "SELECT * FROM users WHERE username = $1 AND password = $2",
-      [username, password]
-    );
-    if (result.rows.length > 0) {
-      res.json({ message: "¡Iniciaste sesión con éxito!", user: result.rows[0] });
-    } else {
-      res.status(401).json({ error: "Usuario o contraseña incorrectos." });
+    const { username, password } = req.body;
+    try {
+        const result = await pool.query(
+            "SELECT * FROM users WHERE username = $1 AND password = $2",
+            [username, password]
+        );
+        if (result.rows.length > 0) {
+            res.json({ message: "¡Iniciaste sesión con éxito!", user: result.rows[0] });
+        } else {
+            res.status(401).json({ error: "Usuario o contraseña incorrectos." });
+        }
+    } catch (err) {
+        res.status(500).json({ error: "Error de conexión con la cuenta." });
     }
-  } catch (err) {
-    res.status(500).json({ error: "Error al conectar con la base de datos." });
-  }
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Emmanuel Store en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Emmanuel Store Online en puerto ${PORT}`));
