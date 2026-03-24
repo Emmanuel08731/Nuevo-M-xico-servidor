@@ -2,76 +2,102 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>DevRoot | Emmanuel Store</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevRoot | Emmanuel Network</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div id="auth-wall">
-        <div class="auth-container">
+    <section id="auth-wall">
+        <div class="auth-container animate-up">
             <h1 class="auth-logo">Dev<span>Root</span></h1>
-            <p style="margin-bottom:30px; color:gray; font-weight:500;">La red social para el 1% de desarrolladores.</p>
             
-            <div class="input-box">
-                <label>NOMBRE DE USUARIO</label>
-                <input type="text" id="reg-name" placeholder="Ej: Emmanuel_Dev">
+            <div id="login-box">
+                <p style="color:var(--text-muted); margin-bottom:35px; font-weight:500;">Accede a tu plataforma de desarrollo.</p>
+                <div class="form-field">
+                    <label>Usuario o Gmail</label>
+                    <input type="text" id="log-input" placeholder="emmanuel@store.com">
+                </div>
+                <div class="form-field">
+                    <label>Contraseña</label>
+                    <input type="password" placeholder="••••••••">
+                </div>
+                <button class="btn-primary" onclick="DevRootApp.doLogin()">Iniciar Sesión</button>
+                <p style="margin-top:25px; font-size:0.9rem;">¿Eres nuevo aquí? <span style="color:var(--primary); font-weight:800; cursor:pointer;" onclick="DevRootApp.auth('signup')">Crear cuenta nueva</span></p>
             </div>
-            
-            <button class="btn-p" style="width:100%;" onclick="DevRoot.createAccount()">
-                Crear Cuenta Profesional
-            </button>
+
+            <div id="signup-box" class="hidden">
+                <p style="color:var(--text-muted); margin-bottom:35px; font-weight:500;">Registra tus datos profesionales.</p>
+                <div class="form-field">
+                    <label>Nombre de Usuario</label>
+                    <input type="text" id="reg-user" placeholder="Ej: Emmanuel_Dev">
+                </div>
+                <div class="form-field">
+                    <label>Gmail</label>
+                    <input type="email" id="reg-mail" placeholder="tu-correo@gmail.com">
+                </div>
+                <div class="form-field">
+                    <label>Especialidad</label>
+                    <select id="reg-spec">
+                        <option value="Node.js Expert">Node.js Expert</option>
+                        <option value="Roblox Developer">Roblox Developer</option>
+                        <option value="Frontend Designer">Frontend Designer</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Contraseña</label>
+                    <input type="password" id="reg-pass" placeholder="Mínimo 8 caracteres">
+                </div>
+                <button class="btn-primary" onclick="DevRootApp.doSignup()">Registrar y Entrar</button>
+                <p style="margin-top:25px; font-size:0.9rem;">¿Ya tienes cuenta? <span style="color:var(--primary); font-weight:800; cursor:pointer;" onclick="DevRootApp.auth('login')">Iniciar Sesión</span></p>
+            </div>
         </div>
-    </div>
+    </section>
 
-    <div id="main-app" class="hidden">
-        <nav class="navbar">
-            <div class="nav-content">
-                <div class="auth-logo" style="font-size:1.8rem; margin:0; cursor:pointer;" onclick="location.reload()">Dev<span>Root</span></div>
+    <main id="main-app-container" class="hidden">
+        <nav class="main-nav">
+            <div class="nav-container">
+                <div class="auth-logo" style="font-size:2rem; margin:0; cursor:pointer;" onclick="DevRootApp.navigate('inicio')">Dev<span>Root</span></div>
                 
-                <div class="search-wrapper">
+                <div class="search-engine">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" class="search-input" placeholder="Buscar amigos..." oninput="DevRoot.search(this.value)">
-                    <div id="search-results" class="search-results"></div>
+                    <input type="text" placeholder="Buscar usuario en la red..." oninput="DevRootApp.search(this.value)">
+                    <div id="search-dropdown" class="animate-fade"></div>
                 </div>
 
-                <div class="user-menu-trigger" onclick="DevRoot.toggleDropdown()">
-                    <span id="nav-user-name" style="font-weight:700;">Emmanuel</span>
-                    <div class="nav-avatar" id="nav-av-icon">E</div>
-                </div>
-
-                <div id="acc-dropdown" class="dropdown-menu">
-                    <div class="menu-link" onclick="DevRoot.showMyProfile()">
-                        <i class="fa-regular fa-circle-user"></i> Ver Mi Perfil
-                    </div>
-                    <div class="menu-link" style="opacity:0.5; cursor:not-allowed;">
-                        <i class="fa-solid fa-gear"></i> Configuración
+                <div class="profile-trigger" onclick="DevRootApp.toggleMenu()">
+                    <span id="nav-user-name" style="font-weight:800; font-size:0.95rem;"></span>
+                    <div class="nav-avatar" id="nav-user-av">E</div>
+                    
+                    <div id="acc-dropdown" class="dropdown-card">
+                        <div class="drop-link" onclick="DevRootApp.navigate('perfil')"><i class="fa-regular fa-user"></i> Mi Perfil</div>
+                        <div class="drop-link" style="opacity:0.5;"><i class="fa-solid fa-sliders"></i> Configuración</div>
+                        <div class="drop-link logout" onclick="DevRootApp.logout()"><i class="fa-solid fa-power-off"></i> Cerrar Sesión</div>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <div class="app-grid">
+        <div class="main-layout">
             <aside>
-                <div class="card" style="padding:15px;">
-                    <div class="menu-link" onclick="DevRoot.renderFeed()" style="background:var(--bg-alt); border-radius:12px; color:var(--p);">
-                        <i class="fa-solid fa-house"></i> Inicio
-                    </div>
-                    <div class="menu-link"><i class="fa-solid fa-fire"></i> Tendencias</div>
-                    <div class="menu-link"><i class="fa-solid fa-code"></i> Proyectos</div>
+                <div class="card-v" style="padding:15px;">
+                    <div class="drop-link" onclick="DevRootApp.navigate('inicio')"><i class="fa-solid fa-house"></i> Inicio</div>
+                    <div class="drop-link" onclick="DevRootApp.navigate('tendencias')"><i class="fa-solid fa-fire"></i> Tendencias</div>
+                    <div class="drop-link" onclick="DevRootApp.navigate('proyectos')"><i class="fa-solid fa-code"></i> Proyectos</div>
                 </div>
             </aside>
 
-            <main id="main-content"></main>
+            <section id="main-feed-area"></section>
 
             <aside>
-                <div class="card">
-                    <h4 style="font-weight:800; margin-bottom:15px;">Estadísticas Rápidas</h4>
-                    <p style="font-size:0.8rem; color:gray;">Bienvenido a DevRoot. Aquí verás el crecimiento de tu red en tiempo real.</p>
+                <div class="card-v">
+                    <h4 style="font-weight:800; margin-bottom:15px;">DevRoot Statistics</h4>
+                    <p style="font-size:0.85rem; color:var(--text-muted);">Bienvenido Emmanuel. El sistema está sincronizado con la nube de Render.</p>
                 </div>
             </aside>
         </div>
-    </div>
+    </main>
 
     <script src="script.js"></script>
 </body>
