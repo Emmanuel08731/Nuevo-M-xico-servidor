@@ -8,32 +8,46 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// CONFIGURACIÓN MAESTRA DE EMMANUEL
 const pool = new Pool({
-    // Usamos el Host Externo Completo
     host: 'dpg-d6u5u3fkijhs73fhh1hg-a.oregon-postgres.render.com',
     user: 'base_datos_global_user',
     password: 'mEDJcu2NtduJqv662gaUvOIuPDh1HFi3',
     database: 'base_datos_global',
     port: 5432,
-    ssl: {
-        rejectUnauthorized: false // <--- VITAL PARA QUE RENDER NO TE BLOQUEE
-    },
-    connectionTimeoutMillis: 10000, 
+    ssl: { rejectUnauthorized: false },
 });
 
-// PROBADOR DE CONEXIÓN AL ARRANCAR
-pool.connect((err, client, release) => {
-    if (err) {
-        console.error('❌ ERROR CRÍTICO DE CONEXIÓN:', err.stack);
-        console.log('CONSEJO: Ve a la DB en Render -> Access Control -> Añade 0.0.0.0/0');
-    } else {
-        console.log('✅ [SISTEMA] ¡EMMANUEL, LA BASE DE DATOS ESTÁ LISTA!');
-        release();
+// --- REPARADOR DE TABLA (SOLUCIÓN AL ERROR) ---
+const repararTabla = async () => {
+    try {
+        // 1. Intentamos crear la tabla si no existe
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL
+            );
+        `);
+
+        // 2. FORZAMOS la columna email por si no existe
+        await pool.query(`
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
+        `);
+        
+        // 3. FORZAMOS la columna color por si no existe
+        await pool.query(`
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS color TEXT DEFAULT '#0066ff';
+        `);
+
+        console.log("✅ [SISTEMA] ¡Tabla reparada! Columna 'email' añadida con éxito.");
+    } catch (err) {
+        console.error("❌ [ERROR REPARANDO]:", err.message);
     }
-});
+};
+repararTabla();
 
-// RUTA DE REGISTRO CON LOGS DE ERROR
+// --- RUTAS API ---
+
 app.post('/api/register', async (req, res) => {
     const { username, email, password } = req.body;
     try {
@@ -44,19 +58,11 @@ app.post('/api/register', async (req, res) => {
         );
         res.status(201).json({ message: "¡Cuenta creada con éxito!" });
     } catch (err) {
-        // Esto aparecerá en los LOGS de Render (pestaña Logs)
-        console.error("--- ERROR EN REGISTRO ---");
-        console.error("Código:", err.code);
-        console.error("Mensaje:", err.message);
-        
-        if (err.code === '23505') {
-            return res.status(400).json({ error: "Ese usuario o Gmail ya existe." });
-        }
+        console.error("ERROR REGISTRO:", err.message);
         res.status(500).json({ error: "Error de servidor: " + err.message });
     }
 });
 
-// RUTA DE LOGIN
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -70,9 +76,9 @@ app.post('/api/login', async (req, res) => {
             res.status(401).json({ error: "Usuario o clave incorrectos." });
         }
     } catch (err) {
-        res.status(500).json({ error: "Error de conexión con la DB." });
+        res.status(500).json({ error: "Error en login." });
     }
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Emmanuel Server Online en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Servidor de Emmanuel en puerto ${PORT}`));
