@@ -3,99 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevRoot | Emmanuel Network</title>
+    <title>DevRoot | Emmanuel Store Network</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <section id="auth-wall">
-        <div class="auth-container animate-up">
-            <h1 class="auth-logo">Dev<span>Root</span></h1>
+        <div class="auth-container animate-slide">
+            <h1 class="logo-title">Dev<span>Root</span></h1>
             
-            <div id="login-box">
-                <p style="color:var(--text-muted); margin-bottom:35px; font-weight:500;">Accede a tu plataforma de desarrollo.</p>
-                <div class="form-field">
-                    <label>Usuario o Gmail</label>
-                    <input type="text" id="log-input" placeholder="emmanuel@store.com">
+            <div id="login-form">
+                <p style="color:var(--text-light); margin-bottom:30px; font-weight:500;">Inicia sesión en tu cuenta de desarrollador.</p>
+                
+                <div class="input-group">
+                    <label><i class="fa-regular fa-user"></i> Usuario o Gmail</label>
+                    <input type="text" id="log-user" placeholder="ejemplo@gmail.com">
                 </div>
-                <div class="form-field">
-                    <label>Contraseña</label>
-                    <input type="password" placeholder="••••••••">
+
+                <div class="input-group">
+                    <label><i class="fa-solid fa-lock"></i> Contraseña</label>
+                    <input type="password" id="log-pass" placeholder="••••••••">
                 </div>
-                <button class="btn-primary" onclick="DevRootApp.doLogin()">Iniciar Sesión</button>
-                <p style="margin-top:25px; font-size:0.9rem;">¿Eres nuevo aquí? <span style="color:var(--primary); font-weight:800; cursor:pointer;" onclick="DevRootApp.auth('signup')">Crear cuenta nueva</span></p>
+
+                <button class="btn-main" onclick="App.login()">Entrar al Sistema</button>
+
+                <p style="margin-top:25px; font-size:0.85rem; font-weight:600;">
+                    ¿No tienes cuenta? 
+                    <span style="color:var(--brand); cursor:pointer;" onclick="App.switchAuth('signup')">Crear cuenta / Cerrar anterior</span>
+                </p>
             </div>
 
-            <div id="signup-box" class="hidden">
-                <p style="color:var(--text-muted); margin-bottom:35px; font-weight:500;">Registra tus datos profesionales.</p>
-                <div class="form-field">
+            <div id="signup-form" class="hidden">
+                <p style="color:var(--text-light); margin-bottom:30px; font-weight:500;">Únete a la red global de Emmanuel.</p>
+                
+                <div class="input-group">
                     <label>Nombre de Usuario</label>
-                    <input type="text" id="reg-user" placeholder="Ej: Emmanuel_Dev">
+                    <input type="text" id="reg-user" placeholder="Nombre_Real">
                 </div>
-                <div class="form-field">
-                    <label>Gmail</label>
-                    <input type="email" id="reg-mail" placeholder="tu-correo@gmail.com">
+
+                <div class="input-group">
+                    <label>Correo Electrónico (Gmail)</label>
+                    <input type="email" id="reg-mail" placeholder="correo@gmail.com">
                 </div>
-                <div class="form-field">
-                    <label>Especialidad</label>
+
+                <div class="input-group">
+                    <label>Especialidad en Programación</label>
                     <select id="reg-spec">
-                        <option value="Node.js Expert">Node.js Expert</option>
-                        <option value="Roblox Developer">Roblox Developer</option>
-                        <option value="Frontend Designer">Frontend Designer</option>
+                        <option value="Node.js Developer">Node.js Developer</option>
+                        <option value="Discord Bot Maker">Discord Bot Maker</option>
+                        <option value="Roblox Scripter">Roblox Scripter</option>
+                        <option value="Web Designer">Web Designer</option>
                     </select>
                 </div>
-                <div class="form-field">
-                    <label>Contraseña</label>
+
+                <div class="input-group">
+                    <label>Contraseña Maestra</label>
                     <input type="password" id="reg-pass" placeholder="Mínimo 8 caracteres">
                 </div>
-                <button class="btn-primary" onclick="DevRootApp.doSignup()">Registrar y Entrar</button>
-                <p style="margin-top:25px; font-size:0.9rem;">¿Ya tienes cuenta? <span style="color:var(--primary); font-weight:800; cursor:pointer;" onclick="DevRootApp.auth('login')">Iniciar Sesión</span></p>
+
+                <button class="btn-main" style="background:var(--brand);" onclick="App.register()">Registrarme Ahora</button>
+
+                <p style="margin-top:25px; font-size:0.85rem; font-weight:600;">
+                    ¿Ya eres miembro? 
+                    <span style="color:var(--text); cursor:pointer;" onclick="App.switchAuth('login')">Volver al Inicio</span>
+                </p>
             </div>
         </div>
     </section>
 
-    <main id="main-app-container" class="hidden">
-        <nav class="main-nav">
-            <div class="nav-container">
-                <div class="auth-logo" style="font-size:2rem; margin:0; cursor:pointer;" onclick="DevRootApp.navigate('inicio')">Dev<span>Root</span></div>
-                
-                <div class="search-engine">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" placeholder="Buscar usuario en la red..." oninput="DevRootApp.search(this.value)">
-                    <div id="search-dropdown" class="animate-fade"></div>
+    <main id="main-app" class="hidden">
+        
+        <nav class="nav">
+            <div class="nav-inner">
+                <div class="logo-title" style="font-size:1.8rem; margin:0; cursor:pointer;" onclick="App.renderView('inicio')">
+                    Dev<span>Root</span>
                 </div>
 
-                <div class="profile-trigger" onclick="DevRootApp.toggleMenu()">
-                    <span id="nav-user-name" style="font-weight:800; font-size:0.95rem;"></span>
-                    <div class="nav-avatar" id="nav-user-av">E</div>
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="global-search" placeholder="Buscar usuarios registrados..." oninput="App.handleSearch(this.value)">
                     
-                    <div id="acc-dropdown" class="dropdown-card">
-                        <div class="drop-link" onclick="DevRootApp.navigate('perfil')"><i class="fa-regular fa-user"></i> Mi Perfil</div>
-                        <div class="drop-link" style="opacity:0.5;"><i class="fa-solid fa-sliders"></i> Configuración</div>
-                        <div class="drop-link logout" onclick="DevRootApp.logout()"><i class="fa-solid fa-power-off"></i> Cerrar Sesión</div>
+                    <div id="search-results" class="animate-pop">
+                        </div>
+                </div>
+
+                <div class="profile-zone" onclick="App.toggleMenu()">
+                    <span id="nav-user-name" style="font-weight:800; font-size:0.9rem; color:var(--text);">Cargando...</span>
+                    <div class="av-nav" id="nav-av">?</div>
+                    
+                    <div id="acc-dropdown" class="dropdown animate-pop">
+                        <div class="drop-item" onclick="App.renderView('perfil')">
+                            <i class="fa-regular fa-circle-user"></i> Mi Perfil Profesional
+                        </div>
+                        <div class="drop-item">
+                            <i class="fa-solid fa-gear"></i> Configuración de Cuenta
+                        </div>
+                        <div class="drop-item" style="color:var(--brand); border-top:1px solid var(--border); margin-top:10px;" onclick="location.reload()">
+                            <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                        </div>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <div class="main-layout">
+        <div class="layout">
+            
             <aside>
-                <div class="card-v" style="padding:15px;">
-                    <div class="drop-link" onclick="DevRootApp.navigate('inicio')"><i class="fa-solid fa-house"></i> Inicio</div>
-                    <div class="drop-link" onclick="DevRootApp.navigate('tendencias')"><i class="fa-solid fa-fire"></i> Tendencias</div>
-                    <div class="drop-link" onclick="DevRootApp.navigate('proyectos')"><i class="fa-solid fa-code"></i> Proyectos</div>
+                <div class="card" style="padding:15px;">
+                    <div class="drop-item" onclick="App.renderView('inicio')">
+                        <i class="fa-solid fa-house"></i> Inicio
+                    </div>
+                    <div class="drop-item" onclick="App.renderView('tendencias')">
+                        <i class="fa-solid fa-fire-flame-curved"></i> Tendencias
+                    </div>
+                    <div class="drop-item" onclick="App.renderView('proyectos')">
+                        <i class="fa-solid fa-code-branch"></i> Proyectos
+                    </div>
+                </div>
+
+                <div class="card" style="background:var(--surface); border:none;">
+                    <h4 style="font-size:0.8rem; font-weight:800; color:var(--text-light); text-transform:uppercase; margin-bottom:15px;">Explorar</h4>
+                    <p style="font-size:0.85rem; font-weight:600; color:var(--text);">Conecta con otros programadores en la red oficial.</p>
                 </div>
             </aside>
 
-            <section id="main-feed-area"></section>
+            <section id="main-content">
+                </section>
 
             <aside>
-                <div class="card-v">
-                    <h4 style="font-weight:800; margin-bottom:15px;">DevRoot Statistics</h4>
-                    <p style="font-size:0.85rem; color:var(--text-muted);">Bienvenido Emmanuel. El sistema está sincronizado con la nube de Render.</p>
+                <div class="card">
+                    <h4 style="font-weight:800; margin-bottom:20px;">Sugerencias para ti</h4>
+                    <div id="right-recommendations">
+                        </div>
                 </div>
+
+                <div class="card" style="border-left: 4px solid var(--brand);">
+                    <h4 style="font-weight:800; margin-bottom:10px;">Emmanuel Store News</h4>
+                    <p style="font-size:0.8rem; color:var(--text-light); line-height:1.5;">
+                        Versión 5.0: Ahora los datos se guardan en la nube. ¡Busca a tus amigos por su nombre de usuario!
+                    </p>
+                </div>
+
+                <footer style="padding:0 10px; font-size:0.7rem; color:var(--text-light); font-weight:700;">
+                    &copy; 2026 DEVROOT NETWORK - EMMANUEL STORE
+                </footer>
             </aside>
+
         </div>
     </main>
 
