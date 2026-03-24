@@ -1,139 +1,202 @@
 /**
- * DEVROOT FRONTEND ENGINE V40
- * CONEXIÓN CON API REAL
+ * DEVROOT FRONTEND CORE V50
+ * PERSISTENCIA REAL Y MOTOR DE BÚSQUEDA SIN FANTASMAS
  */
 
-const UI = {
-    current: null,
-
+const App = {
+    user: null,
+    
     init() {
-        this.bindEvents();
+        console.log("Sistema DevRoot Operativo.");
         this.loadRecommendations();
     },
 
-    bindEvents() {
-        // Buscador en tiempo real
-        const searchInput = document.getElementById('global-search');
-        searchInput.oninput = (e) => this.handleSearch(e.target.value);
-    },
-
-    // --- ACCIONES DE CUENTA ---
+    // --- AUTENTICACIÓN ---
     async register() {
-        const data = {
-            username: document.getElementById('reg-user').value,
-            email: document.getElementById('reg-mail').value,
-            spec: document.getElementById('reg-spec').value,
-            password: document.getElementById('reg-pass').value
-        };
+        const username = document.getElementById('reg-user').value;
+        const email = document.getElementById('reg-mail').value;
+        const spec = document.getElementById('reg-spec').value;
+        const password = document.getElementById('reg-pass').value;
+
+        if (!username || !email || !password) return alert("Completa los datos obligatorios.");
 
         const res = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify({ username, email, spec, password })
         });
 
-        const result = await res.json();
+        const data = await res.json();
         if (res.ok) {
-            this.current = result;
-            this.enterApp();
+            this.user = data;
+            this.startApp();
         } else {
-            alert(result.msg);
+            alert(data.error);
         }
     },
 
     async login() {
         const identity = document.getElementById('log-user').value;
-        const pass = document.getElementById('log-pass').value;
+        const password = document.getElementById('log-pass').value;
 
         const res = await fetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ identity, password: pass })
+            body: JSON.stringify({ identity, password })
         });
 
-        const result = await res.json();
+        const data = await res.json();
         if (res.ok) {
-            this.current = result;
-            this.enterApp();
+            this.user = data;
+            this.startApp();
         } else {
-            alert("Usuario o contraseña incorrectos");
+            alert("Credenciales incorrectas.");
         }
     },
 
-    enterApp() {
-        document.getElementById('auth-wall').style.display = 'none';
+    startApp() {
+        document.getElementById('auth-wall').classList.add('hidden');
         document.getElementById('main-app').classList.remove('hidden');
-        document.getElementById('nav-user').innerText = this.current.username;
-        document.getElementById('nav-av').innerText = this.current.username[0];
+        
+        document.getElementById('nav-user-name').innerText = this.user.username;
+        document.getElementById('nav-av').innerText = this.user.username[0].toUpperCase();
+        document.getElementById('nav-av').style.background = this.user.avatarColor;
+        
         this.renderView('inicio');
     },
 
-    // --- BUSCADOR REAL ---
+    // --- MOTOR DE BÚSQUEDA ---
     async handleSearch(query) {
-        const drop = document.getElementById('search-drop');
+        const drop = document.getElementById('search-results');
         if (query.length < 1) {
             drop.style.display = 'none';
             return;
         }
 
-        const res = await fetch(`/api/users/search?q=${query}`);
+        const res = await fetch(`/api/search?query=${query}`);
         const users = await res.json();
 
         if (users.length > 0) {
             drop.innerHTML = users.map(u => `
-                <div class="search-item" onclick="UI.viewUser('${u._id}')">
-                    <div class="mini-av" style="background:${u.color}">${u.username[0]}</div>
-                    <b>${u.username}</b>
+                <div class="res-item" onclick="App.viewProfile('${u.username}')">
+                    <div class="av-nav" style="background:${u.avatarColor}; width:32px; height:32px; font-size:0.8rem;">${u.username[0]}</div>
+                    <div>
+                        <div style="font-weight:700; font-size:0.9rem;">${u.username}</div>
+                        <div style="font-size:0.7rem; color:gray;">${u.specialization}</div>
+                    </div>
                 </div>
             `).join('');
         } else {
-            // Si no hay resultados, mostrar recomendaciones
-            drop.innerHTML = `<div class="no-res">No encontrado. Sugerencias:</div>`;
-            this.loadSearchSuggestions(drop);
+            // Si no existe, mostrar recomendaciones
+            drop.innerHTML = `
+                <div style="padding:15px; text-align:center; color:red; font-weight:800; font-size:0.8rem;">
+                    Usuario no encontrado.
+                </div>
+                <div style="padding:10px; border-top:1px solid #eee; background:#f9f9f9; font-size:0.7rem; font-weight:800; color:gray;">
+                    TE RECOMENDAMOS:
+                </div>
+                <div id="search-sug"></div>
+            `;
+            this.loadSearchSuggestions();
         }
         drop.style.display = 'block';
     },
 
-    async loadSearchSuggestions(container) {
-        const res = await fetch('/api/users/recommendations');
+    async loadSearchSuggestions() {
+        const res = await fetch('/api/recommendations');
         const users = await res.json();
-        container.innerHTML += users.map(u => `
-            <div class="search-item" onclick="UI.viewUser('${u._id}')">
-                <span>${u.username}</span> <small>(Recomendado)</small>
+        const container = document.getElementById('search-sug');
+        container.innerHTML = users.map(u => `
+            <div class="res-item" onclick="App.viewProfile('${u.username}')">
+                <b>${u.username}</b> <small style="margin-left:5px; color:var(--brand)">Seguir</small>
             </div>
         `).join('');
     },
 
-    // --- SEGUIDORES ---
-    async follow(targetId) {
-        await fetch('/api/users/follow', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ myId: this.current._id, targetId })
-        });
-        alert("¡Ahora lo sigues!");
-        this.renderView('perfil'); // Actualizar contadores
-    },
-
     // --- VISTAS ---
-    renderView(view) {
-        const content = document.getElementById('feed-content');
-        if (view === 'perfil') {
-            content.innerHTML = `
-                <div class="profile-card animate">
-                    <div class="av-big" style="background:${this.current.color}">${this.current.username[0]}</div>
-                    <h2>${this.current.username}</h2>
-                    <p>${this.current.spec}</p>
-                    <div class="stats">
-                        <div class="stat"><b>${this.current.followers.length}</b><br>Seguidores</div>
-                        <div class="stat"><b>${this.current.following.length}</b><br>Siguiendo</div>
+    async renderView(view) {
+        const feed = document.getElementById('main-content');
+        feed.innerHTML = "";
+
+        if (view === 'inicio') {
+            feed.innerHTML = `
+                <div class="card animate-slide">
+                    <h3 style="font-weight:800; margin-bottom:15px;">Personas que quizás conozcas</h3>
+                    <div id="home-recommendations"></div>
+                </div>
+                <div class="empty-state">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <h3>No hay publicaciones</h3>
+                    <p>Los posts de las personas que sigues aparecerán aquí.</p>
+                </div>
+            `;
+            this.loadHomeRecommendations();
+        } else if (view === 'perfil') {
+            feed.innerHTML = `
+                <div class="card animate-slide" style="padding:0; overflow:hidden;">
+                    <div class="profile-header"></div>
+                    <div class="profile-content">
+                        <div class="av-big" style="background:${this.user.avatarColor}">${this.user.username[0]}</div>
+                        <h2 style="font-weight:900;">${this.user.username}</h2>
+                        <p style="color:gray; font-weight:600;">${this.user.specialization}</p>
+                        <div class="stat-row">
+                            <div class="stat"><b>${this.user.followers.length}</b><span>Seguidores</span></div>
+                            <div class="stat"><b>${this.user.following.length}</b><span>Siguiendo</span></div>
+                        </div>
+                    </div>
+                    <div style="padding:30px;">
+                        <button class="btn-main" style="background:var(--brand)">Editar Perfil</button>
                     </div>
                 </div>
             `;
+        } else if (view === 'proyectos') {
+            feed.innerHTML = `<div class="empty-state"><i class="fa-solid fa-code"></i><h3>No hay proyectos publicados</h3></div>`;
+        } else if (view === 'tendencias') {
+            feed.innerHTML = `<div class="empty-state"><i class="fa-solid fa-fire"></i><h3>No hay cosas publicadas</h3></div>`;
+        }
+    },
+
+    async loadHomeRecommendations() {
+        const res = await fetch('/api/recommendations');
+        const users = await res.json();
+        const list = document.getElementById('home-recommendations');
+        list.innerHTML = users.filter(u => u._id !== this.user._id).map(u => `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #f1f5f9;">
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <div class="av-nav" style="background:${u.avatarColor}; width:35px; height:35px;">${u.username[0]}</div>
+                    <b style="font-size:0.9rem;">${u.username}</b>
+                </div>
+                <button class="btn-main" style="width:auto; padding:6px 15px; font-size:0.7rem; margin:0;" onclick="App.followUser('${u._id}')">Seguir</button>
+            </div>
+        `).join('');
+    },
+
+    async followUser(targetId) {
+        const res = await fetch('/api/follow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ followerId: this.user._id, targetId })
+        });
+        if (res.ok) {
+            alert("¡Ahora sigues a este usuario!");
+            location.reload(); // Recargar para actualizar datos del servidor
+        }
+    },
+
+    toggleMenu() {
+        const d = document.getElementById('acc-dropdown');
+        d.style.display = d.style.display === 'block' ? 'none' : 'block';
+    },
+
+    switchAuth(mode) {
+        if (mode === 'signup') {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('signup-form').classList.remove('hidden');
         } else {
-            content.innerHTML = `<div class="empty"><h3>Sección ${view}</h3><p>No hay publicaciones por ahora.</p></div>`;
+            document.getElementById('signup-form').classList.add('hidden');
+            document.getElementById('login-form').classList.remove('hidden');
         }
     }
 };
 
-window.onload = () => UI.init();
+window.onload = () => App.init();
