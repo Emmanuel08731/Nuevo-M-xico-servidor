@@ -9,46 +9,72 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// CONEXIÓN SEGURA A POSTGRESQL
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // <--- Verifica que en Render se llame así
-  ssl: { rejectUnauthorized: false }
-});
-
-// Probar conexión inmediata
-pool.connect((err, client, release) => {
-  if (err) {
-    return console.error('❌ ERROR CRÍTICO DE CONEXIÓN:', err.stack);
-  }
-  console.log('✅ Conexión exitosa a la base de datos de Emmanuel');
-  release();
-});
-
-const initDB = async () => {
-    try {
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                username TEXT UNIQUE NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                color TEXT DEFAULT '#0066ff'
-            )
-        `);
-    } catch (err) { console.error("❌ Error creando tabla:", err); }
+// CONFIGURACIÓN DE CONEXIÓN CON REINTENTOS
+const poolConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 5000, // Máximo 5 segundos para conectar
+    idleTimeoutMillis: 30000,
+    max: 20 // Máximo de conexiones simultáneas
 };
-initDB();
 
-// REGISTRO MEJORADO
+let pool = new Pool(poolConfig);
+
+// PROBADOR DE CONEXIÓN EN TIEMPO REAL
+const testConn = async () => {
+    try {
+        const client = await pool.connect();
+        console.log("------------------------------------------");
+        console.log("✅ [DATABASE] ¡CONEXIÓN EXITOSA!");
+        console.log("🌍 [DB] Host detectado: Oregon-Postgres");
+        console.log("------------------------------------------");
+        client.release();
+    } catch (err) {
+        console.error("------------------------------------------");
+        console.error("❌ [DATABASE] ERROR DE CONEXIÓN:");
+        console.error("DETALLE:", err.message);
+        console.error("CONSEJO: Verifica que DATABASE_URL en Render sea la EXTERNAL y no la internal.");
+        console.log("------------------------------------------");
+    }
+};
+testConn();
+
+// Inicialización de Tablas
+const initDatabase = async () => {
+    const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            color TEXT DEFAULT '#0066ff',
+            bio TEXT DEFAULT 'Usuario de Emmanuel Store',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    `;
+    try {
+        await pool.query(createTableQuery);
+        console.log("📊 [DB] Estructura de tablas verificada.");
+    } catch (e) {
+        console.error("❌ [DB] Error al crear tablas:", e.message);
+    }
+};
+initDatabase();
+
+// --- RUTAS API ---
+
 app.post('/api/register', async (req, res) => {
     const { username, email, password } = req.body;
     
+    if (!username || !email || !password) {
+        return res.status(400).json({ error: "Faltan datos obligatorios." });
+    }
+
     try {
-        // Verificar duplicados
+        // Validación de duplicados manual para evitar errores 500
         const check = await pool.query("SELECT id FROM users WHERE username = $1 OR email = $2", [username, email]);
-        
         if (check.rows.length > 0) {
-            return res.status(400).json({ error: "El usuario o Gmail ya existen." });
+            return res.status(400).json({ error: "Ese nombre o Gmail ya está registrado." });
         }
 
         const color = "#" + Math.floor(Math.random()*16777215).toString(16);
@@ -58,29 +84,43 @@ app.post('/api/register', async (req, res) => {
         );
         
         res.status(201).json({ message: "¡Cuenta creada con éxito!" });
-    } catch (e) {
-        console.error("DETALLE DEL ERROR:", e); // Esto saldrá en los logs de Render
-        res.status(500).json({ error: "Error de base de datos. Revisa la URL en Render." });
+    } catch (err) {
+        console.error("❌ Error en Registro:", err);
+        res.status(500).json({ error: "Error interno al guardar en Postgres." });
     }
 });
 
-// LOGIN MEJORADO
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
         const result = await pool.query(
-            "SELECT * FROM users WHERE username = $1 AND password = $2",
+            "SELECT id, username, email, color, bio FROM users WHERE username = $1 AND password = $2",
             [username, password]
         );
+        
         if (result.rows.length > 0) {
             res.json({ message: "¡Iniciaste sesión con éxito!", user: result.rows[0] });
         } else {
-            res.status(401).json({ error: "Usuario o contraseña incorrectos." });
+            res.status(401).json({ error: "Usuario o contraseña no encontrados." });
         }
-    } catch (e) {
-        res.status(500).json({ error: "Error al conectar con la cuenta." });
+    } catch (err) {
+        res.status(500).json({ error: "No pudimos conectar con tu cuenta." });
     }
 });
 
+// Buscador de usuarios
+app.get('/api/search', async (req, res) => {
+    const { q } = req.query;
+    try {
+        const result = await pool.query(
+            "SELECT username, color, bio FROM users WHERE username ILIKE $1 LIMIT 5",
+            [`%${q}%`]
+        );
+        res.json(result.rows);
+    } catch (e) { res.json([]); }
+});
+
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Servidor listo en puerto ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`🚀 Emmanuel Server Online en puerto ${PORT}`);
+});
