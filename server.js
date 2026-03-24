@@ -8,48 +8,46 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// CONFIGURACIÓN PARA EVITAR EL "ERROR INTERNO"
+// CONFIGURACIÓN ELITE PARA RENDER
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  connectionTimeoutMillis: 10000, // 10 segundos de espera
+  ssl: {
+    rejectUnauthorized: false // <--- ESTO ES VITAL PARA RENDER
+  },
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
-// Verificación de salud de la DB
-pool.query('SELECT NOW()', (err, res) => {
+// PROBADOR DE CONEXIÓN INICIAL
+pool.connect((err, client, release) => {
   if (err) {
-    console.error('❌ ERROR DE CONEXIÓN CRÍTICO:', err.message);
-  } else {
-    console.log('✅ POSTGRES CONECTADO Y LISTO');
+    return console.error('❌ ERROR CRÍTICO DE CONEXIÓN:', err.stack);
   }
+  console.log('✅ [POSTGRES] EMMANUEL, LA BASE DE DATOS ESTÁ LISTA');
+  release();
 });
 
-// REGISTRO SEGURO
+// REGISTRO
 app.post('/api/register', async (req, res) => {
   const { username, email, password } = req.body;
   try {
     const color = "#" + Math.floor(Math.random()*16777215).toString(16);
-    
-    // Intento de inserción
     await pool.query(
       "INSERT INTO users (username, email, password, color) VALUES ($1, $2, $3, $4)",
       [username, email, password, color]
     );
-    
     res.status(201).json({ message: "¡Cuenta creada con éxito!" });
   } catch (err) {
-    console.error("DETALLE DEL ERROR EN POSTGRES:", err.code, err.message);
-    
-    // Si el error es por duplicado (código 23505 en Postgres)
+    console.error("LOG DE ERROR:", err.message);
     if (err.code === '23505') {
-      return res.status(400).json({ error: "Ese usuario o Gmail ya existe." });
+        return res.status(400).json({ error: "Este usuario o Gmail ya están registrados." });
     }
-    
-    res.status(500).json({ error: "Error de base de datos. Revisa los logs de Render." });
+    res.status(500).json({ error: "Error de base de datos. Revisa la URL externa en Render." });
   }
 });
 
-// LOGIN SEGURO
+// LOGIN
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   try {
@@ -57,7 +55,6 @@ app.post('/api/login', async (req, res) => {
       "SELECT * FROM users WHERE username = $1 AND password = $2",
       [username, password]
     );
-    
     if (result.rows.length > 0) {
       res.json({ message: "¡Iniciaste sesión con éxito!", user: result.rows[0] });
     } else {
@@ -69,4 +66,4 @@ app.post('/api/login', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Emmanuel Store corriendo en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Emmanuel Store en puerto ${PORT}`));
