@@ -3,119 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Core | Infrastructure</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>DevRoot | Join the Network</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div id="system-toaster-bridge"></div>
-
-    <div id="boot-overlay">
-        <div class="boot-container">
-            <h1 class="core-logo">Global<span>Core</span></h1>
-            <div class="progress-bar"><div id="progress-fill"></div></div>
-            <p id="boot-status">Inicializando Red...</p>
-        </div>
-    </div>
-
-    <section id="access-layer" class="layer-active">
-        <div class="auth-box">
-            <div class="auth-visual">
-                <div class="v-content">
-                    <div class="logo-sm">Global<span>Core</span></div>
-                    <h2>Infraestructura Centralizada de Datos.</h2>
-                    <p>Accede a la red global de control y gestión.</p>
+    <section id="auth-container">
+        <div class="auth-card animate-pop">
+            <h1>Dev<span>Root</span></h1>
+            
+            <div id="login-form">
+                <p>Bienvenido de nuevo a la red de Emmanuel.</p>
+                <div class="form-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="log-email" placeholder="admin@devroot.com">
                 </div>
-                <div class="v-status"><span class="pulse"></span> SISTEMA ACTIVO</div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="log-pass" placeholder="••••••••">
+                </div>
+                <button class="btn-main" onclick="SocialEngine.login()">Iniciar Sesión</button>
+                <div class="toggle-auth">
+                    ¿No tienes una cuenta? <span onclick="SocialEngine.toggleAuth('signup')">Regístrate ahora</span>
+                </div>
             </div>
 
-            <div class="auth-form">
-                <div class="form-inner">
-                    <h3 id="form-title">Bienvenido</h3>
-                    <div class="inputs-group">
-                        <div class="field hidden" id="field-username">
-                            <label>Nombre de Usuario</label>
-                            <div class="input-ctrl">
-                                <i class="fa-regular fa-user"></i>
-                                <input type="text" id="in-username" placeholder="Usuario">
-                            </div>
-                        </div>
-                        <div class="field">
-                            <label id="lbl-cred">Correo Electrónico</label>
-                            <div class="input-ctrl">
-                                <i class="fa-regular fa-envelope"></i>
-                                <input type="text" id="in-cred" placeholder="email@ecnhaca.site">
-                            </div>
-                        </div>
-                        <div class="field">
-                            <label>Clave Maestra</label>
-                            <div class="input-ctrl">
-                                <i class="fa-solid fa-lock"></i>
-                                <input type="password" id="in-pass" placeholder="••••••••">
-                            </div>
-                        </div>
-                    </div>
-                    <button class="btn-primary" onclick="handleAuthAction()">
-                        <span id="btn-text">ACCEDER</span>
-                    </button>
-                    <div class="form-toggle">
-                        <span id="toggle-msg">¿No tienes cuenta?</span>
-                        <button onclick="switchMode()" id="toggle-btn">Regístrate</button>
-                    </div>
+            <div id="signup-form" class="hidden">
+                <p>Crea tu perfil profesional hoy mismo.</p>
+                <div class="form-group">
+                    <label>Nombre Completo / Usuario</label>
+                    <input type="text" id="reg-name" placeholder="Ej: Emmanuel_Dev">
+                </div>
+                <div class="form-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="reg-email" placeholder="tu@correo.com">
+                </div>
+                <div class="form-group">
+                    <label>Especialidad</label>
+                    <select id="reg-bio">
+                        <option value="Node.js Developer">Node.js Developer</option>
+                        <option value="Roblox Creator">Roblox Creator</option>
+                        <option value="Web Designer">Web Designer</option>
+                        <option value="Discord Bot Expert">Discord Bot Expert</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="reg-pass" placeholder="Mínimo 8 caracteres">
+                </div>
+                <button class="btn-main" onclick="SocialEngine.register()">Crear mi cuenta</button>
+                <div class="toggle-auth">
+                    ¿Ya tienes cuenta? <span onclick="SocialEngine.toggleAuth('login')">Inicia sesión</span>
                 </div>
             </div>
         </div>
     </section>
 
-    <main id="core-app" class="hidden">
-        <nav class="core-nav">
-            <div class="nav-container">
-                <div class="nav-brand">Global<span>Core</span></div>
-                <div class="nav-search">
-                    <div class="search-ctrl">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" placeholder="Buscar identidades..." onkeyup="searchIdentities(this.value)">
-                        <div id="search-drop" class="hidden"></div>
-                    </div>
+    <main id="main-app" class="hidden">
+        <nav class="nav-bar">
+            <div class="nav-inner">
+                <div class="logo-text" onclick="SocialEngine.navigate('feed-view')">Dev<span>Root</span></div>
+                
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Buscar usuario por nombre..." oninput="SocialEngine.search(this.value)">
+                    <div id="search-res-box" class="animate-pop"></div>
                 </div>
-                <div class="nav-user" onclick="toggleMenu()">
-                    <div class="u-avatar" id="nav-av">?</div>
-                    <div class="u-meta">
-                        <strong id="nav-name">Admin</strong>
-                        <small id="nav-role">Standard</small>
-                    </div>
-                    <div id="user-menu" class="hidden">
-                        <button onclick="openMyProfile()">Perfil</button>
-                        <button onclick="location.reload()">Cerrar Sesión</button>
-                    </div>
+
+                <div style="display: flex; align-items: center; gap: 15px; cursor: pointer;" onclick="SocialEngine.openProfile(SocialEngine.currentUser ? SocialEngine.currentUser.id : 0)">
+                    <div id="nav-user-av" class="av-mini" style="width: 40px; height: 40px;">E</div>
+                    <span id="nav-user-name" style="font-weight: 800; font-size: 0.9rem;"></span>
                 </div>
             </div>
         </nav>
 
-        <section class="core-view">
-            <div class="view-grid">
-                <aside class="sidebar-left">
-                    <div class="menu-card">
-                        <div class="m-item active"><i class="fa-solid fa-house"></i> Feed Global</div>
-                        <div class="m-item"><i class="fa-solid fa-chart-line"></i> Estadísticas</div>
-                        <div class="m-item"><i class="fa-solid fa-database"></i> Registros SQL</div>
+        <div class="main-grid">
+            <aside>
+                <div class="card">
+                    <div style="padding: 10px 0; font-weight: 700; color: var(--primary); cursor: pointer;" onclick="SocialEngine.navigate('feed-view')">
+                        <i class="fa-solid fa-house" style="margin-right: 10px;"></i> Inicio
                     </div>
-                </aside>
-
-                <div class="main-feed">
-                    <div class="post-creator">
-                        <textarea id="post-input" placeholder="¿Qué quieres registrar en el Core?"></textarea>
-                        <div class="creator-actions">
-                            <button class="btn-post" onclick="submitPost()">PUBLICAR</button>
-                        </div>
+                    <div style="padding: 10px 0; font-weight: 700; cursor: pointer;" onclick="SocialEngine.navigate('settings-view')">
+                        <i class="fa-solid fa-sliders" style="margin-right: 10px;"></i> Configuración
                     </div>
-                    <div id="feed-container">
-                        </div>
                 </div>
-            </div>
-        </section>
+            </aside>
+
+            <section>
+                <div id="feed-view" class="view-section"></div>
+                <div id="profile-view" class="view-section card hidden" style="padding: 0; overflow: hidden;"></div>
+                <div id="settings-view" class="view-section card hidden">
+                    <h2 style="font-weight: 800; margin-bottom: 20px;">Ajustes del Sistema</h2>
+                    <ul class="settings-list">
+                        <li class="settings-item">
+                            <div><strong>Perfil Público</strong><p style="font-size: 0.8rem; color: gray;">Permitir que otros te encuentren.</p></div>
+                            <input type="checkbox" checked>
+                        </li>
+                        <li class="settings-item">
+                            <div><strong>Eliminar Cuenta</strong><p style="font-size: 0.8rem; color: #ff3d00;">Opción bloqueada por seguridad.</p></div>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+        </div>
     </main>
 
     <script src="script.js"></script>
