@@ -1,204 +1,104 @@
 /**
  * ==============================================================================
- * DEVROOT ONYX KERNEL - V40.0.1
- * INDUSTRIAL GRADE ARCHITECTURE - NODE.JS / EXPRESS
+ * DEVROOT KERNEL - VERSION 18.0.2 (POSTGRESQL EDITION)
+ * DOMAIN: ecnhaca.site
  * ==============================================================================
- * @author: Emmanuel (Lead Architect)
- * @description: Sistema de gestión de identidades, relaciones sociales y 
- * persistencia de datos con validación de integridad de capa 7.
  */
 
 const express = require('express');
 const path = require('path');
 const compression = require('compression');
 const http = require('http');
-const helmet = require('helmet'); // Seguridad avanzada
+const { Pool } = require('pg'); // Conector PostgreSQL
 
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
-// CONFIGURACIÓN DE SEGURIDAD Y RENDIMIENTO
-app.use(helmet({ contentSecurityPolicy: false })); // Protección de headers
-app.use(compression()); // Gzip para carga ultra rápida
-app.use(express.json({ limit: '100mb' }));
+// Configuración de la Base de Datos Real
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+});
+
+// Middleware de Optimización
+app.use(compression());
+app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 /**
- * MOTOR DE PERSISTENCIA (DEVROOT DATA LAKE)
- * Estructura de datos normalizada para evitar redundancia.
+ * INICIALIZACIÓN DE TABLAS (Ejecutar una vez)
  */
-const DATA_LAKE = {
-    users: [
-        { 
-            uid: "DR-001", 
-            user: "Emmanuel_Pro", 
-            email: "admin@devroot.com", 
-            password: "123", 
-            rank: "System Owner", 
-            bio: "Arquitecto principal de DevRoot Onyx.",
-            followers: [], 
-            following: [],
-            notifications: [],
-            stats: { posts: 12, storage: "85%" }
-        },
-        { 
-            uid: "DR-002", 
-            user: "Dev_Assistant", 
-            email: "dev@devroot.com", 
-            password: "dev", 
-            rank: "Senior Developer", 
-            bio: "Soporte técnico y despliegue de módulos.",
-            followers: ["DR-001"], 
-            following: [],
-            notifications: [],
-            stats: { posts: 5, storage: "20%" }
-        }
-    ],
-    global_logs: [],
-    system_uptime: Date.now()
-};
-
-// RELACIÓN INICIAL DE PRUEBA
-DATA_LAKE.users[0].following.push("DR-002");
-
-/**
- * HELPER: BUSCADOR DE IDENTIDAD
- * @param {string} uid - Identificador único
- */
-const findUser = (uid) => DATA_LAKE.users.find(u => u.uid === uid);
-
-/**
- * MIDDLEWARE: VALIDACIÓN DE INTEGRIDAD DE SESIÓN
- */
-const authGuard = (req, res, next) => {
-    const authHeader = req.headers['x-devroot-auth'];
-    if (!authHeader && req.path.startsWith('/api/v1/secure')) {
-        return res.status(401).json({ error: "Acceso denegado: Token de seguridad no detectado." });
+const initDB = async () => {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                uid TEXT PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                joined TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        console.log('\x1b[32m[DB-READY]\x1b[0m Tablas sincronizadas en ecnhaca.site');
+    } catch (err) {
+        console.error('[DB-ERROR] No se pudo inicializar:', err);
     }
-    next();
 };
+initDB();
 
 /**
- * API: MOTOR DE BÚSQUEDA MULTI-CAPA
- * Permite encontrar usuarios por nombre, rango o bio.
+ * API: AUTENTICACIÓN PERSISTENTE
  */
-app.get('/api/v1/search/universal', (req, res) => {
-    const query = req.query.q ? req.query.q.toLowerCase() : "";
-    if (query.length < 1) return res.json({ people: [] });
-
-    const people = DATA_LAKE.users
-        .filter(u => u.user.toLowerCase().includes(query) || u.rank.toLowerCase().includes(query))
-        .map(u => ({
-            uid: u.uid,
-            name: u.user,
-            rank: u.rank,
-            init: u.user[0].toUpperCase(),
-            followers_count: u.followers.length
-        }));
-
-    res.json({ results: { people, posts: [] } });
-});
-
-/**
- * API: PERFIL DETALLADO CON MAPEO DE LISTAS
- */
-app.get('/api/v1/user/full-profile/:uid', (req, res) => {
-    const target = findUser(req.params.uid);
-    if (!target) return res.status(404).json({ error: "Nodo de usuario no encontrado." });
-
-    // Resolver UIDs a Objetos de Usuario para las listas
-    const resolveList = (uids) => uids.map(id => {
-        const u = findUser(id);
-        return u ? { name: u.user, uid: u.uid, rank: u.rank, init: u.user[0].toUpperCase() } : null;
-    }).filter(x => x !== null);
-
-    res.json({
-        identity: {
-            uid: target.uid,
-            name: target.user,
-            rank: target.rank,
-            bio: target.bio,
-            init: target.user[0].toUpperCase()
-        },
-        stats: {
-            followers: target.followers.length,
-            following: target.following.length,
-            posts: target.stats.posts
-        },
-        social: {
-            followers_list: resolveList(target.followers),
-            following_list: resolveList(target.following)
-        }
-    });
-});
-
-/**
- * API: ACCIÓN DE SEGUIMIENTO (FOLLOW/UNFOLLOW)
- */
-app.post('/api/v1/social/toggle-follow', (req, res) => {
-    const { myUid, targetUid } = req.body;
-
-    const me = findUser(myUid);
-    const target = findUser(targetUid);
-
-    if (!me || !target) return res.status(404).json({ error: "Error de sincronización de identidades." });
-
-    const index = me.following.indexOf(targetUid);
-    let status = "";
-
-    if (index > -1) {
-        // UNFOLLOW LOGIC
-        me.following.splice(index, 1);
-        target.followers = target.followers.filter(id => id !== myUid);
-        status = "unfollowed";
-    } else {
-        // FOLLOW LOGIC
-        me.following.push(targetUid);
-        target.followers.push(myUid);
-        status = "followed";
+app.post('/api/v1/auth/signup', async (req, res) => {
+    const { user, email, password } = req.body;
+    try {
+        const uid = "DR-" + Math.random().toString(36).substring(2, 9);
+        const query = 'INSERT INTO users (uid, username, email, password) VALUES ($1, $2, $3, $4)';
+        await pool.query(query, [uid, user.trim(), email.toLowerCase().trim(), password]);
         
-        // Generar Notificación al Target
-        target.notifications.unshift({
-            id: Date.now(),
-            msg: `${me.user} ha comenzado a seguirte.`,
-            type: "SOCIAL",
-            read: false
-        });
+        res.status(201).json({ success: true, message: "Registro exitoso en el Nodo Onyx." });
+    } catch (err) {
+        res.status(409).json({ error: "El usuario o email ya existe en la red." });
     }
+});
 
-    res.json({ status, followers_count: target.followers.length });
+app.post('/api/v1/auth/login', async (req, res) => {
+    const { identity, password } = req.body;
+    try {
+        const query = 'SELECT * FROM users WHERE email = $1 OR username = $1';
+        const result = await pool.query(query, [identity.toLowerCase().trim()]);
+        
+        if (result.rows.length === 0) return res.status(404).json({ error: "Identidad no encontrada." });
+        
+        const account = result.rows[0];
+        if (account.password !== password) return res.status(401).json({ error: "Clave de acceso incorrecta." });
+
+        res.json({
+            success: true,
+            user: { name: account.username, uid: account.uid }
+        });
+    } catch (err) {
+        res.status(500).json({ error: "Error interno del kernel." });
+    }
 });
 
 /**
- * API: AUTENTICACIÓN Y REGISTRO
+ * API: BÚSQUEDA GLOBAL SQL
  */
-app.post('/api/v1/auth/gate', (req, res) => {
-    const { type, user, email, password } = req.body;
-
-    if (type === 'SIGNUP') {
-        const exists = DATA_LAKE.users.find(u => u.email === email || u.user === user);
-        if (exists) return res.status(409).json({ error: "La identidad ya está registrada en el sistema." });
-
-        const newUser = {
-            uid: `DR-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-            user, email, password,
-            rank: "Member",
-            bio: "Identidad recién creada en DevRoot.",
-            followers: [], following: [], notifications: [],
-            stats: { posts: 0, storage: "0%" }
-        };
-        DATA_LAKE.users.push(newUser);
-        return res.status(201).json({ success: true, user: { name: newUser.user, uid: newUser.uid } });
+app.get('/api/v1/search/global', async (req, res) => {
+    const q = req.query.q ? `%${req.query.q.toLowerCase()}%` : "";
+    try {
+        const query = 'SELECT username, uid FROM users WHERE username ILIKE $1 LIMIT 5';
+        const result = await pool.query(query, [q]);
+        
+        const people = result.rows.map(u => ({ name: u.username, id: u.uid }));
+        res.json({ results: { people, posts: [] } });
+    } catch (err) {
+        res.status(500).json({ error: "Fallo en el motor de búsqueda." });
     }
-
-    const account = DATA_LAKE.users.find(u => (u.email === user || u.user === user) && u.password === password);
-    if (!account) return res.status(401).json({ error: "Credenciales de acceso incorrectas." });
-
-    res.json({ success: true, user: { name: account.user, uid: account.uid, rank: account.rank } });
 });
 
 server.listen(PORT, () => {
-    console.log(`[SYSTEM] DevRoot Onyx Kernel desplegado en puerto ${PORT}`);
-    console.log(`[SYSTEM] Estabilidad de base de datos: 100%`);
+    console.log(`\x1b[36m[DEVROOT ONLINE]\x1b[0m Nodo activo en puerto: ${PORT}`);
 });
