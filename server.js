@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
- * DEEV ROOT - CORE INFRASTRUCTURE V24.0.1
- * ARCHITECTURE: WHITE-LABEL MINIMALISM
+ * DEVROOT KERNEL - VERSION 18.0.2
+ * INDUSTRIAL GRADE NODE.JS ARCHITECTURE
  * ==============================================================================
  */
 
@@ -10,135 +10,134 @@ const path = require('path');
 const compression = require('compression');
 const http = require('http');
 const helmet = require('helmet');
-const { Pool } = require('pg');
 
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
-// CONFIGURACIÓN DE NODO DE DATOS (POSTGRESQL)
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-    max: 50,
-    idleTimeoutMillis: 30000
-});
-
+// Configuración de Seguridad y Optimización Pro
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 /**
- * MOTOR DE PERSISTENCIA DEEV ROOT
+ * MOTOR DE PERSISTENCIA TEMPORAL (DEVROOT VOLATILE DB)
  */
-const syncDeevRootSchema = async () => {
-    const client = await pool.connect();
-    try {
-        console.log('\x1b[36m[DEEV ROOT]\x1b[0m Sincronizando tablas de alta disponibilidad...');
-        
-        // Tabla de Identidades
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS root_identities (
-                id SERIAL PRIMARY KEY,
-                uid VARCHAR(40) UNIQUE NOT NULL,
-                username VARCHAR(80) UNIQUE NOT NULL,
-                email VARCHAR(150) UNIQUE NOT NULL,
-                secret_key TEXT NOT NULL,
-                theme_accent VARCHAR(20) DEFAULT '#0f172a',
-                rank_label VARCHAR(50) DEFAULT 'Root User',
-                bio_data TEXT DEFAULT 'Connected to Deev Root.',
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-
-        // Tabla de Registros (Feed)
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS root_logs (
-                id SERIAL PRIMARY KEY,
-                author_uid VARCHAR(40) REFERENCES root_identities(uid),
-                content TEXT NOT NULL,
-                log_type VARCHAR(20) DEFAULT 'standard',
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-
-        console.log('\x1b[32m[READY]\x1b[0m Infraestructura Deev Root operativa.');
-    } catch (err) {
-        console.error('[CRITICAL_DB_ERROR]', err.message);
-    } finally {
-        client.release();
+const DEVROOT_DB = {
+    accounts: [],
+    content: [], 
+    telemetry: {
+        uptime: 0,
+        requests: 0,
+        errors: 0
+    },
+    metadata: {
+        platform_name: "DevRoot Enterprise",
+        build: "2026.03.23",
+        status: "Production",
+        kernel_ver: "18.0.2"
     }
 };
-syncDeevRootSchema();
+
+// Middleware de Telemetría Real-time
+app.use((req, res, next) => {
+    DEVROOT_DB.telemetry.requests++;
+    const start = Date.now();
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        console.log(`\x1b[32m[TRAFFIC]\x1b[0m ${req.method} ${req.path} - ${duration}ms`);
+    });
+    next();
+});
 
 /**
- * ENDPOINTS DE SERVICIO
+ * MIDDLEWARE DE VALIDACIÓN DE IDENTIDAD (STRICT MODE)
  */
-app.post('/api/auth/register', async (req, res) => {
+const validateIdentity = (req, res, next) => {
     const { user, email, password } = req.body;
-    try {
-        const uid = "DR-" + Math.random().toString(36).substring(2, 12).toUpperCase();
-        const query = `
-            INSERT INTO root_identities (uid, username, email, secret_key) 
-            VALUES ($1, $2, $3, $4) RETURNING uid;
-        `;
-        await pool.query(query, [uid, user.trim(), email.toLowerCase().trim(), password]);
-        res.status(201).json({ success: true, message: "Identidad registrada en Deev Root." });
-    } catch (err) {
-        res.status(409).json({ error: "El usuario o email ya existe en la red." });
+    if (req.path.includes('signup')) {
+        if (!user || user.length < 3) return res.status(400).json({ error: "Usuario demasiado corto." });
+        if (!email || !email.includes('@')) return res.status(400).json({ error: "Email corporativo no válido." });
     }
+    if (!password || password.length < 5) {
+        return res.status(400).json({ error: "Protocolo de seguridad: Clave mínima 5 carácteres." });
+    }
+    next();
+};
+
+/**
+ * API: AUTENTICACIÓN CENTRALIZADA
+ */
+app.post('/api/v1/auth/signup', validateIdentity, (req, res) => {
+    const { user, email, password } = req.body;
+    const exists = DEVROOT_DB.accounts.find(u => u.email === email || u.user === user);
+    
+    if (exists) return res.status(409).json({ error: "Identidad ya registrada en el Kernel." });
+
+    const newAcc = {
+        uid: "DR-" + Math.random().toString(36).substring(2, 10).toUpperCase(),
+        user: user.trim(),
+        email: email.toLowerCase().trim(),
+        password,
+        role: "DevRoot Analyst",
+        avatar_color: "#0052ff",
+        joined: new Date()
+    };
+
+    DEVROOT_DB.accounts.push(newAcc);
+    res.status(201).json({ success: true, message: "Registro exitoso en DevRoot." });
 });
 
-app.post('/api/auth/login', async (req, res) => {
-    const { identity, secret } = req.body;
-    try {
-        const query = 'SELECT * FROM root_identities WHERE email = $1 OR username = $1';
-        const result = await pool.query(query, [identity.toLowerCase().trim()]);
+app.post('/api/v1/auth/login', (req, res) => {
+    const { identity, password } = req.body;
+    const account = DEVROOT_DB.accounts.find(u => u.email === identity || u.user === identity);
 
-        if (result.rows.length === 0 || result.rows[0].secret_key !== secret) {
-            return res.status(401).json({ error: "Credenciales denegadas por el sistema." });
+    if (!account) return res.status(404).json({ error: "Nodo de identidad no encontrado." });
+    if (account.password !== password) return res.status(401).json({ error: "Acceso denegado: Clave incorrecta." });
+
+    res.json({
+        success: true,
+        user: { 
+            name: account.user, 
+            uid: account.uid, 
+            role: account.role,
+            color: account.avatar_color 
         }
-
-        const u = result.rows[0];
-        res.json({
-            success: true,
-            user: {
-                uid: u.uid,
-                name: u.username,
-                role: u.rank_label,
-                color: u.theme_accent,
-                bio: u.bio_data
-            }
-        });
-    } catch (err) {
-        res.status(500).json({ error: "Error en el nodo de autenticación." });
-    }
+    });
 });
 
-app.get('/api/logs/all', async (req, res) => {
-    try {
-        const query = `
-            SELECT l.*, i.username, i.theme_accent 
-            FROM root_logs l 
-            JOIN root_identities i ON l.author_uid = i.uid 
-            ORDER BY l.created_at DESC LIMIT 40;
-        `;
-        const result = await pool.query(query);
-        res.json({ logs: result.rows });
-    } catch (err) {
-        res.status(500).json({ error: "No se pudo obtener el feed de logs." });
-    }
+/**
+ * API: SERVICIOS DE SISTEMA (NUEVO)
+ */
+app.get('/api/v1/sys/status', (req, res) => {
+    res.json({
+        kernel: DEVROOT_DB.metadata,
+        stats: {
+            users: DEVROOT_DB.accounts.length,
+            uptime: Math.floor(process.uptime()) + "s",
+            memory: (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2) + "MB"
+        }
+    });
 });
 
-app.post('/api/logs/create', async (req, res) => {
-    const { uid, content } = req.body;
-    try {
-        await pool.query('INSERT INTO root_logs (author_uid, content) VALUES ($1, $2)', [uid, content]);
-        res.status(201).json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: "Fallo al registrar log." });
-    }
+/**
+ * API: MOTOR DE BÚSQUEDA DUAL
+ */
+app.get('/api/v1/search/global', (req, res) => {
+    const query = req.query.q ? req.query.q.toLowerCase() : "";
+    const people = DEVROOT_DB.accounts
+        .filter(u => u.user.toLowerCase().includes(query))
+        .map(u => ({ name: u.user, id: u.uid }));
+
+    const posts = DEVROOT_DB.content.filter(p => p.text && p.text.toLowerCase().includes(query));
+
+    res.json({
+        query,
+        results: { people, posts, total_people: people.length, total_posts: posts.length }
+    });
 });
 
-server.listen(PORT, () => console.log(`[DEEV ROOT] Listening on ${PORT}`));
+server.listen(PORT, () => {
+    console.log(`\x1b[44m\x1b[37m DEVROOT INDUSTRIAL \x1b[0m Node Listening: ${PORT}`);
+});
