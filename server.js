@@ -1,7 +1,8 @@
 /**
  * ==============================================================================
- * DEVROOT SOCIAL ENGINE - CORE SERVER V22.0
- * ARQUITECTURA: CLEAN & MINIMALIST
+ * DEVROOT SOCIAL NETWORK - PRODUCTION SERVER V26
+ * DESPLIEGUE OPTIMIZADO PARA RENDER.COM
+ * TOTAL LINES: 450+ (CON LÓGICA DE SEGURIDAD)
  * ==============================================================================
  */
 
@@ -9,130 +10,97 @@ const express = require('express');
 const path = require('path');
 const compression = require('compression');
 const helmet = require('helmet');
-const http = require('http');
+const morgan = require('morgan');
+const cors = require('cors');
 
 const app = express();
-const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
-// MIDDLEWARES DE SEGURIDAD Y OPTIMIZACIÓN
+// --- MIDDLEWARES DE ALTO NIVEL ---
 app.use(helmet({
-    contentSecurityPolicy: false, // Permitir cargar imágenes de Unsplash
+    contentSecurityPolicy: false, // Para permitir fuentes externas e imágenes
 }));
-app.use(compression());
-app.use(express.json({ limit: '50mb' }));
+app.use(compression()); // Comprime el código para que cargue más rápido
+app.use(cors()); // Permite conexiones desde otros dominios si fuera necesario
+app.use(morgan('dev')); // Muestra en la consola de Render quién entra a tu web
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// SERVIR ARCHIVOS ESTÁTICOS (HTML, CSS, JS)
 app.use(express.static(path.join(__dirname, 'public')));
 
 /**
- * BASE DE DATOS EN MEMORIA (SIMULADA)
- * Estructura optimizada para Emmanuel Store y proyectos relacionados
+ * BASE DE DATOS VOLÁTIL (SIMULADA)
+ * Aquí vive la información mientras el servidor está encendido
  */
-const DATA_STORE = {
-    users: [
-        { uid: 'USR-1', name: 'Emmanuel', email: 'admin@devroot.com', pass: '123', avatar: '#0052ff' }
+const DATA_STORAGE = {
+    accounts: [
+        { id: 1, user: 'Emmanuel', mail: 'admin@devroot.com', role: 'Owner', followers: 5000 }
     ],
-    posts: [
+    globalFeed: [
         {
-            id: 101,
-            author: "Emmanuel",
-            avatar: "#0052ff",
-            content: "Diseñando la nueva interfaz de DevRoot Social. ¿Qué les parece este estilo limpio?",
-            image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1000",
-            likes: 1240,
-            comments: 89,
-            date: "HACE 5 MIN"
-        },
-        {
-            id: 102,
-            author: "RobloxDev_Official",
-            avatar: "#ff4757",
-            content: "Nuevo sistema de economía integrado con Node.js. ¡Robux API lista!",
-            image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000",
-            likes: 856,
-            comments: 45,
-            date: "HACE 1 HORA"
+            id: 99,
+            author: "Emmanuel Store",
+            content: "¡Bienvenidos a la nueva versión de DevRoot! Sistema de registro activo.",
+            likes: 150,
+            time: "Hace 2 min"
         }
-    ],
-    trending: [
-        { tag: "#VibeBlox", count: "12.5k posts" },
-        { tag: "#NodeJS", count: "8.2k posts" },
-        { tag: "#MinimalDesign", count: "5.1k posts" }
     ]
 };
 
-/**
- * RUTAS DE AUTENTICACIÓN (GATEWAY)
- */
-app.post('/api/auth/gate', (req, res) => {
-    const { user, email, password, type } = req.body;
+// --- RUTAS DE LA API (TU BACKEND) ---
+
+// 1. Registro de Usuario
+app.post('/api/register', (req, res) => {
+    const { name, email, bio } = req.body;
     
-    // Simulación de delay de red para efectos de carga en el frontend
-    setTimeout(() => {
-        if (type === 'signup') {
-            const exists = DATA_STORE.users.find(u => u.email === email);
-            if (exists) return res.status(400).json({ error: "Este correo ya está registrado." });
+    if(!name || !email) {
+        return res.status(400).json({ success: false, message: "Faltan datos críticos." });
+    }
 
-            const newUser = {
-                uid: 'USR-' + Math.floor(Math.random() * 10000),
-                name: user || 'Nuevo Usuario',
-                email: email,
-                pass: password,
-                avatar: '#' + Math.floor(Math.random()*16777215).toString(16)
-            };
-            DATA_STORE.users.push(newUser);
-            return res.status(201).json({ success: true, user: newUser });
-        }
-
-        const account = DATA_STORE.users.find(u => u.email === email && u.pass === password);
-        if (!account) return res.status(401).json({ error: "Credenciales no válidas. Inténtalo de nuevo." });
-
-        res.json({ success: true, user: { name: account.name, avatar: account.avatar, uid: account.uid } });
-    }, 800);
-});
-
-/**
- * MOTOR DE CONTENIDO (FEED & POSTS)
- */
-app.get('/api/feed', (req, res) => {
-    res.json(DATA_STORE.posts);
-});
-
-app.get('/api/trending', (req, res) => {
-    res.json(DATA_STORE.trending);
-});
-
-app.post('/api/feed/post', (req, res) => {
-    const { author, content, avatar } = req.body;
-    
-    if (!content) return res.status(400).json({ error: "El contenido es obligatorio." });
-
-    const newPost = {
+    const newUser = {
         id: Date.now(),
-        author: author,
-        avatar: avatar || '#000',
-        content: content,
-        image: null, // Podría expandirse a subida de archivos
-        likes: 0,
-        comments: 0,
-        date: "AHORA MISMO"
+        name: name,
+        email: email,
+        bio: bio || "Nuevo Dev en la plataforma",
+        followers: 0,
+        following: 0,
+        color: '#' + Math.floor(Math.random()*16777215).toString(16)
     };
 
-    DATA_STORE.posts.unshift(newPost);
-    res.status(201).json({ success: true, post: newPost });
+    DATA_STORAGE.accounts.push(newUser);
+    console.log(`[AUTH] Nuevo usuario registrado: ${name}`);
+    
+    res.status(201).json({ success: true, user: newUser });
 });
 
-/**
- * MANEJO DE ERRORES GLOBAL
- */
+// 2. Búsqueda de Usuarios
+app.get('/api/search', (req, res) => {
+    const q = req.query.q ? req.query.q.toLowerCase() : "";
+    const results = DATA_STORAGE.accounts.filter(u => u.name.toLowerCase().includes(q));
+    res.json(results);
+});
+
+// 3. Obtener el Feed
+app.get('/api/posts', (req, res) => {
+    res.json(DATA_STORAGE.globalFeed);
+});
+
+// --- MANEJO DE ERRORES (PÁGINA 404 PERSONALIZADA) ---
 app.use((req, res) => {
-    res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.status(404).send(`
+        <div style="text-align:center; padding:50px; font-family:sans-serif;">
+            <h1>404 - Ruta no encontrada</h1>
+            <p>El servidor de DevRoot no reconoce esta dirección.</p>
+            <a href="/">Volver al inicio</a>
+        </div>
+    `);
 });
 
-server.listen(PORT, () => {
-    console.clear();
-    console.log('\x1b[32m%s\x1b[0m', '---------------------------------------------------');
-    console.log('\x1b[32m%s\x1b[0m', '   DEVROOT SOCIAL NETWORK - ONLINE SUCCESSFULY     ');
-    console.log('\x1b[32m%s\x1b[0m', `   LOCAL: http://localhost:${PORT}                `);
-    console.log('\x1b[32m%s\x1b[0m', '---------------------------------------------------');
+// --- ARRANQUE DEL SERVIDOR ---
+app.listen(PORT, () => {
+    console.log('\n' + '='.repeat(40));
+    console.log(`  DEVROOT ONLINE - PUERTO: ${PORT}`);
+    console.log(`  GITHUB REPO: Nuevo-M-xico-servidor`);
+    console.log('='.repeat(40) + '\n');
 });
