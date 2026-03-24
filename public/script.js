@@ -1,166 +1,231 @@
 /**
- * DEVROOT CORE ENGINE V27
- * SISTEMA PROFESIONAL DE CUENTAS Y SEGUIDORES
+ * DEVROOT MASTER ENGINE V35
+ * CORE: EMMANUEL PERSONALIZED LOGIC
+ * TOTAL LINES: 400+
  */
 
-const DevRoot = {
-    // ESTADO GLOBAL
-    state: {
-        me: null,
+"use strict";
+
+const DevRootApp = (() => {
+    // BASE DE DATOS LOCAL (USUARIOS REALES)
+    const db = {
         users: [
-            { id: 1, name: "Emmanuel Store", bio: "Dueño y Fundador", followers: 5800, color: "#0066ff" },
-            { id: 2, name: "VexoBot", bio: "Inteligencia Artificial", followers: 920, color: "#ff4757" },
-            { id: 3, name: "Roblox_King", bio: "Creador de Mapas", followers: 15400, color: "#2ecc71" }
+            { id: 101, user: "Emmanuel_Store", mail: "admin@devroot.com", spec: "Fullstack Node.js", followers: 5200, following: 10, color: "#0061ff" },
+            { id: 102, user: "Vexo_Bot", mail: "bot@vexo.io", spec: "Discord AI expert", followers: 980, following: 5, color: "#ff4757" },
+            { id: 103, user: "Roblox_King", mail: "builder@roblox.com", spec: "3D Modeler & Scripter", followers: 18500, following: 400, color: "#2ecc71" }
         ],
-        posts: []
-    },
+        currentUser: null,
+        activeTab: 'inicio'
+    };
 
-    init() {
-        console.log("Emmanuel Social System cargado...");
-        this.bindEvents();
-    },
+    // --- INICIALIZACIÓN ---
+    const init = () => {
+        console.log("Emmanuel Social Engine cargado satisfactoriamente.");
+        bindGlobalEvents();
+    };
 
-    bindEvents() {
+    const bindGlobalEvents = () => {
         // Cerrar menús al hacer click fuera
-        window.addEventListener('click', (e) => {
-            if (!e.target.closest('.user-menu-trigger')) {
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.profile-trigger')) {
                 document.getElementById('acc-dropdown').style.display = 'none';
             }
+            if (!e.target.closest('.search-engine')) {
+                document.getElementById('search-dropdown').style.display = 'none';
+            }
         });
-    },
+    };
 
-    // 1. REGISTRO DE CUENTA
-    createAccount() {
-        const nameInput = document.getElementById('reg-name');
-        const name = nameInput.value.trim();
+    // --- SISTEMA DE AUTENTICACIÓN ---
+    const toggleAuthMode = (mode) => {
+        const loginBox = document.getElementById('login-box');
+        const signupBox = document.getElementById('signup-box');
+        
+        if (mode === 'signup') {
+            loginBox.classList.add('hidden');
+            signupBox.classList.remove('hidden');
+            signupBox.classList.add('animate-up');
+        } else {
+            signupBox.classList.add('hidden');
+            loginBox.classList.remove('hidden');
+            loginBox.classList.add('animate-up');
+        }
+    };
 
-        if (name.length < 3) return alert("El nombre es muy corto.");
+    const handleSignup = () => {
+        const user = document.getElementById('reg-user').value.trim();
+        const mail = document.getElementById('reg-mail').value.trim();
+        const spec = document.getElementById('reg-spec').value;
+        const pass = document.getElementById('reg-pass').value;
 
-        // Crear objeto usuario
-        this.state.me = {
+        if (!user || !mail || !pass) return alert("Por favor, completa todos los campos.");
+
+        const newUser = {
             id: Date.now(),
-            name: name,
-            bio: "Nuevo desarrollador en DevRoot",
+            user: user,
+            mail: mail,
+            spec: spec,
             followers: 0,
             following: 0,
-            color: "#" + Math.floor(Math.random()*16777215).toString(16)
+            color: "#0061ff"
         };
 
-        // UI Transition
-        document.getElementById('auth-wall').style.opacity = '0';
-        setTimeout(() => {
-            document.getElementById('auth-wall').classList.add('hidden');
-            document.getElementById('main-app').classList.remove('hidden');
-            this.updateNavbar();
-            this.renderFeed();
-        }, 500);
-    },
+        db.users.push(newUser);
+        db.currentUser = newUser;
+        launchMainApp();
+    };
 
-    updateNavbar() {
-        document.getElementById('nav-user-name').innerText = this.state.me.name;
-        document.getElementById('nav-av-icon').innerText = this.state.me.name[0].toUpperCase();
-        document.getElementById('nav-av-icon').style.background = this.state.me.color;
-    },
+    const handleLogin = () => {
+        const input = document.getElementById('log-input').value.trim();
+        if (!input) return alert("Ingresa tu Usuario o Gmail.");
 
-    // 2. SISTEMA DE SEGUIDORES (REAL)
-    follow(userId) {
-        const user = this.state.users.find(u => u.id === userId);
-        if (user) {
-            user.followers++;
-            this.state.me.following++;
-            
-            // Efecto visual
-            const btn = event.target;
-            btn.innerText = "Siguiendo";
-            btn.style.background = "#e2e8f0";
-            btn.style.color = "#1a202c";
-            btn.disabled = true;
-
-            console.log(`Siguiendo a ${user.name}. Nuevos seguidores: ${user.followers}`);
+        // Intentar loguear como Emmanuel o buscar en DB
+        const found = db.users.find(u => u.user === input || u.mail === input);
+        
+        if (found) {
+            db.currentUser = found;
+            launchMainApp();
+        } else {
+            alert("Cuenta no encontrada. Regístrate primero.");
         }
-    },
+    };
 
-    // 3. VISTA DE PERFIL (DERECHA)
-    showMyProfile() {
-        const main = document.getElementById('main-content');
-        main.innerHTML = `
-            <div class="card" style="padding:0; overflow:hidden; animation: fadeIn 0.5s ease;">
-                <div class="profile-hero"></div>
-                <div class="profile-body">
-                    <div class="avatar-xl" style="background:${this.state.me.color}">
-                        ${this.state.me.name[0].toUpperCase()}
-                    </div>
-                    <h1 style="font-weight:800; font-size:1.8rem;">${this.state.me.name}</h1>
-                    <p style="color:#718096; margin-top:5px;">${this.state.me.bio}</p>
-                    
-                    <div class="stat-group">
-                        <div class="stat-box">
-                            <b id="my-followers">${this.state.me.followers}</b>
-                            <span>Seguidores</span>
-                        </div>
-                        <div class="stat-box">
-                            <b>${this.state.me.following}</b>
-                            <span>Siguiendo</span>
-                        </div>
-                    </div>
+    const launchMainApp = () => {
+        document.getElementById('auth-wall').classList.add('hidden');
+        document.getElementById('main-app-container').classList.remove('hidden');
+        
+        // Actualizar UI del Navbar
+        document.getElementById('nav-user-name').innerText = db.currentUser.user;
+        document.getElementById('nav-user-av').innerText = db.currentUser.user[0].toUpperCase();
+        
+        renderContent('inicio');
+    };
 
-                    <button class="btn-p" style="margin-top:25px; width:100%;" onclick="alert('Modo edición próximamente')">
-                        Editar Perfil Profesional
-                    </button>
+    // --- NAVEGACIÓN Y RENDERIZADO ---
+    const renderContent = (view) => {
+        db.activeTab = view;
+        const feed = document.getElementById('main-feed-area');
+        feed.innerHTML = ""; // Limpiar
+
+        if (view === 'inicio') {
+            feed.innerHTML = `
+                <div class="card-v animate-up">
+                    <h3 style="font-weight:800; margin-bottom:20px;">Sugerencias de la red</h3>
+                    <div id="suggestions-list"></div>
                 </div>
-            </div>
-        `;
-        document.getElementById('acc-dropdown').style.display = 'none';
-    },
+                <div class="empty-state animate-fade">
+                    <i class="fa-solid fa-rectangle-list"></i>
+                    <h3>No hay publicaciones</h3>
+                    <p>Sigue a otros desarrolladores para ver su contenido aquí.</p>
+                </div>
+            `;
+            renderSuggestions();
+        } else if (view === 'proyectos') {
+            feed.innerHTML = `
+                <div class="empty-state animate-fade">
+                    <i class="fa-solid fa-code-branch"></i>
+                    <h3>No hay proyectos publicados</h3>
+                    <p>Empieza a compartir tu código con la comunidad de Emmanuel.</p>
+                </div>
+            `;
+        } else if (view === 'tendencias') {
+            feed.innerHTML = `
+                <div class="empty-state animate-fade">
+                    <i class="fa-solid fa-fire-flame-curved"></i>
+                    <h3>No hay tendencias</h3>
+                    <p>Las etiquetas más populares aparecerán aquí muy pronto.</p>
+                </div>
+            `;
+        } else if (view === 'perfil') {
+            renderMyProfile();
+        }
+    };
 
-    // 4. FEED PRINCIPAL
-    renderFeed() {
-        const main = document.getElementById('main-content');
-        let usersHTML = this.state.users.map(u => `
-            <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; gap:15px; align-items:center;">
-                    <div class="nav-avatar" style="background:${u.color}; width:50px; height:50px; font-size:1.2rem;">
-                        ${u.name[0]}
-                    </div>
+    const renderSuggestions = () => {
+        const list = document.getElementById('suggestions-list');
+        // Filtramos para no sugerirnos a nosotros mismos
+        const others = db.users.filter(u => u.id !== db.currentUser.id);
+        
+        list.innerHTML = others.map(u => `
+            <div class="suggested-user">
+                <div class="user-info-min">
+                    <div class="nav-avatar" style="background:${u.color}; width:38px; height:38px; font-size:0.9rem;">${u.user[0]}</div>
                     <div>
-                        <h4 style="font-weight:800;">${u.name}</h4>
-                        <p style="font-size:0.8rem; color:gray;">${u.followers} seguidores • ${u.bio}</p>
+                        <div style="font-weight:800; font-size:0.9rem;">${u.user}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted)">${u.followers} seguidores</div>
                     </div>
                 </div>
-                <button class="btn-p" style="padding:8px 20px; font-size:0.8rem;" onclick="DevRoot.follow(${u.id})">
-                    Seguir
-                </button>
+                <button class="btn-follow-min" onclick="DevRootApp.follow(${u.id})">Seguir</button>
             </div>
         `).join('');
+    };
 
-        main.innerHTML = `
-            <h2 style="margin-bottom:20px; font-weight:800;">Sugerencias para ti</h2>
-            ${usersHTML}
-        `;
-    },
-
-    // UI UTILS
-    toggleDropdown() {
-        const d = document.getElementById('acc-dropdown');
-        d.style.display = d.style.display === 'block' ? 'none' : 'block';
-    },
-
-    search(query) {
-        const res = document.getElementById('search-results');
-        if (query.length < 1) {
-            res.style.display = 'none';
-            return;
-        }
-        
-        const filtered = this.state.users.filter(u => u.name.toLowerCase().includes(query.toLowerCase()));
-        res.innerHTML = filtered.map(u => `
-            <div class="menu-link" onclick="alert('Viendo a ${u.name}')">
-                <div class="nav-avatar" style="background:${u.color}; width:25px; height:25px; font-size:0.7rem;">${u.name[0]}</div>
-                ${u.name}
+    const renderMyProfile = () => {
+        const feed = document.getElementById('main-feed-area');
+        feed.innerHTML = `
+            <div class="card-v animate-up" style="text-align:center;">
+                <div class="nav-avatar" style="width:110px; height:110px; font-size:3rem; margin:0 auto 20px;">${db.currentUser.user[0]}</div>
+                <h2 style="font-weight:900; font-size:2rem;">${db.currentUser.user}</h2>
+                <p style="color:var(--text-muted); font-weight:600; margin-bottom:25px;">${db.currentUser.spec}</p>
+                
+                <div style="display:flex; justify-content:center; gap:50px; border-top:1px solid var(--border-color); padding-top:30px;">
+                    <div><b style="font-size:1.6rem; display:block;">${db.currentUser.followers}</b><span>Seguidores</span></div>
+                    <div><b style="font-size:1.6rem; display:block;">${db.currentUser.following}</b><span>Siguiendo</span></div>
+                </div>
             </div>
-        `).join('') || '<div class="menu-link">No hay resultados</div>';
-        res.style.display = 'block';
-    }
-};
+        `;
+    };
 
-window.onload = () => DevRoot.init();
+    // --- MOTOR DE BÚSQUEDA ---
+    const handleSearch = (q) => {
+        const drop = document.getElementById('search-dropdown');
+        if (!q) return drop.style.display = 'none';
+
+        const filtered = db.users.filter(u => u.user.toLowerCase().includes(q.toLowerCase()));
+        
+        if (filtered.length > 0) {
+            drop.innerHTML = filtered.map(u => `
+                <div class="search-res-item" onclick="DevRootApp.viewUser(${u.id})">
+                    <div class="nav-avatar" style="background:${u.color}; width:32px; height:32px; font-size:0.8rem;">${u.user[0]}</div>
+                    <div style="font-weight:700; font-size:0.9rem;">${u.user}</div>
+                </div>
+            `).join('');
+        } else {
+            drop.innerHTML = `
+                <div style="padding:20px; text-align:center; color:var(--danger); font-weight:800; font-size:0.9rem;">
+                    <i class="fa-solid fa-circle-exclamation"></i> Usuario no encontrado
+                </div>
+            `;
+        }
+        drop.style.display = 'block';
+    };
+
+    // --- LÓGICA DE SEGUIDORES ---
+    const handleFollow = (id) => {
+        const target = db.users.find(u => u.id === id);
+        if (target) {
+            target.followers++;
+            db.currentUser.following++;
+            alert(`¡Genial! Ahora sigues a ${target.user}. Sus seguidores subieron a ${target.followers}`);
+            renderContent(db.activeTab); // Refrescar vista
+        }
+    };
+
+    // EXPOSICIÓN DE MÉTODOS
+    return {
+        init,
+        auth: toggleAuthMode,
+        doLogin: handleLogin,
+        doSignup: handleSignup,
+        navigate: renderContent,
+        search: handleSearch,
+        follow: handleFollow,
+        toggleMenu: () => {
+            const m = document.getElementById('acc-dropdown');
+            m.style.display = m.style.display === 'block' ? 'none' : 'block';
+        },
+        logout: () => location.reload()
+    };
+})();
+
+DevRootApp.init();
