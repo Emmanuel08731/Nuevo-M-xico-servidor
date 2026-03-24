@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
- * DEVROOT KERNEL - VERSION 18.0.2 (POSTGRESQL INDUSTRIAL)
- * CORE ARCHITECTURE BY EMMANUEL | DOMAIN: ecnhaca.site
+ * CORE ARCHITECTURE - VERSION 18.0.2
+ * INDUSTRIAL GRADE PERSISTENCE LAYER
  * ==============================================================================
  */
 
@@ -16,180 +16,122 @@ const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
-// 1. CONFIGURACIÓN DEL POOL DE CONEXIÓN (POSTGRESQL)
+// CONFIGURACIÓN DE BASE DE DATOS PROFESIONAL
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
-    max: 20, // Máximo de conexiones simultáneas
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    max: 30,
+    idleTimeoutMillis: 10000
 });
 
-// 2. MIDDLEWARES DE CAPA EMPRESARIAL
-app.use(helmet({ contentSecurityPolicy: false })); // Seguridad de headers
-app.use(compression()); // Compresión Gzip para velocidad
-app.use(express.json({ limit: '50mb' })); // Soporte para archivos grandes
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(compression());
+app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 /**
- * 3. MOTOR DE SINCRONIZACIÓN DE ESQUEMAS (SQL)
- * Este bloque asegura que las tablas existan con los tipos de datos correctos.
+ * INICIALIZACIÓN DE ESQUEMAS RELACIONALES
  */
-const syncDatabaseNode = async () => {
+const syncCoreDB = async () => {
     const client = await pool.connect();
     try {
-        console.log('\x1b[33m[SYSTEM]\x1b[0m Iniciando secuencia de sincronización...');
-        
-        // Tabla de Usuarios Maestro
+        // Tabla de Identidades
         await client.query(`
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE IF NOT EXISTS identities (
                 id SERIAL PRIMARY KEY,
-                uid VARCHAR(20) UNIQUE NOT NULL,
-                username VARCHAR(50) UNIQUE NOT NULL,
+                uuid VARCHAR(25) UNIQUE NOT NULL,
+                handle VARCHAR(50) UNIQUE NOT NULL,
                 email VARCHAR(100) UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                rank VARCHAR(30) DEFAULT 'Developer',
-                bio TEXT DEFAULT 'Miembro de la red DevRoot Onyx.',
-                avatar_color VARCHAR(10) DEFAULT '#0052ff',
-                followers_count INTEGER DEFAULT 0,
-                following_count INTEGER DEFAULT 0,
-                is_verified BOOLEAN DEFAULT false,
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                secret_hash TEXT NOT NULL,
+                status_label VARCHAR(30) DEFAULT 'Standard',
+                profile_color VARCHAR(15) DEFAULT '#0052ff',
+                metrics_followers INTEGER DEFAULT 0,
+                metrics_following INTEGER DEFAULT 0,
+                is_active BOOLEAN DEFAULT true,
+                timestamp_created TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
         `);
 
-        // Tabla de Relaciones (Seguidores)
+        // Tabla de Relaciones Dinámicas
         await client.query(`
-            CREATE TABLE IF NOT EXISTS social_graph (
+            CREATE TABLE IF NOT EXISTS relationships (
                 id SERIAL PRIMARY KEY,
-                follower_id VARCHAR(20) REFERENCES users(uid),
-                following_id VARCHAR(20) REFERENCES users(uid),
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(follower_id, following_id)
+                source_uuid VARCHAR(25) REFERENCES identities(uuid),
+                target_uuid VARCHAR(25) REFERENCES identities(uuid),
+                timestamp_link TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(source_uuid, target_uuid)
             );
         `);
-
-        console.log('\x1b[32m[SUCCESS]\x1b[0m Nodo PostgreSQL ecnhaca.site vinculado con éxito.');
+        console.log('\x1b[36m[CORE]\x1b[0m Base de datos sincronizada correctamente.');
     } catch (err) {
-        console.error('\x1b[31m[CRITICAL]\x1b[0m Error en Sincronización:', err.message);
+        console.error('[DATABASE_CRITICAL]', err);
     } finally {
         client.release();
     }
 };
-syncDatabaseNode();
+syncCoreDB();
 
 /**
- * 4. CONTROLADORES DE AUTENTICACIÓN (AUTH CONTROLLERS)
+ * ENDPOINTS DE AUTENTICACIÓN
  */
-app.post('/api/v1/auth/signup', async (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
     const { user, email, password } = req.body;
-    
-    // Validaciones de seguridad de servidor
-    if (!user || user.length < 3) return res.status(400).json({ error: "Nombre de usuario inválido (min 3 chars)." });
-    if (!email.includes('@')) return res.status(400).json({ error: "Formato de correo electrónico no soportado." });
-    if (password.length < 6) return res.status(400).json({ error: "La clave debe ser de alta seguridad (min 6)." });
-
     try {
-        const uid = "DR-" + Math.random().toString(36).substring(2, 10).toUpperCase();
-        const colors = ['#0052ff', '#7c3aed', '#db2777', '#2563eb', '#059669'];
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
-
+        const uuid = "ID-" + Math.random().toString(36).substring(2, 12).toUpperCase();
         const query = `
-            INSERT INTO users (uid, username, email, password, avatar_color) 
-            VALUES ($1, $2, $3, $4, $5) RETURNING uid, username;
+            INSERT INTO identities (uuid, handle, email, secret_hash) 
+            VALUES ($1, $2, $3, $4) RETURNING uuid;
         `;
-        const values = [uid, user.trim(), email.toLowerCase().trim(), password, randomColor];
-        
-        const result = await pool.query(query, values);
-        res.status(201).json({ 
-            success: true, 
-            message: "Identidad creada en el clúster Onyx.",
-            data: result.rows[0] 
-        });
+        await pool.query(query, [uuid, user.trim(), email.toLowerCase().trim(), password]);
+        res.status(201).json({ success: true, message: "Identidad registrada en el sistema." });
     } catch (err) {
-        if (err.code === '23505') {
-            res.status(409).json({ error: "Conflicto: El usuario o email ya está registrado." });
-        } else {
-            res.status(500).json({ error: "Fallo crítico en el motor de persistencia." });
-        }
+        res.status(409).json({ error: "La identidad ya existe en los registros." });
     }
 });
 
-app.post('/api/v1/auth/login', async (req, res) => {
+app.post('/api/auth/verify', async (req, res) => {
     const { identity, password } = req.body;
-    if (!identity || !password) return res.status(400).json({ error: "Credenciales incompletas." });
-
     try {
-        const query = 'SELECT * FROM users WHERE email = $1 OR username = $1';
+        const query = 'SELECT * FROM identities WHERE email = $1 OR handle = $1';
         const result = await pool.query(query, [identity.toLowerCase().trim()]);
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: "Nodo de identidad no hallado." });
+        if (result.rows.length === 0 || result.rows[0].secret_hash !== password) {
+            return res.status(401).json({ error: "Credenciales de acceso no válidas." });
         }
 
-        const user = result.rows[0];
-        if (user.password !== password) {
-            return res.status(401).json({ error: "Fallo de autenticación: Clave incorrecta." });
-        }
-
+        const data = result.rows[0];
         res.json({
             success: true,
             user: {
-                uid: user.uid,
-                name: user.username,
-                rank: user.rank,
-                color: user.avatar_color,
-                bio: user.bio,
-                stats: {
-                    followers: user.followers_count,
-                    following: user.following_count
-                }
+                uuid: data.uuid,
+                name: data.handle,
+                color: data.profile_color,
+                status: data.status_label,
+                stats: { followers: data.metrics_followers, following: data.metrics_following }
             }
         });
     } catch (err) {
-        res.status(500).json({ error: "Error de comunicación con el nodo SQL." });
+        res.status(500).json({ error: "Fallo en el servidor de verificación." });
     }
 });
 
 /**
- * 5. MOTOR DE BÚSQUEDA AVANZADA (FULL-TEXT SEARCH)
+ * MOTOR DE BÚSQUEDA GLOBAL
  */
-app.get('/api/v1/search/global', async (req, res) => {
-    const searchVal = req.query.q ? `%${req.query.q}%` : '';
-    if (!searchVal) return res.json({ results: { people: [] } });
-
+app.get('/api/search', async (req, res) => {
+    const q = req.query.q ? `%${req.query.q}%` : '';
     try {
         const query = `
-            SELECT uid, username, rank, avatar_color, is_verified 
-            FROM users 
-            WHERE username ILIKE $1 OR uid ILIKE $1 
-            ORDER BY is_verified DESC, username ASC 
-            LIMIT 8;
+            SELECT uuid, handle, status_label, profile_color 
+            FROM identities 
+            WHERE handle ILIKE $1 OR uuid ILIKE $1 
+            LIMIT 10;
         `;
-        const result = await pool.query(query, [searchVal]);
-        
-        const people = result.rows.map(r => ({
-            id: r.uid,
-            name: r.username,
-            rank: r.rank,
-            color: r.avatar_color,
-            verified: r.is_verified
-        }));
-
-        res.json({ results: { people, posts: [] } });
+        const result = await pool.query(query, [q]);
+        res.json({ results: result.rows });
     } catch (err) {
-        res.status(500).json({ error: "El motor de búsqueda está temporalmente fuera de línea." });
+        res.status(500).json({ error: "Error en el motor de indexación." });
     }
 });
 
-// 6. INICIO DE SERVIDOR
-server.listen(PORT, () => {
-    console.log(`
-    \x1b[34m╔════════════════════════════════════════════════════════╗
-    \x1b[34m║\x1b[0m  DEVROOT ONYX KERNEL ONLINE - PORT: ${PORT}          \x1b[34m║
-    \x1b[34m║\x1b[0m  DOMINIO: ecnhaca.site                              \x1b[34m║
-    \x1b[34m║\x1b[0m  DB: PostgreSQL Cloud Managed                       \x1b[34m║
-    \x1b[34m╚════════════════════════════════════════════════════════╝\x1b[0m
-    `);
-});
+server.listen(PORT, () => console.log(`[SYSTEM] Core Online on Port ${PORT}`));
