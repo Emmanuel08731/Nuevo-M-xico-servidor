@@ -2,113 +2,76 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevRoot | Join the Network</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>DevRoot | Emmanuel Store</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <section id="auth-container">
-        <div class="auth-card animate-pop">
-            <h1>Dev<span>Root</span></h1>
+    <div id="auth-wall">
+        <div class="auth-container">
+            <h1 class="auth-logo">Dev<span>Root</span></h1>
+            <p style="margin-bottom:30px; color:gray; font-weight:500;">La red social para el 1% de desarrolladores.</p>
             
-            <div id="login-form">
-                <p>Bienvenido de nuevo a la red de Emmanuel.</p>
-                <div class="form-group">
-                    <label>Correo Electrónico</label>
-                    <input type="email" id="log-email" placeholder="admin@devroot.com">
-                </div>
-                <div class="form-group">
-                    <label>Contraseña</label>
-                    <input type="password" id="log-pass" placeholder="••••••••">
-                </div>
-                <button class="btn-main" onclick="SocialEngine.login()">Iniciar Sesión</button>
-                <div class="toggle-auth">
-                    ¿No tienes una cuenta? <span onclick="SocialEngine.toggleAuth('signup')">Regístrate ahora</span>
-                </div>
+            <div class="input-box">
+                <label>NOMBRE DE USUARIO</label>
+                <input type="text" id="reg-name" placeholder="Ej: Emmanuel_Dev">
             </div>
-
-            <div id="signup-form" class="hidden">
-                <p>Crea tu perfil profesional hoy mismo.</p>
-                <div class="form-group">
-                    <label>Nombre Completo / Usuario</label>
-                    <input type="text" id="reg-name" placeholder="Ej: Emmanuel_Dev">
-                </div>
-                <div class="form-group">
-                    <label>Correo Electrónico</label>
-                    <input type="email" id="reg-email" placeholder="tu@correo.com">
-                </div>
-                <div class="form-group">
-                    <label>Especialidad</label>
-                    <select id="reg-bio">
-                        <option value="Node.js Developer">Node.js Developer</option>
-                        <option value="Roblox Creator">Roblox Creator</option>
-                        <option value="Web Designer">Web Designer</option>
-                        <option value="Discord Bot Expert">Discord Bot Expert</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Contraseña</label>
-                    <input type="password" id="reg-pass" placeholder="Mínimo 8 caracteres">
-                </div>
-                <button class="btn-main" onclick="SocialEngine.register()">Crear mi cuenta</button>
-                <div class="toggle-auth">
-                    ¿Ya tienes cuenta? <span onclick="SocialEngine.toggleAuth('login')">Inicia sesión</span>
-                </div>
-            </div>
+            
+            <button class="btn-p" style="width:100%;" onclick="DevRoot.createAccount()">
+                Crear Cuenta Profesional
+            </button>
         </div>
-    </section>
+    </div>
 
-    <main id="main-app" class="hidden">
-        <nav class="nav-bar">
-            <div class="nav-inner">
-                <div class="logo-text" onclick="SocialEngine.navigate('feed-view')">Dev<span>Root</span></div>
+    <div id="main-app" class="hidden">
+        <nav class="navbar">
+            <div class="nav-content">
+                <div class="auth-logo" style="font-size:1.8rem; margin:0; cursor:pointer;" onclick="location.reload()">Dev<span>Root</span></div>
                 
-                <div class="search-box">
+                <div class="search-wrapper">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" placeholder="Buscar usuario por nombre..." oninput="SocialEngine.search(this.value)">
-                    <div id="search-res-box" class="animate-pop"></div>
+                    <input type="text" class="search-input" placeholder="Buscar amigos..." oninput="DevRoot.search(this.value)">
+                    <div id="search-results" class="search-results"></div>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 15px; cursor: pointer;" onclick="SocialEngine.openProfile(SocialEngine.currentUser ? SocialEngine.currentUser.id : 0)">
-                    <div id="nav-user-av" class="av-mini" style="width: 40px; height: 40px;">E</div>
-                    <span id="nav-user-name" style="font-weight: 800; font-size: 0.9rem;"></span>
+                <div class="user-menu-trigger" onclick="DevRoot.toggleDropdown()">
+                    <span id="nav-user-name" style="font-weight:700;">Emmanuel</span>
+                    <div class="nav-avatar" id="nav-av-icon">E</div>
+                </div>
+
+                <div id="acc-dropdown" class="dropdown-menu">
+                    <div class="menu-link" onclick="DevRoot.showMyProfile()">
+                        <i class="fa-regular fa-circle-user"></i> Ver Mi Perfil
+                    </div>
+                    <div class="menu-link" style="opacity:0.5; cursor:not-allowed;">
+                        <i class="fa-solid fa-gear"></i> Configuración
+                    </div>
                 </div>
             </div>
         </nav>
 
-        <div class="main-grid">
+        <div class="app-grid">
             <aside>
-                <div class="card">
-                    <div style="padding: 10px 0; font-weight: 700; color: var(--primary); cursor: pointer;" onclick="SocialEngine.navigate('feed-view')">
-                        <i class="fa-solid fa-house" style="margin-right: 10px;"></i> Inicio
+                <div class="card" style="padding:15px;">
+                    <div class="menu-link" onclick="DevRoot.renderFeed()" style="background:var(--bg-alt); border-radius:12px; color:var(--p);">
+                        <i class="fa-solid fa-house"></i> Inicio
                     </div>
-                    <div style="padding: 10px 0; font-weight: 700; cursor: pointer;" onclick="SocialEngine.navigate('settings-view')">
-                        <i class="fa-solid fa-sliders" style="margin-right: 10px;"></i> Configuración
-                    </div>
+                    <div class="menu-link"><i class="fa-solid fa-fire"></i> Tendencias</div>
+                    <div class="menu-link"><i class="fa-solid fa-code"></i> Proyectos</div>
                 </div>
             </aside>
 
-            <section>
-                <div id="feed-view" class="view-section"></div>
-                <div id="profile-view" class="view-section card hidden" style="padding: 0; overflow: hidden;"></div>
-                <div id="settings-view" class="view-section card hidden">
-                    <h2 style="font-weight: 800; margin-bottom: 20px;">Ajustes del Sistema</h2>
-                    <ul class="settings-list">
-                        <li class="settings-item">
-                            <div><strong>Perfil Público</strong><p style="font-size: 0.8rem; color: gray;">Permitir que otros te encuentren.</p></div>
-                            <input type="checkbox" checked>
-                        </li>
-                        <li class="settings-item">
-                            <div><strong>Eliminar Cuenta</strong><p style="font-size: 0.8rem; color: #ff3d00;">Opción bloqueada por seguridad.</p></div>
-                        </li>
-                    </ul>
+            <main id="main-content"></main>
+
+            <aside>
+                <div class="card">
+                    <h4 style="font-weight:800; margin-bottom:15px;">Estadísticas Rápidas</h4>
+                    <p style="font-size:0.8rem; color:gray;">Bienvenido a DevRoot. Aquí verás el crecimiento de tu red en tiempo real.</p>
                 </div>
-            </section>
+            </aside>
         </div>
-    </main>
+    </div>
 
     <script src="script.js"></script>
 </body>
