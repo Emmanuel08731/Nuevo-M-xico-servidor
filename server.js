@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
- * CORE ARCHITECTURE - VERSION 18.0.2
- * INDUSTRIAL GRADE PERSISTENCE LAYER
+ * GLOBAL CORE INFRASTRUCTURE - V20.0.1
+ * ENTERPRISE ARCHITECTURE | ECNHACA.SITE
  * ==============================================================================
  */
 
@@ -16,122 +16,146 @@ const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
-// CONFIGURACIÓN DE BASE DE DATOS PROFESIONAL
+// CONFIGURACIÓN DE CLÚSTER DE BASE DE DATOS
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
-    max: 30,
-    idleTimeoutMillis: 10000
+    max: 50,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
 });
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
-app.use(express.json({ limit: '20mb' }));
+app.use(express.json({ limit: '100mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 /**
- * INICIALIZACIÓN DE ESQUEMAS RELACIONALES
+ * SINCRONIZACIÓN DE ESQUEMAS DE ALTA DISPONIBILIDAD
  */
-const syncCoreDB = async () => {
+const initializeDatabaseSchema = async () => {
     const client = await pool.connect();
     try {
-        // Tabla de Identidades
+        console.log('\x1b[34m[SYSTEM]\x1b[0m Validando integridad de tablas...');
+        
+        // Tabla de Usuarios Maestro
         await client.query(`
-            CREATE TABLE IF NOT EXISTS identities (
+            CREATE TABLE IF NOT EXISTS global_users (
                 id SERIAL PRIMARY KEY,
-                uuid VARCHAR(25) UNIQUE NOT NULL,
-                handle VARCHAR(50) UNIQUE NOT NULL,
-                email VARCHAR(100) UNIQUE NOT NULL,
-                secret_hash TEXT NOT NULL,
-                status_label VARCHAR(30) DEFAULT 'Standard',
-                profile_color VARCHAR(15) DEFAULT '#0052ff',
-                metrics_followers INTEGER DEFAULT 0,
-                metrics_following INTEGER DEFAULT 0,
-                is_active BOOLEAN DEFAULT true,
-                timestamp_created TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                user_id VARCHAR(30) UNIQUE NOT NULL,
+                handle VARCHAR(60) UNIQUE NOT NULL,
+                email VARCHAR(120) UNIQUE NOT NULL,
+                password_vault TEXT NOT NULL,
+                badge_type VARCHAR(40) DEFAULT 'Member',
+                hex_theme VARCHAR(20) DEFAULT '#2563eb',
+                bio_content TEXT DEFAULT 'User of Global Core.',
+                count_followers INTEGER DEFAULT 0,
+                count_following INTEGER DEFAULT 0,
+                is_verified_id BOOLEAN DEFAULT false,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
         `);
 
-        // Tabla de Relaciones Dinámicas
+        // Tabla de Publicaciones (Feed)
         await client.query(`
-            CREATE TABLE IF NOT EXISTS relationships (
+            CREATE TABLE IF NOT EXISTS global_posts (
                 id SERIAL PRIMARY KEY,
-                source_uuid VARCHAR(25) REFERENCES identities(uuid),
-                target_uuid VARCHAR(25) REFERENCES identities(uuid),
-                timestamp_link TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(source_uuid, target_uuid)
+                author_id VARCHAR(30) REFERENCES global_users(user_id),
+                content_text TEXT NOT NULL,
+                asset_url TEXT,
+                likes_count INTEGER DEFAULT 0,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
         `);
-        console.log('\x1b[36m[CORE]\x1b[0m Base de datos sincronizada correctamente.');
+
+        // Tabla de Conexiones Sociales
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS social_matrix (
+                id SERIAL PRIMARY KEY,
+                follower_uid VARCHAR(30) REFERENCES global_users(user_id),
+                followed_uid VARCHAR(30) REFERENCES global_users(user_id),
+                timestamp_link TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(follower_uid, followed_uid)
+            );
+        `);
+
+        console.log('\x1b[32m[SUCCESS]\x1b[0m Infraestructura de datos vinculada.');
     } catch (err) {
-        console.error('[DATABASE_CRITICAL]', err);
+        console.error('\x1b[31m[CRITICAL]\x1b[0m Error en Sincronización:', err.message);
     } finally {
         client.release();
     }
 };
-syncCoreDB();
+initializeDatabaseSchema();
 
 /**
- * ENDPOINTS DE AUTENTICACIÓN
+ * RUTAS DE SERVICIOS CORE
  */
-app.post('/api/auth/register', async (req, res) => {
-    const { user, email, password } = req.body;
+app.post('/api/v1/identity/register', async (req, res) => {
+    const { username, email, password } = req.body;
     try {
-        const uuid = "ID-" + Math.random().toString(36).substring(2, 12).toUpperCase();
+        const uid = "USR-" + Math.random().toString(36).substring(2, 15).toUpperCase();
+        const colors = ['#2563eb', '#7c3aed', '#db2777', '#10b981', '#f59e0b'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
         const query = `
-            INSERT INTO identities (uuid, handle, email, secret_hash) 
-            VALUES ($1, $2, $3, $4) RETURNING uuid;
+            INSERT INTO global_users (user_id, handle, email, password_vault, hex_theme) 
+            VALUES ($1, $2, $3, $4, $5) RETURNING user_id;
         `;
-        await pool.query(query, [uuid, user.trim(), email.toLowerCase().trim(), password]);
-        res.status(201).json({ success: true, message: "Identidad registrada en el sistema." });
+        const values = [uid, username.trim(), email.toLowerCase().trim(), password, randomColor];
+        
+        await pool.query(query, values);
+        res.status(201).json({ success: true, message: "Identidad sincronizada." });
     } catch (err) {
-        res.status(409).json({ error: "La identidad ya existe en los registros." });
+        res.status(409).json({ error: "El identificador o correo ya están en uso." });
     }
 });
 
-app.post('/api/auth/verify', async (req, res) => {
-    const { identity, password } = req.body;
+app.post('/api/v1/identity/login', async (req, res) => {
+    const { credential, secret } = req.body;
     try {
-        const query = 'SELECT * FROM identities WHERE email = $1 OR handle = $1';
-        const result = await pool.query(query, [identity.toLowerCase().trim()]);
+        const query = 'SELECT * FROM global_users WHERE email = $1 OR handle = $1';
+        const result = await pool.query(query, [credential.toLowerCase().trim()]);
 
-        if (result.rows.length === 0 || result.rows[0].secret_hash !== password) {
-            return res.status(401).json({ error: "Credenciales de acceso no válidas." });
+        if (result.rows.length === 0 || result.rows[0].password_vault !== secret) {
+            return res.status(401).json({ error: "Fallo de validación de credenciales." });
         }
 
-        const data = result.rows[0];
+        const user = result.rows[0];
         res.json({
             success: true,
-            user: {
-                uuid: data.uuid,
-                name: data.handle,
-                color: data.profile_color,
-                status: data.status_label,
-                stats: { followers: data.metrics_followers, following: data.metrics_following }
+            data: {
+                uid: user.user_id,
+                name: user.handle,
+                role: user.badge_type,
+                color: user.hex_theme,
+                bio: user.bio_content,
+                verified: user.is_verified_id,
+                stats: { followers: user.count_followers, following: user.count_following }
             }
         });
     } catch (err) {
-        res.status(500).json({ error: "Fallo en el servidor de verificación." });
+        res.status(500).json({ error: "Error de servidor en el módulo de acceso." });
     }
 });
 
-/**
- * MOTOR DE BÚSQUEDA GLOBAL
- */
-app.get('/api/search', async (req, res) => {
-    const q = req.query.q ? `%${req.query.q}%` : '';
+app.get('/api/v1/directory/search', async (req, res) => {
+    const term = req.query.q ? `%${req.query.q}%` : '';
+    if (!term) return res.json({ items: [] });
     try {
         const query = `
-            SELECT uuid, handle, status_label, profile_color 
-            FROM identities 
-            WHERE handle ILIKE $1 OR uuid ILIKE $1 
-            LIMIT 10;
+            SELECT user_id, handle, badge_type, hex_theme, is_verified_id 
+            FROM global_users 
+            WHERE handle ILIKE $1 OR user_id ILIKE $1 
+            LIMIT 12;
         `;
-        const result = await pool.query(query, [q]);
-        res.json({ results: result.rows });
+        const result = await pool.query(query, [term]);
+        res.json({ items: result.rows });
     } catch (err) {
-        res.status(500).json({ error: "Error en el motor de indexación." });
+        res.status(500).json({ error: "Fallo en el motor de indexación." });
     }
 });
 
-server.listen(PORT, () => console.log(`[SYSTEM] Core Online on Port ${PORT}`));
+server.listen(PORT, () => {
+    console.log(`[CORE] Online - Port: ${PORT}`);
+});
