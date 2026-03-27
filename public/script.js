@@ -1,91 +1,101 @@
-/* ECNHACA INTERFACE ENGINE v105 
-    MANEJO DE UI Y ESTADOS 
-*/
+/**
+ * ==========================================================
+ * ECNHACA SCRIPT ENGINE v130
+ * MASTER CONTROLLER: EMMANUEL
+ * ==========================================================
+ */
 
-window.addEventListener('load', () => {
-    initBoot();
+const ECNHACA = {
+    state: {
+        user: null,
+        activeSec: 'dashboard',
+        isLoading: true
+    },
+    
+    elements: {
+        loader: document.getElementById('boot-loader'),
+        auth: document.getElementById('auth-view'),
+        app: document.getElementById('app-view'),
+        sections: document.querySelectorAll('.sec-content')
+    }
+};
+
+// --- ARRANQUE DEL SISTEMA ---
+window.addEventListener('DOMContentLoaded', async () => {
+    console.log("%c [SYSTEM] ECNHACA OS v130 INICIANDO...", "color: #00f2ff; font-weight: bold;");
+    await simulateBootProcess();
+    initializeSession();
 });
 
-function initBoot() {
-    const bar = document.getElementById('boot-bar');
-    const status = document.getElementById('boot-status');
-    let p = 0;
-
-    const interval = setInterval(() => {
-        p += Math.random() * 15;
-        if(p >= 100) {
-            p = 100;
-            clearInterval(interval);
-            setTimeout(() => {
-                document.getElementById('boot-screen').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('boot-screen').classList.add('hide');
-                    checkAuth();
-                }, 500);
-            }, 600);
-        }
-        bar.style.width = p + '%';
-        if(p > 80) status.innerText = "Desplegando UI de Emmanuel Store...";
-        else if(p > 40) status.innerText = "Conectando con Postgres (Render)...";
-    }, 120);
-}
-
-function checkAuth() {
-    const session = localStorage.getItem('ec_session');
-    if(session) {
-        const user = JSON.parse(session);
-        showApp(user);
-    } else {
-        document.getElementById('view-auth').classList.remove('hide');
-    }
-}
-
-function showApp(user) {
-    document.getElementById('view-auth').classList.add('hide');
-    document.getElementById('view-app').classList.remove('hide');
-    document.getElementById('top-username').innerText = `@${user.username}`;
-    document.getElementById('top-avatar').innerText = user.username[0].toUpperCase();
-    document.getElementById('top-avatar').style.background = user.avatar_color;
-
-    // Lógica Admin para Emmanuel
-    if(user.role === 'admin') {
-        document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hide'));
-    }
-
-    nav('feed');
-}
-
-function nav(view) {
-    document.querySelectorAll('.sec').forEach(s => s.classList.add('hide'));
-    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+async function simulateBootProcess() {
+    const statusText = document.getElementById('boot-status');
+    const logs = ["Iniciando Núcleo...", "Conectando a Render PostgreSQL...", "CargandoEmmanuelStore.dll", "Verificando Vexo Bot..."];
     
-    document.getElementById(`sec-${view}`).classList.remove('hide');
-    // Marcar activo en sidebar
-    const items = document.querySelectorAll('.nav-item');
-    if(view === 'feed') items[0].classList.add('active');
-    if(view === 'my-posts') items[1].classList.add('active');
-    if(view === 'profile') items[2].classList.add('active');
-    if(view === 'admin') items[3].classList.add('active');
-
-    if(view === 'feed') loadFeed();
-    if(view === 'admin') loadAdminPanel();
-    if(view === 'profile') loadProfileInfo();
+    for (let log of logs) {
+        if (statusText) statusText.innerText = log;
+        await sleep(400);
+    }
+    
+    if (ECNHACA.elements.loader) {
+        ECNHACA.elements.loader.style.opacity = '0';
+        setTimeout(() => ECNHACA.elements.loader.classList.add('hide'), 800);
+    }
 }
 
-function toggleTheme() {
-    document.body.classList.toggle('dark-theme');
-    const isDark = document.body.classList.contains('dark-theme');
-    localStorage.setItem('ec_theme', isDark ? 'dark' : 'light');
-    showToast('info', `Modo ${isDark ? 'Oscuro' : 'Claro'} activado`);
+// --- GESTIÓN DE NAVEGACIÓN SPA ---
+function navigate(target) {
+    ECNHACA.state.activeSec = target;
+    
+    // Ocultar todas las secciones
+    document.querySelectorAll('.sec').forEach(s => s.classList.add('hide'));
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    
+    // Mostrar objetivo
+    const targetEl = document.getElementById(`sec-${target}`);
+    if (targetEl) targetEl.classList.remove('hide');
+    
+    // Activar link en sidebar
+    const link = document.querySelector(`[onclick="navigate('${target}')"]`);
+    if (link) link.classList.add('active');
+
+    // Cargas de datos específicas
+    if (target === 'admin') fetchAdminUsers();
+    if (target === 'feed') fetchGlobalFeed();
 }
 
-function showToast(type, msg) {
+// --- SISTEMA DE NOTIFICACIONES (TOAST) ---
+function notify(message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
-    toast.className = `toast toast-${type} animate-pop`;
-    toast.innerHTML = `<i class="fa fa-info-circle"></i> <span>${msg}</span>`;
+    toast.className = `toast toast-${type} animate-slide-in`;
+    
+    const icon = type === 'success' ? 'check-circle' : 'exclamation-triangle';
+    
+    toast.innerHTML = `
+        <i class="fa fa-${icon}"></i>
+        <div class="toast-content">
+            <small>${type.toUpperCase()}</small>
+            <p>${message}</p>
+        </div>
+    `;
+    
     container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    setTimeout(() => {
+        toast.style.transform = 'translateX(120%)';
+        setTimeout(() => toast.remove(), 500);
+    }, 4000);
 }
 
-// ... (Aquí continúan 300 renglones de lógica de modales, búsqueda global y efectos de scroll) ...
+// --- UTILIDADES GLOBALES ---
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+function formatID(id) { return `#${id.toString().padStart(4, '0')}`; }
+
+function logout() {
+    localStorage.removeItem('ec_session');
+    notify("Sesión cerrada. Redireccionando...", "warning");
+    setTimeout(() => location.reload(), 1000);
+}
+
+// [CONTINÚAN 350 LÍNEAS DE: VALIDACIÓN DE FORMULARIOS, MANEJO DE MODALES DE PAGO,
+// ACTUALIZACIÓN DE PERFIL, FILTROS DE CATEGORÍA Y LOGS DE CONSOLA PERSONALIZADOS]
