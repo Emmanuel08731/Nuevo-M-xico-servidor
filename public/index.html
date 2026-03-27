@@ -3,173 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ECNHACA v105 | Professional Software Hub</title>
+    <title>ECNHACA v120 | Master Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&display=swap" rel="stylesheet">
 </head>
-<body class="light-theme">
+<body class="dark-mode">
 
-    <div id="particle-container"></div>
-
-    <div id="boot-screen" class="boot-layer">
-        <div class="boot-content">
-            <div class="logo-anim">ECNHACA</div>
-            <div class="progress-container">
-                <div id="boot-bar" class="progress-fill"></div>
-            </div>
-            <p id="boot-status">Inicializando kernel de Emmanuel...</p>
-        </div>
+    <div id="loader-layer" class="loader-layer">
+        <div class="minimal-spinner"></div>
+        <div class="loader-status">ECNHACA OS v120</div>
     </div>
 
-    <div id="toast-container"></div>
+    <div id="toast-container" class="toast-stack"></div>
 
-    <div id="modal-confirm" class="modal-overlay hide">
-        <div class="confirm-box animate-pop">
-            <i class="fa fa-triangle-exclamation"></i>
-            <h3>¿Estás seguro?</h3>
-            <p>Esta acción no se puede deshacer en la base de datos de Render.</p>
-            <div class="confirm-btns">
-                <button onclick="closeConfirm()" class="btn-sec">Cancelar</button>
-                <button id="btn-execute-del" class="btn-danger">Eliminar Ahora</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="view-auth" class="full-screen-center hide">
+    <section id="auth-view" class="auth-wrapper hide">
         <div class="auth-card">
-            <div class="auth-left">
-                <h2>ECNHACA <span>Elite</span></h2>
-                <p>Únete a la red de desarrolladores más exclusiva. Crea bots, webs y bases de datos.</p>
+            <div class="auth-header">
+                <h2>ECNHACA <span>TERMINAL</span></h2>
+                <p>Gestión de servicios Emmanuel Store</p>
             </div>
-            <div class="auth-right">
-                <div class="tabs">
-                    <button id="tab-login" class="active" onclick="switchAuth('login')">Login</button>
-                    <button id="tab-reg" onclick="switchAuth('reg')">Registro</button>
-                </div>
-                <form id="auth-form" onsubmit="handleAuth(event)">
-                    <div class="input-field">
-                        <label><i class="fa fa-user"></i> Usuario</label>
-                        <input type="text" id="auth-user" placeholder="Dev_Emmanuel" required>
-                    </div>
-                    <div id="field-email" class="input-field hide">
-                        <label><i class="fa fa-envelope"></i> Email</label>
-                        <input type="email" id="auth-email" placeholder="emma@gmail.com">
-                    </div>
-                    <div class="input-field">
-                        <label><i class="fa fa-lock"></i> Contraseña</label>
-                        <input type="password" id="auth-pass" placeholder="••••••••" required>
-                    </div>
-                    <button type="submit" id="auth-submit" class="btn-main-neon">Ingresar al Sistema</button>
-                </form>
+            
+            <div class="auth-switch">
+                <button id="btn-t-login" class="sw-active" onclick="toggleAuthMode('login')">Entrar</button>
+                <button id="btn-t-reg" onclick="toggleAuthMode('reg')">Registrar</button>
             </div>
-        </div>
-    </div>
 
-    <div id="view-app" class="app-grid hide">
-        <aside class="sidebar">
-            <div class="side-logo">ECNHACA</div>
-            <nav class="side-nav">
-                <div class="nav-item active" onclick="nav('feed')"><i class="fa fa-house"></i><span>Muro Global</span></div>
-                <div class="nav-item" onclick="nav('my-posts')"><i class="fa fa-code"></i><span>Mis Proyectos</span></div>
-                <div class="nav-item" onclick="nav('profile')"><i class="fa fa-user-tie"></i><span>Mi Perfil</span></div>
-                <div id="side-admin" class="nav-item admin-only hide" onclick="nav('admin')"><i class="fa fa-shield-halved"></i><span>Panel Maestro</span></div>
+            <form id="form-auth" class="auth-form" onsubmit="processAuth(event)">
+                <div class="input-group">
+                    <label>Usuario Identificado</label>
+                    <input type="text" id="auth-username" placeholder="Dev_Emmanuel" required>
+                </div>
+                
+                <div id="reg-email-container" class="input-group hide">
+                    <label>Correo de Recuperación</label>
+                    <input type="email" id="auth-email" placeholder="ejemplo@gmail.com">
+                </div>
+
+                <div class="input-group">
+                    <label>Código de Acceso</label>
+                    <input type="password" id="auth-password" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="btn-neon-glow">Ejecutar Comando</button>
+            </form>
+        </div>
+    </section>
+
+    <div id="app-view" class="dashboard-layout hide">
+        
+        <aside class="side-panel">
+            <div class="panel-brand">ECNHACA <span>v120</span></div>
+            
+            <nav class="panel-nav">
+                <div class="nav-btn active" onclick="navigate('feed')">
+                    <i class="fa fa-grid-2"></i> Dashboard
+                </div>
+                <div class="nav-btn" onclick="navigate('my-posts')">
+                    <i class="fa fa-code-merge"></i> Mis Proyectos
+                </div>
+                <div class="nav-btn" onclick="navigate('profile')">
+                    <i class="fa fa-user-shield"></i> Perfil Dev
+                </div>
+                
+                <div id="admin-nav-item" class="nav-btn admin-link hide" onclick="navigate('admin')">
+                    <i class="fa fa-database"></i> PANEL MAESTRO
+                </div>
             </nav>
-            <div class="side-footer">
-                <div class="theme-toggle" onclick="toggleTheme()">
-                    <i class="fa fa-moon"></i> <span>Oscuro / Claro</span>
+
+            <div class="panel-footer">
+                <div class="user-info-sidebar">
+                    <div id="side-av" class="av-small">E</div>
+                    <div class="side-details">
+                        <span id="side-name">Emmanuel</span>
+                        <small id="side-role">Administrador</small>
+                    </div>
                 </div>
-                <div class="logout-btn" onclick="logout()">
-                    <i class="fa fa-right-from-bracket"></i> <span>Salir</span>
-                </div>
+                <button class="logout-link" onclick="handleLogout()">
+                    <i class="fa fa-power-off"></i> Desconectar
+                </button>
             </div>
         </aside>
 
-        <main class="main-content">
-            <header class="top-nav">
-                <div class="search-bar">
-                    <i class="fa fa-search"></i>
-                    <input type="text" id="global-search" placeholder="Buscar por código o usuario..." oninput="triggerSearch()">
+        <main class="main-workspace">
+            
+            <section id="sec-feed" class="workspace-sec">
+                <div class="sec-header">
+                    <div class="title-box">
+                        <h1>Muro de Operaciones</h1>
+                        <p>Feed de publicaciones en tiempo real.</p>
+                    </div>
+                    <button class="btn-create" onclick="openPostModal()">
+                        <i class="fa fa-plus"></i> Nueva Entrada
+                    </button>
                 </div>
-                <div class="user-profile-top">
-                    <span id="top-username">@Emmanuel</span>
-                    <div id="top-avatar" class="av-circle">E</div>
-                </div>
-            </header>
-
-            <div class="content-wrapper">
                 
-                <section id="sec-feed" class="sec">
-                    <div class="sec-header">
-                        <h2>Feed de Actividad</h2>
-                        <button class="btn-add" onclick="openModal('post')"><i class="fa fa-plus"></i> Publicar</button>
+                <div id="posts-container" class="posts-grid">
                     </div>
-                    <div id="feed-container" class="grid-layout">
-                        <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
-                    </div>
-                </section>
+            </section>
 
-                <section id="sec-admin" class="sec hide">
-                    <div class="sec-header">
-                        <h2>Panel de Control Maestro</h2>
-                        <div class="admin-stats">
-                            <div class="st-box">Total Users: <b id="stat-users">0</b></div>
-                        </div>
+            <section id="sec-admin" class="workspace-sec hide">
+                <div class="sec-header">
+                    <div class="title-box">
+                        <h1>Terminal Admin (PostgreSQL)</h1>
+                        <p>Gestión completa de usuarios registrados.</p>
                     </div>
-                    <div class="admin-search-box">
-                        <input type="text" id="admin-user-q" placeholder="Buscar usuario por ID, Nombre o Gmail..." oninput="adminSearch()">
-                    </div>
-                    <div class="admin-table-scroll">
-                        <table class="ec-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Usuario</th>
-                                    <th>Email</th>
-                                    <th>Rol</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admin-tbody"></tbody>
-                        </table>
-                    </div>
-                </section>
+                </div>
 
-                <section id="sec-profile" class="sec hide">
-                    <div class="profile-hero">
-                        <div id="p-hero-av" class="hero-av">E</div>
-                        <h1 id="p-hero-name">Dev_Emmanuel</h1>
-                        <p id="p-hero-email">emma2013rq@gmail.com</p>
-                        <div class="p-tags">
-                            <span>Node.js Expert</span>
-                            <span>Discord Bot Dev</span>
-                            <span>UI/UX Designer</span>
-                        </div>
+                <div class="admin-tools">
+                    <div class="search-bar-neon">
+                        <i class="fa fa-search"></i>
+                        <input type="text" id="admin-user-search" placeholder="Buscar por ID, Nombre o Gmail..." oninput="searchUsers()">
                     </div>
-                </section>
+                    <div class="admin-stats-box">
+                        Usuarios Totales: <span id="count-users">0</span>
+                    </div>
+                </div>
 
-            </div>
-        </main>
+                <div class="table-wrapper">
+                    <table class="master-table">
+                        <thead>
+                            <tr>
+                                <th>#UID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Rango</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-users-body">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+            </main>
+
     </div>
 
     <div id="modal-post" class="modal-overlay hide">
-        <div class="modal-card animate-up">
+        <div class="modal-card animate-zoom">
             <div class="modal-head">
-                <h3>Crear Publicación</h3>
-                <button onclick="closeModal('post')">&times;</button>
+                <h3>Nueva Publicación Técnica</h3>
+                <button onclick="closePostModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <input type="text" id="post-title" placeholder="Título de tu proyecto (Ej: Vexo Bot)">
-                <textarea id="post-content" placeholder="Describe los comandos, la base de datos o el diseño..."></textarea>
-                <select id="post-cat">
-                    <option value="Bot">Discord Bot</option>
-                    <option value="Web">Página Web</option>
-                    <option value="Script">Script Útil</option>
-                    <option value="DB">Base de Datos</option>
-                </select>
-            </div>
-            <div class="modal-foot">
-                <button class="btn-main-neon" onclick="submitPost()">Publicar Proyecto</button>
+                <div class="input-group">
+                    <label>Título del Proyecto</label>
+                    <input type="text" id="p-title" placeholder="Ej: Vexo Bot v2.0">
+                </div>
+                <div class="input-group">
+                    <label>Detalles Técnicos</label>
+                    <textarea id="p-content" placeholder="Escribe los comandos o descripción del sistema..."></textarea>
+                </div>
+                <div class="input-group">
+                    <label>Categoría</label>
+                    <select id="p-category">
+                        <option value="Bot">Discord Bot</option>
+                        <option value="Web">Página Web</option>
+                        <option value="Logic">Backend Script</option>
+                    </select>
+                </div>
+                <button class="btn-neon-glow" onclick="submitNewPost()">Lanzar a la Red</button>
             </div>
         </div>
     </div>
