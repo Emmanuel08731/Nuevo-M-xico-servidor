@@ -1,175 +1,160 @@
-/* ==========================================================
-   ECNHACA DESIGN PROTOCOL v130 - TITANIUM EDITION
-   DESIGNER: EMMANUEL | THEME: CYBER-MINIMALIST
-   ========================================================== */
+/**
+ * ==========================================================
+ * ECNHACA SCRIPT MASTER v150
+ * ARCHITECTURE: SINGLE PAGE APPLICATION (SPA)
+ * DEVELOPER: EMMANUEL
+ * ==========================================================
+ */
 
-:root {
-    --bg-deep: #050505;
-    --bg-card: #0d0d0d;
-    --bg-nav: #0a0a0a;
-    --accent: #00f2ff;
-    --accent-glow: rgba(0, 242, 255, 0.4);
-    --accent-dark: #008fa6;
-    --text-primary: #ffffff;
-    --text-dim: #8892b0;
-    --border: rgba(255, 255, 255, 0.05);
-    --border-hover: rgba(0, 242, 255, 0.2);
-    --danger: #ff0055;
-    --success: #00ff9d;
-    --warning: #ffb800;
-    --panel-width: 280px;
-    --font-main: 'Plus Jakarta Sans', 'Inter', system-ui;
-    --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+const APP_STATE = {
+    currentUser: null,
+    activeView: 'dashboard',
+    isLocked: false,
+    logs: [],
+    stats: { users: 0, bots: 12, sales: 0 }
+};
+
+// --- DOM CACHE ---
+const DOM = {
+    loader: document.getElementById('master-loader'),
+    auth: document.getElementById('view-auth'),
+    app: document.getElementById('view-app'),
+    navItems: document.querySelectorAll('.nav-item'),
+    sections: document.querySelectorAll('.content-sec'),
+    terminalBody: document.getElementById('terminal-body'),
+    toastContainer: document.getElementById('toast-box')
+};
+
+// --- INICIALIZACIÓN CRÍTICA ---
+document.addEventListener('DOMContentLoaded', async () => {
+    logSystem("Iniciando secuencia de arranque...");
+    await simulateSystemLoad();
+    checkAuthSession();
+});
+
+async function simulateSystemLoad() {
+    return new Promise(resolve => {
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress >= 100) {
+                clearInterval(interval);
+                DOM.loader.style.opacity = '0';
+                setTimeout(() => {
+                    DOM.loader.classList.add('hide');
+                    resolve();
+                }, 500);
+            }
+        }, 100);
+    });
 }
 
-/* RESET TOTAL PROFESIONAL */
-* {
-    margin: 0; padding: 0; box-sizing: border-box;
-    font-family: var(--font-main);
-    scrollbar-width: thin;
-    scrollbar-color: var(--accent) var(--bg-deep);
+// --- GESTOR DE SESIÓN ---
+function checkAuthSession() {
+    const saved = localStorage.getItem('ec_session');
+    if (saved) {
+        APP_STATE.currentUser = JSON.parse(saved);
+        logSystem(`Sesión recuperada: ${APP_STATE.currentUser.username}`);
+        launchInterface();
+    } else {
+        logSystem("No hay sesión activa. Mostrando Login.");
+        DOM.auth.classList.remove('hide');
+    }
 }
 
-body {
-    background-color: var(--bg-deep);
-    color: var(--text-primary);
-    overflow-x: hidden;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
+function launchInterface() {
+    DOM.auth.classList.add('hide');
+    DOM.app.classList.remove('hide');
+    
+    // Configurar Perfil
+    document.getElementById('display-name').innerText = APP_STATE.currentUser.username;
+    if (APP_STATE.currentUser.role === 'admin') {
+        document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hide'));
+    }
+    
+    switchView('dashboard');
+    showNotification(`Bienvenido de nuevo, ${APP_STATE.currentUser.username}`);
 }
 
-/* CARGA TÉCNICA (MINIMALISTA) */
-.boot-layer {
-    position: fixed; inset: 0; z-index: 10000;
-    background: #000; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    transition: opacity 0.8s ease-out;
+// --- NAVEGACIÓN SPA ---
+function switchView(viewId) {
+    logSystem(`Cambiando vista a: ${viewId}`);
+    
+    // Actualizar UI de Navegación
+    DOM.navItems.forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.target === viewId) item.classList.add('active');
+    });
+
+    // Cambiar Secciones
+    DOM.sections.forEach(sec => {
+        sec.classList.add('hide');
+        if (sec.id === `sec-${viewId}`) sec.classList.remove('hide');
+    });
+
+    APP_STATE.activeView = viewId;
+    
+    // Cargas de datos dinámicas
+    if (viewId === 'admin') syncDatabase();
+    if (viewId === 'stats') calculateSchoolStats();
 }
 
-.loader-circle {
-    width: 50px; height: 50px;
-    border: 2px solid var(--border);
-    border-top: 2px solid var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+// --- SISTEMA DE NOTIFICACIONES ---
+function showNotification(msg, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <i class="fa fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+        <span>${msg}</span>
+    `;
+    
+    DOM.toastContainer.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(50px)';
+        setTimeout(() => toast.remove(), 400);
+    }, 4000);
 }
 
-.loader-status {
-    margin-top: 25px; font-size: 0.7rem; letter-spacing: 5px;
-    text-transform: uppercase; color: var(--accent); font-weight: 900;
+// --- LOGS DE SISTEMA (TERMINAL) ---
+function logSystem(msg) {
+    const time = new Date().toLocaleTimeString();
+    const logEntry = `[${time}] ${msg}`;
+    APP_STATE.logs.push(logEntry);
+    
+    if (DOM.terminalBody) {
+        const line = document.createElement('div');
+        line.innerHTML = `<span class="terminal-prompt">></span> ${logEntry}`;
+        DOM.terminalBody.appendChild(line);
+        DOM.terminalBody.scrollTop = DOM.terminalBody.scrollHeight;
+    }
+    console.log(`%c ECNHACA: ${msg}`, 'color: #00f2ff');
 }
 
-@keyframes spin { 100% { transform: rotate(360deg); } }
+// --- SISTEMA DE TAREAS MATEMÁTICAS (MEDIA, MEDIANA, MODA) ---
+function calculateSchoolStats() {
+    logSystem("Calculando estadísticas de rendimiento escolar...");
+    const scores = [85, 90, 78, 92, 88, 85, 95]; // Ejemplo de notas de Emmanuel
+    
+    // Media
+    const sum = scores.reduce((a, b) => a + b, 0);
+    const mean = (sum / scores.length).toFixed(2);
+    
+    // Mediana
+    const sorted = [...scores].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    const median = sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 
-/* ESTRUCTURA DEL DASHBOARD */
-.app-container { display: flex; min-height: 100vh; }
-
-/* SIDEBAR ELITE */
-.sidebar {
-    width: var(--panel-width); background: var(--bg-nav);
-    border-right: 1px solid var(--border); padding: 40px 20px;
-    display: flex; flex-direction: column; position: sticky;
-    top: 0; height: 100vh; z-index: 100;
+    document.getElementById('stat-mean').innerText = mean;
+    document.getElementById('stat-median').innerText = median;
+    logSystem(`Estadísticas listas: Media ${mean}, Mediana ${median}`);
 }
 
-.brand {
-    font-size: 1.8rem; font-weight: 800; color: #fff;
-    margin-bottom: 60px; display: flex; align-items: center; gap: 10px;
+// --- CIERRE DE SESIÓN ---
+function performLogout() {
+    logSystem("Cerrando sesión del usuario...");
+    localStorage.removeItem('ec_session');
+    location.reload();
 }
 
-.brand span { color: var(--accent); text-shadow: 0 0 10px var(--accent-glow); }
-
-.nav-group { display: flex; flex-direction: column; gap: 8px; }
-
-.nav-link {
-    display: flex; align-items: center; gap: 15px; padding: 16px;
-    color: var(--text-dim); text-decoration: none; border-radius: 12px;
-    font-weight: 600; transition: var(--transition);
-}
-
-.nav-link:hover, .nav-link.active {
-    background: rgba(0, 242, 255, 0.05); color: var(--accent);
-    transform: translateX(8px);
-}
-
-.nav-link i { font-size: 1.2rem; }
-
-/* PANEL DE ADMINISTRADOR (ROJO PREVENTIVO) */
-.admin-link {
-    border: 1px dashed var(--danger); color: var(--danger);
-    margin-top: 30px; opacity: 0.8;
-}
-
-.admin-link:hover { background: rgba(255, 0, 85, 0.05); color: #fff; border-style: solid; }
-
-/* MAIN CONTENT AREA */
-.main-view { flex: 1; padding: 50px 70px; }
-
-.view-header {
-    display: flex; justify-content: space-between; align-items: flex-end;
-    margin-bottom: 50px;
-}
-
-.view-header h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -1px; }
-
-/* TABLAS MAESTRAS (POSTGRESQL UI) */
-.table-wrapper {
-    background: var(--bg-card); border-radius: 24px;
-    border: 1px solid var(--border); overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-}
-
-.master-table { width: 100%; border-collapse: collapse; text-align: left; }
-
-.master-table th {
-    padding: 22px; background: #000; font-size: 0.75rem;
-    text-transform: uppercase; letter-spacing: 1.5px;
-    color: var(--accent); border-bottom: 1px solid var(--border);
-}
-
-.master-table td {
-    padding: 22px; border-bottom: 1px solid var(--border);
-    font-size: 0.95rem; color: var(--text-dim);
-}
-
-.user-row:hover { background: rgba(255, 255, 255, 0.02); }
-
-/* BUSCADOR NEÓN */
-.search-container { position: relative; margin-bottom: 35px; }
-
-.search-input {
-    width: 100%; background: var(--bg-card); border: 1px solid var(--border);
-    padding: 18px 60px; border-radius: 16px; color: #fff;
-    font-size: 1rem; transition: var(--transition);
-}
-
-.search-input:focus {
-    border-color: var(--accent); box-shadow: 0 0 25px var(--accent-glow); outline: none;
-}
-
-.search-icon { position: absolute; left: 25px; top: 50%; transform: translateY(-50%); color: var(--accent); }
-
-/* BOTONES DE ACCIÓN */
-.btn-delete {
-    background: rgba(255, 0, 85, 0.1); color: var(--danger);
-    border: 1px solid var(--danger); padding: 10px 18px;
-    border-radius: 10px; cursor: pointer; font-weight: 700;
-    transition: 0.3s;
-}
-
-.btn-delete:hover { background: var(--danger); color: #fff; box-shadow: 0 0 15px rgba(255, 0, 85, 0.4); }
-
-/* FORMULARIOS DE AUTH */
-.auth-wrapper {
-    height: 100vh; display: flex; align-items: center; justify-content: center;
-    background: radial-gradient(circle at center, #111 0%, #000 100%);
-}
-
-.auth-box {
-    width: 450px; background: var(--bg-card); padding: 50px;
-    border-radius: 35px; border: 1px solid var(--border);
-    box-shadow: 0 50px 100px rgba(0,0,0,0.8);
-}
-
-/* [CONTINÚAN 350 LÍNEAS DE: MEDIA QUERIES, ESTILOS DE TOASTS, ANIMACIONES DE CARDS,
-   CONFIGURACIÓN DE BENTOGRIDS PARA LOS BOTS Y ESTILOS PARA EL STORE] */
+// [MÁS FUNCIONES DE VALIDACIÓN DE FORMULARIOS Y MANEJO DE EVENTOS DE TECLADO]
