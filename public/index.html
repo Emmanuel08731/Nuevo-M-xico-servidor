@@ -2,74 +2,89 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Ecnhaca | Elite Community</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecnhaca | Elite Dev Community</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-    <div id="loader" class="loader-overlay">
-        <div class="loader-content">
-            <h1 class="logo-load">Ecnhaca</h1>
-            <div class="bar-container"><div class="bar-fill"></div></div>
-            <p>Sincronizando con la red...</p>
+    <div id="app-loader" class="full-loader">
+        <div class="loader-box">
+            <h1 class="logo-text">ECNHACA</h1>
+            <div class="progress-container"><div id="bar" class="progress-bar"></div></div>
+            <p id="status-msg">Iniciando sistemas de Emmanuel...</p>
         </div>
     </div>
 
-    <button id="fab" class="fab hide" onclick="openModal()"><i class="fa fa-plus"></i></button>
-    <div id="modal" class="modal hide">
-        <div class="modal-card animate-up">
-            <h3>Crear Publicación</h3>
-            <form id="pForm" onsubmit="createPost(event)">
-                <input type="text" id="pT" placeholder="Título" required>
-                <textarea id="pD" placeholder="Descripción..."></textarea>
-                <input type="text" id="pI" placeholder="URL Imagen">
-                <select id="pC">
-                    <option>Dev Discord Bot</option>
-                    <option>Web Design</option>
-                    <option>Roblox Assets</option>
-                </select>
-                <button type="submit" class="btn-main">Subir Ahora</button>
-            </form>
-            <button onclick="closeModal()" class="btn-close">Cancelar</button>
-        </div>
-    </div>
+    <div id="notif-container"></div>
 
-    <section id="auth" class="auth-box hide">
-        <div class="glass-card">
-            <h2>Ecnhaca</h2>
-            <div class="tabs">
-                <button id="tL" class="act" onclick="toggleAuth('L')">Entrar</button>
-                <button id="tR" onclick="toggleAuth('R')">Registro</button>
+    <section id="view-auth" class="auth-wrapper hide">
+        <div class="auth-card">
+            <h1>Bienvenido</h1>
+            <div class="auth-tabs">
+                <button id="btn-tab-in" class="active" onclick="setAuth('in')">Entrar</button>
+                <button id="btn-tab-up" onclick="setAuth('up')">Registrarse</button>
             </div>
-            <form onsubmit="handleAuth(event)">
-                <input type="text" id="aU" placeholder="Usuario" required>
-                <input type="email" id="aE" class="hide" placeholder="Email">
-                <input type="password" id="aP" placeholder="Contraseña" required>
-                <button type="submit" class="btn-main">Continuar</button>
+            <form id="auth-form" onsubmit="executeAuth(event)">
+                <input type="text" id="in-user" placeholder="Nombre de usuario" required>
+                <input type="email" id="in-email" class="hide" placeholder="Correo electrónico">
+                <input type="password" id="in-pass" placeholder="Contraseña" required>
+                <button type="submit" class="btn-primary">Acceder</button>
             </form>
         </div>
     </section>
 
-    <div id="app" class="hide">
-        <nav class="glass-nav">
-            <div class="nav-in">
-                <div class="brand" onclick="goHome()">Ecnhaca</div>
-                <div class="search-box">
+    <div id="view-app" class="hide">
+        <nav class="main-nav">
+            <div class="nav-content">
+                <div class="logo" onclick="goHome()">Ecnhaca</div>
+                
+                <div class="search-engine">
                     <i class="fa fa-search"></i>
-                    <input type="text" id="sIn" placeholder="Buscar usuarios o contenido..." oninput="doSearch(this.value)">
-                    <div id="sRes" class="search-results hide"></div>
+                    <input type="text" id="global-search" placeholder="Buscar creadores o bots..." oninput="handleSearch(this.value)">
+                    <div id="search-results" class="results-dropdown hide">
+                        </div>
                 </div>
-                <div class="nav-right">
-                    <div id="myAv" class="av-nav" onclick="toggleUserMenu()"></div>
+
+                <div class="nav-user" onclick="toggleDrop()">
+                    <div id="me-av" class="avatar-sm"></div>
+                    <div id="me-menu" class="dropdown-menu hide">
+                        <div onclick="showProfile()"><i class="fa fa-user"></i> Mi Perfil</div>
+                        <div onclick="doLogout()" class="red"><i class="fa fa-sign-out-alt"></i> Salir</div>
+                    </div>
                 </div>
             </div>
         </nav>
 
-        <main class="main-content">
-            <div id="feed" class="post-wall">
+        <main class="feed-layout">
+            <div id="feed-wall" class="project-grid">
                 </div>
         </main>
+
+        <button class="fab-left" onclick="openPostModal()">
+            <i class="fa fa-plus"></i>
+            <span>Nuevo Post</span>
+        </button>
+    </div>
+
+    <div id="post-modal" class="modal-overlay hide">
+        <div class="modal-content animate-slide-up">
+            <h2>Crear Publicación</h2>
+            <form onsubmit="submitPost(event)">
+                <input type="text" id="p-name" placeholder="Título del proyecto" required>
+                <textarea id="p-desc" placeholder="Describe tu creación..." required></textarea>
+                <input type="text" id="p-img" placeholder="URL de la imagen (Opcional)">
+                <select id="p-cat">
+                    <option value="Dev Discord Bot">Dev Discord Bot</option>
+                    <option value="Web Dashboard">Web Dashboard</option>
+                    <option value="Roblox Clothing">Roblox Clothing</option>
+                    <option value="API / Database">API / Database</option>
+                </select>
+                <button type="submit" class="btn-primary">Publicar Ahora</button>
+            </form>
+            <button onclick="closePostModal()" class="btn-text">Cancelar</button>
+        </div>
     </div>
 
     <script src="/script.js"></script>
