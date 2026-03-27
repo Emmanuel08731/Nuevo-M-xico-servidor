@@ -1,131 +1,273 @@
 /**
- * ECNHACA DATA ENGINE V200
- * API CRUD & BUSCADOR MASTER: EMMANUEL
+ * ==========================================================
+ * ECNHACA DATA ENGINE v300.0
+ * DESARROLLADOR: EMMANUEL
+ * PROPÓSITO: GESTIÓN DE DATOS, API FETCH Y POSTGRESQL
+ * PROTOCOLO: WHITE MINIMALIST (DATABASE LAYER)
+ * ==========================================================
  */
 
-let MASTER_DB_CACHE = [];
+// --- CONFIGURACIÓN DE ENDPOINTS ---
+const API_BASE = "/api";
+const ENDPOINTS = {
+    AUTH_LOGIN: `${API_BASE}/auth/login`,
+    AUTH_REG: `${API_BASE}/auth/register`,
+    ADMIN_USERS: `${API_BASE}/admin/users`,
+    PRODUCTS: `${API_BASE}/products`,
+    DB_STATUS: `${API_BASE}/status`
+};
 
-// --- AUTENTICACIÓN ---
-async function executeAuth(e) {
-    e.preventDefault();
-    const mode = document.getElementById('tab-btn-reg').classList.contains('active') ? 'register' : 'login';
+// --- CACHÉ LOCAL DE DATOS MASTER ---
+let MASTER_CACHE = {
+    users: [],
+    products: [],
+    logs: [],
+    stats: {
+        totalUsers: 0,
+        totalSales: 0,
+        dbLatency: 0
+    }
+};
+
+/**
+ * 1. GESTIÓN DE AUTENTICACIÓN (LOGIN & REGISTER)
+ * Emmanuel: Aquí enviamos los datos al backend de Node.js.
+ */
+async function handleAuthAction(event) {
+    event.preventDefault();
+    
+    const isRegister = !document.getElementById('group-email').classList.contains('hide');
+    const endpoint = isRegister ? ENDPOINTS.AUTH_REG : ENDPOINTS.AUTH_LOGIN;
     
     const payload = {
-        username: document.getElementById('auth-user').value,
-        password: document.getElementById('auth-pass').value,
-        email: document.getElementById('auth-email').value
+        username: document.getElementById('auth-user').value.trim(),
+        password: document.getElementById('auth-pass').value.trim()
     };
 
+    if (isRegister) {
+        payload.email = document.getElementById('auth-email').value.trim();
+    }
+
     try {
-        const res = await fetch(`/api/auth/${mode}`, {
+        logData(`Iniciando petición a ${endpoint}...`);
+        
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        const data = await res.json();
+        const result = await response.json();
 
-        if (res.ok) {
-            localStorage.setItem('ec_session', JSON.stringify(data.user));
-            notify("Sincronización Exitosa", "success");
-            setTimeout(() => location.reload(), 1000);
+        if (response.ok) {
+            // Guardar sesión y redirigir
+            localStorage.setItem('ec_session', JSON.stringify(result.user));
+            notify(isRegister ? "Cuenta creada con éxito." : "Acceso concedido.", "success");
+            
+            setTimeout(() => {
+                location.reload(); // Recargar para entrar al Dashboard
+            }, 1000);
         } else {
-            notify(data.error, "error");
+            notify(result.error || "Error en la autenticación.", "error");
+            logError(result.error);
         }
-    } catch (err) {
-        notify("Error al conectar con Render", "error");
-    }
-}
-
-function toggleAuthMode(mode) {
-    const emailField = document.getElementById('email-field');
-    const btnLogin = document.getElementById('tab-btn-login');
-    const btnReg = document.getElementById('tab-btn-reg');
-
-    if (mode === 'reg') {
-        emailField.classList.remove('hide');
-        btnReg.classList.add('active');
-        btnLogin.classList.remove('active');
-    } else {
-        emailField.classList.add('hide');
-        btnLogin.classList.add('active');
-        btnReg.classList.remove('active');
-    }
-}
-
-// --- GESTIÓN DE BASE DE DATOS (ADMIN PANEL) ---
-async function syncUsers() {
-    const tableBody = document.getElementById('admin-table-body');
-    tableBody.innerHTML = '<tr><td colspan="5" align="center">Consultando PostgreSQL...</td></tr>';
-
-    try {
-        const res = await fetch('/api/admin/users');
-        MASTER_DB_CACHE = await res.json();
-        renderTable(MASTER_DB_CACHE);
-        document.getElementById('stat-users').innerText = MASTER_DB_CACHE.length;
-    } catch (err) {
-        notify("Error de sincronización de DB", "error");
+    } catch (error) {
+        notify("No se pudo conectar con el servidor de Render.", "error");
+        logError(error);
     }
 }
 
 /**
- * BUSCADOR MASTER EMMANUEL
- * Filtra por ID, Usuario o Gmail instantáneamente.
+ * 2. BUSCADOR MASTER (EMMANUEL EXCLUSIVE)
+ * Sincroniza y filtra la base de datos de usuarios en tiempo real.
  */
-function filterDatabase() {
-    const query = document.getElementById('admin-search-input').value.toLowerCase();
+async function syncMasterDatabase() {
+    const tableBody = document.getElementById('master-table-body');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="6" style="text-align: center; padding: 50px;">
+                <i class="fa fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 15px; color: #86868b;"></i>
+                <p style="font-weight: 600; color: #86868b;">Consultando PostgreSQL en Render...</p>
+            </td>
+        </tr>
+    `;
+
+    try {
+        const response = await fetch(ENDPOINTS.ADMIN_USERS);
+        const users = await response.json();
+
+        if (response.ok) {
+            MASTER_CACHE.users = users;
+            renderMasterTable(users);
+            updateDashboardStats();
+            logData(`${users.length} usuarios sincronizados.`);
+        } else {
+            notify("Error al obtener usuarios.", "error");
+        }
+    } catch (error) {
+        logError("Fallo en sincronización master: " + error);
+        tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ff3b30;">Error de conexión.</td></tr>`;
+    }
+}
+
+/**
+ * FILTRO AVANZADO EMMANUEL
+ * Busca por ID, Usuario, Email o Rango simultáneamente.
+ */
+function executeMasterFilter() {
+    const query = document.getElementById('master-search-input').value.toLowerCase().trim();
     
-    const filtered = MASTER_DB_CACHE.filter(u => {
+    const filteredResults = MASTER_CACHE.users.filter(user => {
         return (
-            u.id.toString().includes(query) ||
-            u.username.toLowerCase().includes(query) ||
-            u.email.toLowerCase().includes(query)
+            user.id.toString().includes(query) ||
+            user.username.toLowerCase().includes(query) ||
+            user.email.toLowerCase().includes(query) ||
+            user.role.toLowerCase().includes(query)
         );
     });
 
-    renderTable(filtered);
+    renderMasterTable(filteredResults);
 }
 
-function renderTable(data) {
-    const tableBody = document.getElementById('admin-table-body');
+function renderMasterTable(data) {
+    const tableBody = document.getElementById('master-table-body');
     
     if (data.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5" align="center">No se encontraron registros.</td></tr>';
+        tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px;">No se encontraron coincidencias.</td></tr>`;
         return;
     }
 
-    tableBody.innerHTML = data.map(u => `
+    tableBody.innerHTML = data.map(user => `
         <tr>
-            <td>#${u.id}</td>
-            <td><strong>${u.username}</strong></td>
-            <td>${u.email}</td>
-            <td><span class="badge ${u.role}">${u.role}</span></td>
+            <td><code style="background: #f5f5f7; padding: 2px 6px; border-radius: 4px;">#${user.id}</code></td>
+            <td style="font-weight: 800;">${user.username}</td>
+            <td style="color: #86868b;">${user.email}</td>
+            <td><span class="badge-${user.role === 'admin' ? 'admin' : 'user'}">${user.role.toUpperCase()}</span></td>
+            <td style="font-size: 0.8rem;">${user.last_login ? new Date(user.last_login).toLocaleString() : 'Nunca'}</td>
             <td>
-                ${u.role !== 'admin' ? `
-                    <button class="btn-delete" onclick="purgarUsuario(${u.id})">
-                        <i class="fa fa-trash"></i> Eliminar
-                    </button>
-                ` : 'Master Access'}
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-icon-sm" title="Editar" onclick="editUser(${user.id})"><i class="fa fa-pen"></i></button>
+                    ${user.role !== 'admin' ? `
+                        <button class="btn-purgar" title="Eliminar" onclick="purgeUser(${user.id})"><i class="fa fa-trash-can"></i></button>
+                    ` : ''}
+                </div>
             </td>
         </tr>
     `).join('');
 }
 
-async function purgarUsuario(id) {
-    if (!confirm("EMMANUEL: ¿Confirmas la eliminación permanente de este registro?")) return;
-
+/**
+ * 3. GESTIÓN DE PRODUCTOS (EMMANUEL STORE)
+ */
+async function loadStoreProducts() {
     try {
-        const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
-        if (res.ok) {
-            notify("Usuario purgado con éxito");
-            syncUsers();
-        } else {
-            const data = await res.json();
-            notify(data.error, "error");
+        const response = await fetch(ENDPOINTS.PRODUCTS);
+        const products = await response.json();
+        
+        if (response.ok) {
+            MASTER_CACHE.products = products;
+            // Aquí iría la lógica para pintar el catálogo de VibeBlox
+            logData("Catálogo de productos cargado.");
         }
-    } catch (err) {
-        notify("Error al procesar purga", "error");
+    } catch (error) {
+        logError("Error al cargar la tienda.");
     }
 }
 
-// [MÁS LÓGICA DE CRUD DE PRODUCTOS PARA EMMANUEL STORE Y MANEJO DE IMÁGENES]
+/**
+ * 4. ACCIONES DE ADMINISTRACIÓN (PURGA)
+ */
+async function purgeUser(userId) {
+    const confirmPurge = confirm(`EMMANUEL: ¿Estás seguro de eliminar permanentemente al usuario #${userId}? Esta acción no se puede deshacer en PostgreSQL.`);
+    
+    if (!confirmPurge) return;
+
+    try {
+        const response = await fetch(`${ENDPOINTS.ADMIN_USERS}/${userId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            notify("Registro purgado correctamente.", "success");
+            syncMasterDatabase(); // Refrescar tabla
+        } else {
+            const err = await response.json();
+            notify(err.error || "No se pudo eliminar.", "error");
+        }
+    } catch (error) {
+        notify("Error crítico de servidor.", "error");
+    }
+}
+
+/**
+ * 5. ESTADÍSTICAS Y DASHBOARD
+ */
+function updateDashboardStats() {
+    const userCountEl = document.getElementById('stat-users-count');
+    if (userCountEl) {
+        userCountEl.innerText = MASTER_CACHE.users.length;
+    }
+    
+    // Simular latencia de DB
+    const pingEl = document.getElementById('stat-ping');
+    if (pingEl) {
+        const startTime = Date.now();
+        fetch(ENDPOINTS.DB_STATUS).finally(() => {
+            const latency = Date.now() - startTime;
+            pingEl.innerText = `${latency} ms`;
+        });
+    }
+}
+
+/**
+ * 6. LOGS DE SISTEMA Y DEBUGGING
+ */
+function logData(msg) {
+    console.log(`%c [DATA] %c ${msg}`, "color: #34c759; font-weight: bold;", "color: #1d1d1f;");
+}
+
+function logError(msg) {
+    console.error(`%c [ERROR DB] %c ${msg}`, "color: #ff3b30; font-weight: bold;", "color: #1d1d1f;");
+}
+
+/**
+ * 7. INTEGRACIÓN CON VEXO BOT & VIBEBLOX
+ * Emmanuel: Funciones preparadas para expandir tus otros servicios.
+ */
+async function sendVexoNotification(message) {
+    logData("Enviando comando a Vexo Bot...");
+    // Lógica para conectar con el webhook de Discord del Bot
+}
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+    }).format(amount);
+}
+
+// Iniciar carga automática de datos si el usuario es Admin
+if (localStorage.getItem('ec_session')) {
+    const user = JSON.parse(localStorage.getItem('ec_session'));
+    if (user.role === 'admin') {
+        setTimeout(syncMasterDatabase, 2000);
+    }
+    loadStoreProducts();
+}
+
+/**
+ * 8. GESTIÓN DE ERRORES DE RED
+ */
+window.addEventListener('offline', () => {
+    notify("Has perdido la conexión. ECNHACA Style funcionando en modo local.", "error");
+});
+
+window.addEventListener('online', () => {
+    notify("Conexión restablecida. Sincronizando...", "success");
+    syncMasterDatabase();
+});
+
+// --- FINAL DEL ARCHIVO APP.JS ---
+// Emmanuel: Este archivo gestiona toda la comunicación con tu base de datos global.
