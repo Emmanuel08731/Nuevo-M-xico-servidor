@@ -1,120 +1,115 @@
 /**
- * EMMANUEL SOCIAL ENGINE - CLIENT SIDE
- * MANEJO DE ESTADOS Y API FETCH
+ * EMMANUEL SOCIAL ENGINE v5.0
+ * SISTEMA DE INTERACCIÓN EN TIEMPO REAL
  */
 
-// ESTADO GLOBAL DE LA APP
 const state = {
-    user: JSON.parse(localStorage.getItem('emmanuel_user')) || null,
-    searchResults: [],
-    isSearching: false
+    currentUser: JSON.parse(localStorage.getItem('emmanuel_session')) || null,
+    isSearching: false,
+    lastQuery: ''
 };
 
-// SELECTORES DOM
-const feed = document.getElementById('mainFeed');
-const searchInput = document.getElementById('globalSearch');
-const authWall = document.getElementById('authWall');
+// 1. INICIALIZADOR
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("🚀 Red Social de Emmanuel Iniciada");
+    initApp();
+});
 
-/**
- * INICIALIZACIÓN DE LA WEB
- */
-function init() {
-    console.log("🛠️ App de Emmanuel Inicializada");
-    checkAuth();
-    loadDefaultProfiles();
-}
-
-/**
- * CONTROL DE ACCESO (AUTH)
- */
-function checkAuth() {
-    if (!state.user) {
-        authWall.classList.remove('hidden');
+function initApp() {
+    if (!state.currentUser) {
+        document.getElementById('authWall').classList.remove('hidden');
     } else {
-        authWall.classList.add('hidden');
-        renderHeader();
+        document.getElementById('authWall').classList.add('hidden');
+        setupUI();
+        loadInitialFeed();
     }
 }
 
+// 2. SISTEMA DE REGISTRO / LOGIN
 async function handleRegister(e) {
     e.preventDefault();
-    const btn = e.target.querySelector('button');
-    btn.innerText = "Creando...";
-    
-    const data = {
-        username: e.target.username.value,
-        email: e.target.email.value,
-        password: e.target.password.value
-    };
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
 
     try {
+        showToast("Conectando con Postgres...", "info");
         const res = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        
+
         const result = await res.json();
-        
+
         if (res.ok) {
-            state.user = result.user;
-            localStorage.setItem('emmanuel_user', JSON.stringify(result.user));
-            location.reload();
+            state.currentUser = result.user;
+            localStorage.setItem('emmanuel_session', JSON.stringify(result.user));
+            showToast("¡Bienvenido a tu nueva red!", "success");
+            setTimeout(() => location.reload(), 1500);
         } else {
-            alert(result.error);
+            showToast(result.error, "error");
         }
     } catch (err) {
-        console.error("Error de red");
-    } finally {
-        btn.innerText = "Registrarse";
+        showToast("Error de conexión al servidor", "error");
     }
 }
 
-/**
- * BUSCADOR EN TIEMPO REAL
- */
-let debounceTimer;
+// 3. BUSCADOR INTELIGENTE (ESTILO TIKTOK)
+let searchTimer;
 function performSearch(query) {
-    clearTimeout(debounceTimer);
-    if (!query) return loadDefaultProfiles();
+    state.lastQuery = query;
+    clearTimeout(searchTimer);
+    
+    if (query.trim().length === 0) {
+        return loadInitialFeed();
+    }
 
-    debounceTimer = setTimeout(async () => {
+    searchTimer = setTimeout(async () => {
+        const feed = document.getElementById('mainFeed');
+        feed.innerHTML = '<div class="loader-spinner"></div>';
+
         try {
             const res = await fetch(`/api/social/search?query=${query}`);
             const users = await res.json();
-            renderProfiles(users);
+            renderUsers(users);
         } catch (err) {
-            console.error("Error buscando usuarios");
+            console.error("Error en búsqueda");
         }
-    }, 300);
+    }, 400);
 }
 
-/**
- * RENDERIZADO DE PERFILES (ESTILO TIKTOK)
- */
-function renderProfiles(users) {
-    feed.innerHTML = users.length > 0 
-        ? '' 
-        : '<p class="empty-msg">No se encontraron usuarios en Emmanuel Store</p>';
+// 4. RENDERIZADO DE PERFILES
+function renderUsers(users) {
+    const feed = document.getElementById('mainFeed');
+    feed.innerHTML = '';
 
-    users.forEach((u, index) => {
+    if (users.length === 0) {
+        feed.innerHTML = `
+            <div class="empty-state">
+                <i class="fa-solid fa-user-slash"></i>
+                <p>No encontramos a "${state.lastQuery}" en Emmanuel Store</p>
+            </div>
+        `;
+        return;
+    }
+
+    users.forEach((u, i) => {
         const card = document.createElement('div');
         card.className = 'profile-card animate-up';
-        card.style.animationDelay = `${index * 0.1}s`;
-        
+        card.style.animationDelay = `${i * 0.1}s`;
+
         card.innerHTML = `
-            <div class="avatar-circle" style="background: ${u.color}">
+            <div class="avatar-circle" style="background: ${u.color || '#fe2c55'}">
                 ${u.username[0].toUpperCase()}
             </div>
             <div class="profile-info">
-                <h4>
-                    ${u.username} 
-                    ${u.is_verified ? '<span class="verified-icon">●</span>' : ''}
-                </h4>
-                <p>${u.bio}</p>
-                <small>👥 ${u.followers_count} Seguidores</small>
+                <h4>${u.username} ${u.is_verified ? '<i class="fa-solid fa-circle-check verified"></i>' : ''}</h4>
+                <p>${u.bio || 'Sin biografía disponible.'}</p>
+                <div class="profile-stats">
+                    <span><b>${u.followers_count}</b> seguidores</span>
+                </div>
             </div>
-            <button class="btn-follow" onclick="followUser(${u.id}, this)">
+            <button class="btn-follow" id="btn-${u.id}" onclick="followAction(${u.id})">
                 Seguir
             </button>
         `;
@@ -122,34 +117,68 @@ function renderProfiles(users) {
     });
 }
 
-/**
- * ACCIÓN DE SEGUIR
- */
-async function followUser(id, btn) {
-    if (!state.user) return alert("Inicia sesión primero");
+// 5. ACCIÓN DE SEGUIR (DATABASE CONNECT)
+async function followAction(targetId) {
+    const btn = document.getElementById(`btn-${targetId}`);
     
-    btn.disabled = true;
-    btn.innerText = "Siguiendo...";
+    if (btn.classList.contains('following')) return;
 
     try {
         const res = await fetch('/api/social/follow', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                follower_id: state.user.id,
-                following_id: id
+                follower_id: state.currentUser.id,
+                following_id: targetId
             })
         });
 
         if (res.ok) {
-            btn.classList.add('following');
             btn.innerText = "Siguiendo";
+            btn.classList.add('following');
+            showToast("¡Nuevo amigo seguido!", "success");
         }
     } catch (err) {
-        btn.disabled = false;
-        btn.innerText = "Seguir";
+        showToast("Error al seguir usuario", "error");
     }
 }
 
-// INICIO DE LA APP AL CARGAR
-window.onload = init;
+// 6. UI Y UTILIDADES
+function setupUI() {
+    document.getElementById('navUsername').innerText = state.currentUser.username;
+    const avatar = document.getElementById('navAvatar');
+    avatar.innerText = state.currentUser.username[0].toUpperCase();
+    avatar.style.background = state.currentUser.color || '#fe2c55';
+    
+    document.getElementById('userFollowers').innerText = state.currentUser.followers_count || 0;
+    document.getElementById('userFollowing').innerText = state.currentUser.following_count || 0;
+}
+
+async function loadInitialFeed() {
+    // Carga usuarios por defecto para que la web no esté vacía
+    const res = await fetch('/api/social/search?query=');
+    const users = await res.json();
+    renderUsers(users);
+}
+
+function showToast(msg, type) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<i class="fa-solid fa-info-circle"></i> ${msg}`;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
+}
+
+function toggleAuth() {
+    showToast("Función de Login próximamente...", "info");
+}
+
+function logout() {
+    localStorage.removeItem('emmanuel_session');
+    location.reload();
+}
