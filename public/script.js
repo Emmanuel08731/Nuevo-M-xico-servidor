@@ -1,110 +1,249 @@
-let currentUser = JSON.parse(localStorage.getItem('emmanuel_session')) || null;
-let mode = 'login';
+/**
+ * ECNHACA SOCIAL ENGINE v1.0
+ * Desarrollado por Emmanuel Dev
+ * Lógica: SPA, PostgreSQL Real-time Fetch, Session Management
+ */
 
-// 1. CONTROL DE ACCESO
-function checkSession() {
-    if (currentUser) {
-        document.getElementById('authWall').classList.add('hidden');
-        renderHeader();
-        loadFeed("");
-    }
-}
+// --- 1. ESTADO GLOBAL ---
+let usuarioActual = JSON.parse(localStorage.getItem('ecnhaca_user')) || null;
+let modoAuth = 'login';
+let busquedaActiva = false;
 
-function switchAuth(m) {
-    mode = m;
-    const emailInput = document.getElementById('auth_email');
-    const tabs = document.querySelectorAll('#authTabs button');
+// --- 2. INICIALIZADOR DEL SISTEMA ---
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("⚡ Ecnhaca Engine: Sistema listo.");
+    verificarSesion();
     
-    if (mode === 'register') {
-        emailInput.classList.remove('hidden');
-        tabs[1].classList.add('active');
-        tabs[0].classList.remove('active');
-        document.getElementById('authBtn').innerText = "Crear Cuenta";
+    // Cerrar el menú desplegable si se hace clic fuera
+    window.addEventListener('click', (e) => {
+        const menu = document.getElementById('dropdown');
+        const trigger = document.querySelector('.user-trigger');
+        if (menu && !trigger.contains(e.target) && !menu.contains(e.target)) {
+            menu.classList.add('hide');
+        }
+    });
+});
+
+/**
+ * Verifica si el usuario ya está logueado en Ecnhaca
+ */
+function verificarSesion() {
+    const authBox = document.getElementById('authBox');
+    const app = document.getElementById('app');
+
+    if (usuarioActual) {
+        authBox.classList.add('hide');
+        app.classList.remove('hide');
+        cargarDatosHeader();
+        irA('feed');
     } else {
-        emailInput.classList.add('hidden');
-        tabs[0].classList.add('active');
-        tabs[1].classList.remove('active');
-        document.getElementById('authBtn').innerText = "Entrar";
+        authBox.classList.remove('hide');
+        app.classList.add('hide');
     }
 }
 
-// 2. REGISTRO Y LOGIN
-async function handleAuth(e) {
-    e.preventDefault();
-    const user = document.getElementById('auth_user').value;
-    const pass = document.getElementById('auth_pass').value;
-    const email = document.getElementById('auth_email').value;
+// --- 3. LÓGICA DE AUTENTICACIÓN ---
 
-    const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
-    const body = mode === 'login' ? { username: user, password: pass } : { username: user, email, password: pass };
+function setMode(m) {
+    modoAuth = m;
+    const inputMail = document.getElementById('e');
+    const btnPrincipal = document.getElementById('btnA');
+    const tabL = document.getElementById('tL');
+    const tabR = document.getElementById('tR');
+
+    if (m === 'reg') {
+        inputMail.classList.remove('hide');
+        btnPrincipal.innerText = "Crear Cuenta de Ecnhaca";
+        tabR.classList.add('active');
+        tabL.classList.remove('active');
+    } else {
+        inputMail.classList.add('hide');
+        btnPrincipal.innerText = "Iniciar Sesión";
+        tabL.classList.add('active');
+        tabR.classList.remove('active');
+    }
+}
+
+async function doAuth(event) {
+    event.preventDefault();
+    const user = document.getElementById('u').value.trim();
+    const pass = document.getElementById('p').value.trim();
+    const email = document.getElementById('e').value.trim();
+
+    const path = modoAuth === 'login' ? '/api/login' : '/api/register';
+    const payload = modoAuth === 'login' ? { username: user, password: pass } : { username: user, email, password: pass };
 
     try {
-        const res = await fetch(endpoint, {
+        const res = await fetch(path, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+            body: JSON.stringify(payload)
         });
-        const data = await res.json();
 
         if (res.ok) {
-            currentUser = data;
-            localStorage.setItem('emmanuel_session', JSON.stringify(data));
-            location.reload();
+            const data = await res.json();
+            localStorage.setItem('ecnhaca_user', JSON.stringify(data));
+            location.reload(); // Reiniciar para aplicar cambios
         } else {
-            alert(data.error);
+            const err = await res.json();
+            alert("Error: " + (err.error || "Datos incorrectos"));
         }
-    } catch (err) { alert("Error al conectar con el servidor."); }
+    } catch (e) {
+        alert("No se pudo conectar con el servidor de Ecnhaca en Render.");
+    }
 }
 
-// 3. BUSCADOR EN VIVO
-let timer;
-function liveSearch() {
-    clearTimeout(timer);
-    const q = document.getElementById('searchInput').value;
-    timer = setTimeout(() => loadFeed(q), 300);
+// --- 4. NAVEGACIÓN ENTRE VISTAS (SPA) ---
+
+/**
+ * Cambia entre Feed, Perfil y Configuración sin recargar
+ */
+function irA(vista) {
+    // Ocultar todas las vistas primero
+    const vistas = ['view-feed', 'view-profile', 'view-settings'];
+    vistas.forEach(v => document.getElementById(v).classList.add('hide'));
+
+    // Mostrar la vista seleccionada
+    const vistaActiva = document.getElementById('view-' + vista);
+    vistaActiva.classList.remove('hide');
+    vistaActiva.classList.add('animate-up');
+
+    // Cerrar menú siempre al navegar
+    document.getElementById('dropdown').classList.add('hide');
+
+    if (vista === 'profile') {
+        cargarEstadisticasPerfil();
+    }
 }
 
-async function loadFeed(q) {
-    const res = await fetch(`/api/social/search?q=${q}`);
-    const users = await res.json();
-    const feed = document.getElementById('feedList');
-    feed.innerHTML = '';
-
-    users.forEach(u => {
-        feed.innerHTML += `
-            <div class="profile-card">
-                <div class="avatar-big" style="background: ${u.color}">${u.username[0].toUpperCase()}</div>
-                <div class="info-profile">
-                    <h4>@${u.username} ${u.is_verified ? '✅' : ''}</h4>
-                    <p>${u.bio}</p>
-                    <small>${u.followers_count} seguidores</small>
-                </div>
-                <button class="btn-follow" onclick="follow(${u.id})">Seguir</button>
-            </div>
-        `;
-    });
+function toggleMenu() {
+    const menu = document.getElementById('dropdown');
+    menu.classList.toggle('hide');
 }
 
-async function follow(id) {
-    const res = await fetch('/api/social/follow', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ follower_id: currentUser.id, following_id: id })
-    });
-    if (res.ok) alert("¡Ahora sigues a este usuario!");
+// --- 5. BUSCADOR DE USUARIOS ---
+
+let timerBusqueda;
+async function search(q) {
+    const lista = document.getElementById('results');
+    const emptyMsg = document.getElementById('empty-msg');
+
+    clearTimeout(timerBusqueda);
+
+    if (q.length < 1) {
+        lista.innerHTML = '';
+        emptyMsg.classList.remove('hide');
+        return;
+    }
+
+    emptyMsg.classList.add('hide');
+
+    timerBusqueda = setTimeout(async () => {
+        try {
+            const res = await fetch(`/api/search?q=${q}&myId=${usuarioActual.id}`);
+            const usuarios = await res.json();
+            
+            lista.innerHTML = '';
+            
+            if (usuarios.length === 0) {
+                lista.innerHTML = '<p class="no-found">No se encontró a nadie con ese nombre.</p>';
+                return;
+            }
+
+            usuarios.forEach((u, i) => {
+                const card = document.createElement('div');
+                card.className = 'user-card';
+                card.style.animationDelay = `${i * 0.05}s`;
+                
+                card.innerHTML = `
+                    <div class="mini-av" style="background:${u.color}">${u.username[0].toUpperCase()}</div>
+                    <div class="u-info">
+                        <b>@${u.username}</b>
+                        <p>${u.followers} seguidores</p>
+                    </div>
+                    <button class="btn-follow ${u.am_following > 0 ? 'following' : ''}" 
+                            onclick="ejecutarFollow(${u.id}, this)">
+                        ${u.am_following > 0 ? 'Siguiendo' : 'Seguir'}
+                    </button>
+                `;
+                lista.appendChild(card);
+            });
+        } catch (e) {
+            console.error("Error en búsqueda remota");
+        }
+    }, 350);
 }
 
-function renderHeader() {
-    document.getElementById('userNameHeader').innerText = currentUser.username;
-    document.getElementById('userAvHeader').innerText = currentUser.username[0].toUpperCase();
-    document.getElementById('userAvHeader').style.background = currentUser.color;
-    document.getElementById('myBio').innerText = currentUser.bio;
-    document.getElementById('myFollowers').innerText = currentUser.followers_count;
+// --- 6. ACCIÓN DE SEGUIR ---
+
+async function ejecutarFollow(idTarget, boton) {
+    if (boton.classList.contains('following')) return;
+
+    // Efecto visual de carga
+    boton.innerText = "...";
+    boton.disabled = true;
+
+    try {
+        const res = await fetch('/api/follow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ myId: usuarioActual.id, targetId: idTarget })
+        });
+
+        if (res.ok) {
+            boton.innerText = "Siguiendo";
+            boton.classList.add('following');
+            boton.disabled = false;
+        }
+    } catch (e) {
+        boton.innerText = "Seguir";
+        boton.disabled = false;
+    }
+}
+
+// --- 7. CARGA DE DATOS DINÁMICOS ---
+
+function cargarDatosHeader() {
+    const avatar = document.getElementById('myAv');
+    avatar.innerText = usuarioActual.username[0].toUpperCase();
+    avatar.style.background = usuarioActual.color || '#6366f1';
+}
+
+async function cargarEstadisticasPerfil() {
+    // Actualizar visual del perfil
+    document.getElementById('pAv').innerText = usuarioActual.username[0].toUpperCase();
+    document.getElementById('pAv').style.background = usuarioActual.color;
+    document.getElementById('pName').innerText = "@" + usuarioActual.username;
+    document.getElementById('pBio').innerText = usuarioActual.bio || "Usuario de Ecnhaca";
+
+    try {
+        const res = await fetch(`/api/profile-stats/${usuarioActual.id}`);
+        const stats = await res.json();
+        
+        // Animación de números
+        animarNumero('s-followers', stats.followers);
+        animarNumero('s-following', stats.following);
+    } catch (e) {
+        console.error("No se pudieron cargar las estadísticas.");
+    }
+}
+
+function animarNumero(id, valor) {
+    const el = document.getElementById(id);
+    el.innerText = valor; // En una versión más pro, aquí haríamos un contador que sube
 }
 
 function logout() {
-    localStorage.removeItem('emmanuel_session');
-    location.reload();
+    const confirmar = confirm("¿Emmanuel, seguro que quieres cerrar sesión en Ecnhaca?");
+    if (confirmar) {
+        localStorage.removeItem('ecnhaca_user');
+        location.reload();
+    }
 }
 
-window.onload = checkSession;
+/**
+ * Función estética para scroll suave
+ */
+function scrollArriba() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
