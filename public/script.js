@@ -1,239 +1,232 @@
 /**
  * ==========================================================
- * ECNHACA SOCIAL ENGINE v400.0
+ * ECNHACA SOCIAL ENGINE v500.0
  * DESARROLLADOR: EMMANUEL
- * PROPÓSITO: LÓGICA DE RED SOCIAL (POSTS, FOLLOWERS, SEARCH)
- * PROTOCOLO: WHITE MINIMALIST
+ * LÓGICA: AUTH, NAVEGACIÓN, MODAL DINÁMICO Y SEGUIDORES
  * ==========================================================
  */
 
-// --- ESTADO GLOBAL DE LA RED ---
 const STATE = {
-    currentUser: {
-        id: 1,
-        username: "Emmanuel_Dev",
-        followers: 128,
-        following: 45,
-        posts: 12
+    isAuthenticated: false,
+    user: {
+        username: "",
+        followers: 0,
+        following: 0,
+        posts: 0
     },
-    view: 'feed', // feed, profile, settings, search-users
-    isMenuOpen: false
+    activeView: 'feed'
 };
 
-// --- ELEMENTOS DE LA INTERFAZ ---
-const DOM = {
+const UI = {
+    authView: document.getElementById('view-auth'),
+    appView: document.getElementById('view-app'),
     preloader: document.getElementById('preloader'),
-    userDropdown: document.getElementById('user-dropdown'),
-    views: document.querySelectorAll('.content-view'),
-    searchType: document.getElementById('search-type'),
-    searchInput: document.getElementById('global-search'),
-    postsContainer: document.getElementById('posts-container'),
-    followersCount: document.getElementById('count-followers'),
-    followingCount: document.getElementById('count-following'),
-    modalPost: document.getElementById('modal-post-settings')
+    dropdown: document.getElementById('user-dropdown'),
+    publishModal: document.getElementById('publish-overlay'),
+    // Stats del perfil
+    statFollowers: document.getElementById('stat-followers'),
+    statFollowing: document.getElementById('stat-following'),
+    statPosts: document.getElementById('stat-posts')
 };
 
-// --- 1. INICIALIZACIÓN ---
+// --- 1. CARGA INICIAL ---
 window.addEventListener('DOMContentLoaded', () => {
-    console.log("ECNHACA Social cargando...");
-    
-    // Simular carga
     setTimeout(() => {
-        DOM.preloader.style.opacity = '0';
-        setTimeout(() => DOM.preloader.classList.add('hide'), 600);
-    }, 1500);
+        UI.preloader.style.opacity = '0';
+        setTimeout(() => UI.preloader.classList.add('hide'), 600);
+    }, 1200);
 
-    setupEventListeners();
+    // Verificar si ya había una sesión (opcional)
+    const savedSession = localStorage.getItem('ec_session');
+    if (savedSession) {
+        STATE.user = JSON.parse(savedSession);
+        launchApp();
+    }
 });
 
-function setupEventListeners() {
-    // Escuchar Enter en el buscador
-    DOM.searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') executeSearch();
-    });
+// --- 2. SISTEMA DE AUTENTICACIÓN ---
+function setAuthMode(mode) {
+    const tabLogin = document.getElementById('tab-login');
+    const tabReg = document.getElementById('tab-reg');
+    const emailGroup = document.getElementById('reg-email-group');
 
-    // Cerrar menú al hacer clic fuera
-    window.addEventListener('click', (e) => {
-        if (!e.target.closest('.user-menu-section')) {
-            DOM.userDropdown.classList.add('hide');
-            STATE.isMenuOpen = false;
-        }
-    });
-}
-
-// --- 2. NAVEGACIÓN DE VISTAS ---
-function showView(viewName) {
-    DOM.views.forEach(v => v.classList.add('hide'));
-    const target = document.getElementById(`view-${viewName}`);
-    
-    if (target) {
-        target.classList.remove('hide');
-        STATE.view = viewName;
-        window.scrollTo(0, 0);
+    if (mode === 'register') {
+        tabReg.classList.add('active');
+        tabLogin.classList.remove('active');
+        emailGroup.classList.remove('hide');
+    } else {
+        tabLogin.classList.add('active');
+        tabReg.classList.remove('active');
+        emailGroup.classList.add('hide');
     }
+}
+
+function handleAuth(event) {
+    event.preventDefault();
+    const username = document.getElementById('auth-user').value.trim();
     
-    // Cerrar menú después de elegir
-    DOM.userDropdown.classList.add('hide');
+    if (!username) return;
+
+    // Emmanuel: Al iniciar sesión o registrarse, seteamos los datos de la red
+    STATE.user.username = username;
+    STATE.user.followers = 0;
+    STATE.user.following = 0;
+    STATE.user.posts = 0;
+
+    localStorage.setItem('ec_session', JSON.stringify(STATE.user));
+    launchApp();
 }
 
-function toggleUserMenu() {
-    STATE.isMenuOpen = !STATE.isMenuOpen;
-    DOM.userDropdown.classList.toggle('hide', !STATE.isMenuOpen);
+function launchApp() {
+    UI.authView.classList.add('hide');
+    UI.appView.classList.remove('hide');
+    
+    // Actualizar UI con el nombre del usuario
+    document.getElementById('nav-avatar').innerText = STATE.user.username.charAt(0).toUpperCase();
+    document.getElementById('drop-username').innerText = STATE.user.username;
+    document.getElementById('profile-username').innerText = STATE.user.username;
+    document.getElementById('profile-avatar').innerText = STATE.user.username.charAt(0).toUpperCase();
+    
+    updateStats();
+    notify(`Bienvenido a ECNHACA, ${STATE.user.username}`, "success");
 }
 
-// --- 3. LÓGICA DE PUBLICACIONES ---
-function submitPost() {
+// --- 3. NAVEGACIÓN Y MENÚS ---
+function toggleDropdown() {
+    UI.dropdown.classList.toggle('hide');
+}
+
+function showView(viewName) {
+    const views = document.querySelectorAll('.view-sec');
+    views.forEach(v => v.classList.add('hide'));
+    
+    document.getElementById(`sec-${viewName}`).classList.remove('hide');
+    UI.dropdown.classList.add('hide');
+    window.scrollTo(0, 0);
+}
+
+// --- 4. MODAL DE PUBLICACIÓN (ANIMADO) ---
+function togglePublishModal() {
+    UI.publishModal.classList.toggle('hide');
+}
+
+function publishPost() {
     const title = document.getElementById('post-title').value;
-    const desc = document.getElementById('post-desc').value;
-    const tag = document.getElementById('post-tag').value;
+    const content = document.getElementById('post-content').value;
+    const topic = document.getElementById('post-topic').value || "General";
 
-    if (!title || !desc) {
-        alert("Emmanuel, por favor completa el título y la descripción.");
+    if (!title || !content) {
+        notify("Emmanuel, el título y contenido son obligatorios", "error");
         return;
     }
 
-    // Crear elemento de post (Simulación)
-    const newPost = document.createElement('div');
-    newPost.className = 'post-card';
-    newPost.innerHTML = `
-        <div class="post-header">
-            <div class="u-info">
-                <div class="u-pic">E</div>
-                <div>
-                    <b>${STATE.currentUser.username}</b>
-                    <small>Ahora mismo • ${tag || 'General'}</small>
+    // Crear el elemento visual del post
+    const feed = document.getElementById('feed-container');
+    // Si es el primer post, quitamos el mensaje de "vacío"
+    if (STATE.user.posts === 0) feed.innerHTML = "";
+
+    const postHTML = `
+        <div class="post-card animated-in" style="margin-bottom: 20px;">
+            <div class="post-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="u-avatar" style="width: 35px; height: 35px; font-size: 0.8rem;">${STATE.user.username.charAt(0).toUpperCase()}</div>
+                    <div>
+                        <b style="font-size: 0.9rem;">${STATE.user.username}</b>
+                        <small style="display: block; color: #86868b; font-size: 0.7rem;">Ahora mismo • ${topic}</small>
+                    </div>
                 </div>
+                <button onclick="deletePost(this)" style="background: none; border: none; color: #d2d2d7; cursor: pointer;"><i class="fa fa-trash"></i></button>
             </div>
-            <div class="post-actions">
-                <button onclick="openPostSettings()"><i class="fa fa-ellipsis"></i></button>
-            </div>
-        </div>
-        <div class="post-body">
-            <h4>${title}</h4>
-            <p>${desc}</p>
-        </div>
-        <div class="post-footer">
-            <button class="btn-action" onclick="this.classList.toggle('active')"><i class="fa fa-heart"></i> Like</button>
-            <button class="btn-action"><i class="fa fa-comment"></i> Comentar</button>
+            <h3 style="margin-bottom: 10px; font-size: 1.1rem; font-weight: 800;">${title}</h3>
+            <p style="font-size: 0.95rem; line-height: 1.5; color: #333;">${content}</p>
         </div>
     `;
 
-    // Insertar al inicio del feed
-    DOM.postsContainer.prepend(newPost);
+    feed.insertAdjacentHTML('afterbegin', postHTML);
     
-    // Limpiar formulario
-    document.getElementById('form-create-post').reset();
+    // Actualizar conteo
+    STATE.user.posts++;
+    updateStats();
     
-    // Actualizar contador
-    STATE.currentUser.posts++;
-    document.getElementById('count-posts').innerText = STATE.currentUser.posts;
+    // Limpiar y cerrar
+    document.getElementById('post-title').value = "";
+    document.getElementById('post-content').value = "";
+    togglePublishModal();
+    notify("Publicación enviada", "success");
 }
 
-function openPostSettings() {
-    DOM.modalPost.classList.remove('hide');
-}
-
-function closeModals() {
-    DOM.modalPost.classList.add('hide');
-}
-
-function deletePost() {
-    if(confirm("¿Eliminar esta publicación de ECNHACA?")) {
-        // En un caso real buscaríamos el ID, aquí simulamos borrar el último
-        const lastPost = DOM.postsContainer.firstChild;
-        if(lastPost) lastPost.remove();
-        closeModals();
-        STATE.currentUser.posts--;
-        document.getElementById('count-posts').innerText = STATE.currentUser.posts;
+function deletePost(btn) {
+    if(confirm("¿Eliminar publicación?")) {
+        btn.closest('.post-card').remove();
+        STATE.user.posts--;
+        updateStats();
+        if(STATE.user.posts === 0) renderEmptyState();
     }
 }
 
-// --- 4. BUSCADOR DUAL (USUARIOS / POSTS) ---
+// --- 5. BUSCADOR DUAL ---
 function executeSearch() {
-    const type = DOM.searchType.value;
-    const query = DOM.searchInput.value.toLowerCase().trim();
+    const type = document.getElementById('search-type').value;
+    const query = document.getElementById('global-search').value.toLowerCase().trim();
 
     if (!query) return;
 
     if (type === 'users') {
         showView('search-users');
-        renderUserResults(query);
-    } else {
-        showView('feed');
-        // Filtrar posts existentes (lógica simple)
-        console.log(`Buscando posts sobre: ${query}`);
-    }
-}
-
-function renderUserResults(query) {
-    const container = document.getElementById('users-result');
-    container.innerHTML = ''; // Limpiar
-
-    // Simulación de base de datos de usuarios
-    const fakeUsers = [
-        { id: 2, name: "Angel_User", bio: "Bot Developer", initial: "A" },
-        { id: 3, name: "William_Dev", bio: "Roblox Scripter", initial: "W" },
-        { id: 4, name: "Vexo_Bot", bio: "Official Service", initial: "V" }
-    ];
-
-    const results = fakeUsers.filter(u => u.name.toLowerCase().includes(query));
-
-    if (results.length === 0) {
-        container.innerHTML = `<p style="grid-column: 1/-1; text-align: center; padding: 40px; color: #86868b;">No se encontró al usuario "${query}"</p>`;
-        return;
-    }
-
-    results.forEach(u => {
-        const card = document.createElement('div');
-        card.className = 'user-card';
-        card.innerHTML = `
-            <div class="u-avatar-lg">${u.initial}</div>
-            <h4>${u.name}</h4>
-            <p>${u.bio}</p>
-            <button class="btn-follow" onclick="toggleFollow(this, '${u.name}')">Seguir</button>
+        const grid = document.getElementById('users-result-grid');
+        grid.innerHTML = `
+            <div class="user-card">
+                <div class="u-avatar-lg" style="width: 60px; height: 60px; background: #f5f5f7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-weight: 800;">${query.charAt(0).toUpperCase()}</div>
+                <h4>${query}</h4>
+                <button class="btn-follow" style="margin-top: 10px; padding: 5px 15px; border-radius: 20px; border: 1px solid #000; background: none; font-weight: 700; cursor: pointer;" onclick="toggleFollow(this)">Seguir</button>
+            </div>
         `;
-        container.appendChild(card);
-    });
-}
-
-// --- 5. LÓGICA DE SEGUIDORES (FOLLOW/UNFOLLOW) ---
-function toggleFollow(btn, username) {
-    const isFollowing = btn.classList.contains('active');
-
-    if (!isFollowing) {
-        // Seguir
-        btn.classList.add('active');
-        btn.innerText = "Siguiendo";
-        STATE.currentUser.following++;
-        console.log(`Ahora sigues a ${username}`);
     } else {
-        // Dejar de seguir
-        btn.classList.remove('active');
+        notify(`Buscando publicaciones sobre: ${query}`, "success");
+    }
+}
+
+function toggleFollow(btn) {
+    if (btn.innerText === "Seguir") {
+        btn.innerText = "Siguiendo";
+        btn.style.background = "#000";
+        btn.style.color = "#fff";
+        STATE.user.following++;
+    } else {
         btn.innerText = "Seguir";
-        STATE.currentUser.following--;
-        console.log(`Diste unfollow a ${username}`);
+        btn.style.background = "none";
+        btn.style.color = "#000";
+        STATE.user.following--;
     }
-
-    // Actualizar UI del perfil
-    DOM.followingCount.innerText = STATE.currentUser.following;
+    updateStats();
 }
 
-// --- 6. CERRAR SESIÓN ---
+// --- 6. UTILIDADES ---
+function updateStats() {
+    UI.statFollowers.innerText = STATE.user.followers;
+    UI.statFollowing.innerText = STATE.user.following;
+    UI.statPosts.innerText = STATE.user.posts;
+}
+
+function renderEmptyState() {
+    document.getElementById('feed-container').innerHTML = `
+        <div class="empty-state" style="text-align: center; padding: 50px; color: #86868b;">
+            <i class="fa fa-earth-americas" style="font-size: 2rem; margin-bottom: 10px;"></i>
+            <p>Aún no hay publicaciones en tu red.</p>
+        </div>
+    `;
+}
+
+function notify(msg, type) {
+    const box = document.getElementById('toast-box');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerText = msg;
+    box.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
 function logout() {
-    if(confirm("¿Cerrar sesión en ECNHACA Style?")) {
-        DOM.preloader.classList.remove('hide');
-        DOM.preloader.style.opacity = '1';
-        setTimeout(() => {
-            location.reload();
-        }, 1000);
-    }
+    localStorage.removeItem('ec_session');
+    location.reload();
 }
-
-/**
- * FINAL DEL SCRIPT
- * Emmanuel, ya tienes la lógica de:
- * 1. Publicar con tema y descripción.
- * 2. Buscar usuarios específicos.
- * 3. Seguir/Dejar de seguir con cambio de contador.
- * 4. Navegación por el menú derecho.
- */
