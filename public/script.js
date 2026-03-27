@@ -1,31 +1,41 @@
 /**
- * ECNHACA UI SYSTEM
- * Control de Modales, Notificaciones y Vistas
+ * ECNHACA UX CONTROLLER
+ * Manejo de Toasts, Transiciones y Modales
  */
 
-function toast(msg, type = "ok") {
-    const box = document.getElementById('toast-box');
+// Notificaciones flotantes
+function showToast(text, type = 'success') {
+    const container = document.getElementById('toast-container');
     const t = document.createElement('div');
-    t.className = `toast ${type}`;
-    t.innerText = msg;
-    box.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
+    t.className = `toast animate-pop ${type}`;
+    t.innerHTML = `<i class="fa ${type === 'success' ? 'fa-check-circle' : 'fa-times-circle'}"></i> ${text}`;
+    container.appendChild(t);
+    setTimeout(() => {
+        t.style.opacity = '0';
+        setTimeout(() => t.remove(), 500);
+    }, 3500);
 }
 
-function openPostModal() {
-    document.getElementById('modal-post').classList.remove('hide');
-}
-
-function closePostModal() {
-    document.getElementById('modal-post').classList.add('hide');
-}
-
-function showView(viewName) {
+// Navegación entre secciones
+function changeView(viewName) {
     document.querySelectorAll('.view').forEach(v => v.classList.add('hide'));
-    document.getElementById(`v-${viewName}`).classList.remove('hide');
-    if(viewName === 'feed') loadPosts();
+    document.getElementById(`view-${viewName}`).classList.remove('hide');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function toggleMenu() {
+// Abrir/Cerrar Modal de Publicación
+function togglePostModal(show) {
+    const modal = document.getElementById('post-modal');
+    modal.classList.toggle('hide', !show);
+}
+
+// Menú de usuario en la Navbar
+function toggleNavMenu() {
     document.getElementById('navMenu').classList.toggle('hide');
 }
+
+// Cerrar menús al hacer click fuera
+window.onclick = (e) => {
+    if (e.target.className === 'modal-overlay') togglePostModal(false);
+    if (!e.target.closest('.user-pill')) document.getElementById('navMenu').classList.add('hide');
+};
