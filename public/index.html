@@ -3,149 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ecnhaca v100 | Admin Panel</title>
-    <link rel="stylesheet" href="/style.css">
+    <title>ECNHACA v105 | Professional Software Hub</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&display=swap" rel="stylesheet">
 </head>
-<body class="light-mode">
+<body class="light-theme">
 
-    <div id="status-ov" class="ov hide">
-        <div class="ov-card animate-pop">
-            <div id="ov-icon" class="ov-i"><i class="fa fa-check"></i></div>
-            <h2 id="ov-title">Acción Exitosa</h2>
-            <p id="ov-desc">Proceso completado.</p>
+    <div id="particle-container"></div>
+
+    <div id="boot-screen" class="boot-layer">
+        <div class="boot-content">
+            <div class="logo-anim">ECNHACA</div>
+            <div class="progress-container">
+                <div id="boot-bar" class="progress-fill"></div>
+            </div>
+            <p id="boot-status">Inicializando kernel de Emmanuel...</p>
         </div>
     </div>
 
-    <div id="boot" class="boot">
-        <div class="boot-box">
-            <h1 class="glitch">ECNHACA</h1>
-            <div class="bar"><div id="progress" class="fill"></div></div>
-            <p id="boot-text">Inyectando bases de datos...</p>
+    <div id="toast-container"></div>
+
+    <div id="modal-confirm" class="modal-overlay hide">
+        <div class="confirm-box animate-pop">
+            <i class="fa fa-triangle-exclamation"></i>
+            <h3>¿Estás seguro?</h3>
+            <p>Esta acción no se puede deshacer en la base de datos de Render.</p>
+            <div class="confirm-btns">
+                <button onclick="closeConfirm()" class="btn-sec">Cancelar</button>
+                <button id="btn-execute-del" class="btn-danger">Eliminar Ahora</button>
+            </div>
         </div>
     </div>
 
-    <div id="auth" class="auth hide">
-        <div class="auth-card animate-up">
-            <div class="auth-head">
-                <h1>ECNHACA</h1>
-                <p>Ingresa tus credenciales de desarrollador.</p>
+    <div id="view-auth" class="full-screen-center hide">
+        <div class="auth-card">
+            <div class="auth-left">
+                <h2>ECNHACA <span>Elite</span></h2>
+                <p>Únete a la red de desarrolladores más exclusiva. Crea bots, webs y bases de datos.</p>
             </div>
-            <div class="auth-tabs">
-                <button id="tab-in" class="active" onclick="toggleAuth('in')">Entrar</button>
-                <button id="tab-up" onclick="toggleAuth('up')">Registrarse</button>
-            </div>
-            <form id="f-auth" onsubmit="executeAuth(event)">
-                <div class="f-group">
-                    <label>Usuario o Email</label>
-                    <input type="text" id="a-user" placeholder="Dev_Emmanuel" required>
+            <div class="auth-right">
+                <div class="tabs">
+                    <button id="tab-login" class="active" onclick="switchAuth('login')">Login</button>
+                    <button id="tab-reg" onclick="switchAuth('reg')">Registro</button>
                 </div>
-                <div id="reg-fields" class="hide">
-                    <div class="f-group">
-                        <label>Correo Electrónico</label>
-                        <input type="email" id="a-email" placeholder="emma@dev.com">
+                <form id="auth-form" onsubmit="handleAuth(event)">
+                    <div class="input-field">
+                        <label><i class="fa fa-user"></i> Usuario</label>
+                        <input type="text" id="auth-user" placeholder="Dev_Emmanuel" required>
                     </div>
-                </div>
-                <div class="f-group">
-                    <label>Contraseña</label>
-                    <input type="password" id="a-pass" placeholder="••••••••" required>
-                </div>
-                <button type="submit" id="a-btn" class="btn-primary">Acceder al Sistema</button>
-            </form>
+                    <div id="field-email" class="input-field hide">
+                        <label><i class="fa fa-envelope"></i> Email</label>
+                        <input type="email" id="auth-email" placeholder="emma@gmail.com">
+                    </div>
+                    <div class="input-field">
+                        <label><i class="fa fa-lock"></i> Contraseña</label>
+                        <input type="password" id="auth-pass" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" id="auth-submit" class="btn-main-neon">Ingresar al Sistema</button>
+                </form>
+            </div>
         </div>
     </div>
 
-    <div id="app" class="app hide">
-        <nav class="navbar">
-            <div class="nav-container">
-                <div class="brand" onclick="navigate('feed')">ECNHACA <span>v100</span></div>
-                <div class="nav-right">
-                    <div class="user-pill" onclick="toggleDrop()">
-                        <div id="nav-av" class="avatar-sm">E</div>
-                        <i class="fa fa-chevron-down"></i>
-                    </div>
-                    <div id="drop" class="dropdown hide">
-                        <div class="drop-info"><b id="drop-name">@User</b><span id="drop-role">Developer</span></div>
-                        <div class="item" onclick="navigate('profile')"><i class="fa fa-user"></i> Mi Perfil</div>
-                        <div class="item" onclick="navigate('my-posts')"><i class="fa fa-folder-open"></i> Mis Publicaciones</div>
-                        <div id="admin-link" class="item admin-item hide" onclick="navigate('admin')"><i class="fa fa-shield-halved"></i> Panel Admin</div>
-                        <div class="item" onclick="switchTheme()"><i class="fa fa-moon"></i> Modo Oscuro</div>
-                        <hr>
-                        <div class="item logout" onclick="logout()"><i class="fa fa-power-off"></i> Cerrar Sesión</div>
-                    </div>
+    <div id="view-app" class="app-grid hide">
+        <aside class="sidebar">
+            <div class="side-logo">ECNHACA</div>
+            <nav class="side-nav">
+                <div class="nav-item active" onclick="nav('feed')"><i class="fa fa-house"></i><span>Muro Global</span></div>
+                <div class="nav-item" onclick="nav('my-posts')"><i class="fa fa-code"></i><span>Mis Proyectos</span></div>
+                <div class="nav-item" onclick="nav('profile')"><i class="fa fa-user-tie"></i><span>Mi Perfil</span></div>
+                <div id="side-admin" class="nav-item admin-only hide" onclick="nav('admin')"><i class="fa fa-shield-halved"></i><span>Panel Maestro</span></div>
+            </nav>
+            <div class="side-footer">
+                <div class="theme-toggle" onclick="toggleTheme()">
+                    <i class="fa fa-moon"></i> <span>Oscuro / Claro</span>
+                </div>
+                <div class="logout-btn" onclick="logout()">
+                    <i class="fa fa-right-from-bracket"></i> <span>Salir</span>
                 </div>
             </div>
-        </nav>
+        </aside>
 
-        <main class="main">
-            <section id="v-feed" class="view">
-                <div class="header-v"><h1>Muro Global</h1><p>Últimos avances de la comunidad.</p></div>
-                <div id="feed-grid" class="grid"></div>
-            </section>
-
-            <section id="v-my-posts" class="view hide">
-                <div class="header-v"><h1>Gestionar Publicaciones</h1><p>Edita o elimina tus proyectos.</p></div>
-                <div id="my-grid" class="grid"></div>
-            </section>
-
-            <section id="v-admin" class="view hide">
-                <div class="header-v">
-                    <h1>Panel Maestro</h1>
-                    <p>Control total de usuarios y seguridad.</p>
-                </div>
-                <div class="admin-search">
-                    <input type="text" id="user-search" placeholder="Buscar usuario por nombre o email..." oninput="filterUsers()">
+        <main class="main-content">
+            <header class="top-nav">
+                <div class="search-bar">
                     <i class="fa fa-search"></i>
+                    <input type="text" id="global-search" placeholder="Buscar por código o usuario..." oninput="triggerSearch()">
                 </div>
-                <div class="admin-card">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Usuario</th>
-                                <th>Email</th>
-                                <th>Rol</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="user-table-body">
-                            </tbody>
-                    </table>
+                <div class="user-profile-top">
+                    <span id="top-username">@Emmanuel</span>
+                    <div id="top-avatar" class="av-circle">E</div>
                 </div>
-            </section>
+            </header>
 
-            <section id="v-profile" class="view hide">
-                <div class="profile-header">
-                    <div id="prof-av" class="avatar-lg">E</div>
-                    <h2 id="prof-name">Emmanuel</h2>
-                    <p id="prof-mail">emma2013rq@gmail.com</p>
-                    <div class="badge-admin">ADMINISTRADOR</div>
-                </div>
-            </section>
+            <div class="content-wrapper">
+                
+                <section id="sec-feed" class="sec">
+                    <div class="sec-header">
+                        <h2>Feed de Actividad</h2>
+                        <button class="btn-add" onclick="openModal('post')"><i class="fa fa-plus"></i> Publicar</button>
+                    </div>
+                    <div id="feed-container" class="grid-layout">
+                        <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
+                    </div>
+                </section>
+
+                <section id="sec-admin" class="sec hide">
+                    <div class="sec-header">
+                        <h2>Panel de Control Maestro</h2>
+                        <div class="admin-stats">
+                            <div class="st-box">Total Users: <b id="stat-users">0</b></div>
+                        </div>
+                    </div>
+                    <div class="admin-search-box">
+                        <input type="text" id="admin-user-q" placeholder="Buscar usuario por ID, Nombre o Gmail..." oninput="adminSearch()">
+                    </div>
+                    <div class="admin-table-scroll">
+                        <table class="ec-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Usuario</th>
+                                    <th>Email</th>
+                                    <th>Rol</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-tbody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="sec-profile" class="sec hide">
+                    <div class="profile-hero">
+                        <div id="p-hero-av" class="hero-av">E</div>
+                        <h1 id="p-hero-name">Dev_Emmanuel</h1>
+                        <p id="p-hero-email">emma2013rq@gmail.com</p>
+                        <div class="p-tags">
+                            <span>Node.js Expert</span>
+                            <span>Discord Bot Dev</span>
+                            <span>UI/UX Designer</span>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
         </main>
-
-        <button class="fab" onclick="openModal('post')"><i class="fa fa-plus"></i></button>
     </div>
 
-    <div id="m-post" class="modal hide">
-        <div class="modal-box animate-pop">
-            <h3>Nueva Publicación</h3>
-            <input type="text" id="p-title" placeholder="Título del Proyecto">
-            <textarea id="p-content" placeholder="Escribe los detalles técnicos..."></textarea>
-            <select id="p-category">
-                <option value="Discord Bot">Discord Bot</option>
-                <option value="Web Design">Web Design</option>
-                <option value="Backend">Backend</option>
-            </select>
-            <div class="modal-footer">
-                <button onclick="closeModal('post')">Cancelar</button>
-                <button onclick="submitPost()" class="btn-primary">Publicar Ahora</button>
+    <div id="modal-post" class="modal-overlay hide">
+        <div class="modal-card animate-up">
+            <div class="modal-head">
+                <h3>Crear Publicación</h3>
+                <button onclick="closeModal('post')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="post-title" placeholder="Título de tu proyecto (Ej: Vexo Bot)">
+                <textarea id="post-content" placeholder="Describe los comandos, la base de datos o el diseño..."></textarea>
+                <select id="post-cat">
+                    <option value="Bot">Discord Bot</option>
+                    <option value="Web">Página Web</option>
+                    <option value="Script">Script Útil</option>
+                    <option value="DB">Base de Datos</option>
+                </select>
+            </div>
+            <div class="modal-foot">
+                <button class="btn-main-neon" onclick="submitPost()">Publicar Proyecto</button>
             </div>
         </div>
     </div>
 
-    <script src="/script.js"></script>
-    <script src="/app.js"></script>
+    <script src="script.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
