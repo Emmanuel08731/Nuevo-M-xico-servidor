@@ -1,59 +1,54 @@
-/** * ECNHACA UI ENGINE - Emmanuel Store
- * Maneja: Animaciones, Menús, Vistas SPA y Splash Screen
+/**
+ * ECNHACA UI SCRIPT - Emmanuel
+ * Maneja efectos visuales y feedback de usuario
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Pantalla de carga profesional (Splash)
+window.addEventListener('load', () => {
     setTimeout(() => {
-        const splash = document.getElementById('splash');
-        if(splash) {
-            splash.style.opacity = '0';
-            setTimeout(() => splash.classList.add('hide'), 500);
-        }
-        initSocialLogic(); // Llama a la lógica de app.js
+        document.getElementById('splash').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('splash').classList.add('hide');
+            startEcnhaca(); // Inicia app.js
+        }, 500);
     }, 2000);
-
-    // 2. Cerrar menús al hacer clic fuera
-    window.onclick = (e) => {
-        const drop = document.getElementById('drop');
-        if (drop && !e.target.closest('.profile-trigger') && !e.target.closest('.dropdown')) {
-            drop.classList.add('hide');
-        }
-    };
 });
 
-// Cambiar de vista con animación de entrada
-function switchView(viewId) {
-    const views = document.querySelectorAll('.view');
-    views.forEach(v => {
-        v.classList.add('hide');
-        v.style.opacity = '0';
-        v.style.transform = 'translateY(10px)';
-    });
-
-    const activeView = document.getElementById(viewId);
-    if(activeView) {
-        activeView.classList.remove('hide');
-        setTimeout(() => {
-            activeView.style.opacity = '1';
-            activeView.style.transform = 'translateY(0)';
-            activeView.style.transition = 'all 0.4s ease';
-        }, 50);
+// Función para mostrar mensajes de éxito o error con estilo
+function notify(text, type = 'ok') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type === 'ok' ? 'ok' : 'err'}`;
+    toast.innerHTML = `<i class="fa ${type === 'ok' ? 'fa-check-circle' : 'fa-times-circle'}"></i> ${text}`;
+    
+    container.appendChild(toast);
+    
+    // Si es error, vibramos el contenedor
+    if(type === 'err') {
+        const activeForm = document.querySelector('.auth-card');
+        if(activeForm) {
+            activeForm.classList.add('shake');
+            setTimeout(() => activeForm.classList.remove('shake'), 500);
+        }
     }
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 400);
+    }, 3500);
+}
+
+// Cambiar vistas con transición suave
+function irA(v) {
+    document.querySelectorAll('.view').forEach(view => {
+        view.classList.add('hide');
+        view.style.opacity = '0';
+    });
+    const target = document.getElementById('v-' + v);
+    target.classList.remove('hide');
+    setTimeout(() => target.style.opacity = '1', 50);
     document.getElementById('drop').classList.add('hide');
 }
 
-// Menú desplegable de la derecha
 function toggleDrop() {
-    const drop = document.getElementById('drop');
-    drop.classList.toggle('hide');
-    if(!drop.classList.contains('hide')) {
-        drop.style.animation = 'slideDown 0.3s ease forwards';
-    }
-}
-
-// Efecto de vibración en botones
-function vibrateBtn(el) {
-    el.style.transform = 'scale(0.95)';
-    setTimeout(() => el.style.transform = 'scale(1)', 100);
+    document.getElementById('drop').classList.toggle('hide');
 }
