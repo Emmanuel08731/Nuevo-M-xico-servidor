@@ -2,171 +2,271 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ECNHACA White | Professional Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ffffff">
+    <title>ECNHACA STYLE | Professional Dashboard</title>
+
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1067/1067256.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="loading">
+<body class="ecnhaca-os">
 
     <div id="preloader" class="preloader">
-        <div class="loader-ring"></div>
-        <div class="loader-text">ECNHACA OS</div>
+        <div class="loader-brand">ECNHACA STYLE</div>
+        <div class="loader-bar">
+            <div id="load-progress" class="loader-progress"></div>
+        </div>
+        <small id="load-status" style="margin-top: 15px; font-weight: 600; color: #86868b; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px;">Sincronizando Base de Datos...</small>
     </div>
 
-    <div id="toast-container" class="toast-container"></div>
+    <div id="toast-container" class="toast-box"></div>
 
-    <section id="auth-view" class="auth-view">
-        <div class="auth-card">
-            <div class="auth-logo">
-                <i class="fa fa-shield-halved"></i>
-                <h1>White Access</h1>
-                <p>Identificación necesaria para Emmanuel Store</p>
-            </div>
-            
-            <div class="auth-tabs">
-                <button id="tab-btn-login" class="active" onclick="toggleAuthMode('login')">Ingresar</button>
-                <button id="tab-btn-reg" onclick="toggleAuthMode('reg')">Crear Cuenta</button>
+    <section id="view-auth" class="view-auth">
+        <div class="auth-box">
+            <div class="auth-header">
+                <div style="width: 50px; height: 50px; background: #000; border-radius: 12px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa fa-shield-halved" style="color: #fff; font-size: 1.5rem;"></i>
+                </div>
+                <h1>ECNHACA Style</h1>
+                <p>Ingresa a tu ecosistema digital profesional.</p>
             </div>
 
-            <form id="auth-form" onsubmit="executeAuth(event)">
-                <div class="input-field">
-                    <label>Nombre de Usuario</label>
-                    <input type="text" id="auth-user" placeholder="Ej. Emmanuel_Master" required>
-                </div>
-                
-                <div id="email-field" class="input-field hide">
-                    <label>Correo Electrónico</label>
-                    <input type="email" id="auth-email" placeholder="emma@ejemplo.com">
+            <div class="auth-switcher">
+                <button id="btn-tab-login" class="switch-btn active" onclick="setAuthMode('login')">Ingresar</button>
+                <button id="btn-tab-reg" class="switch-btn" onclick="setAuthMode('register')">Registrarse</button>
+            </div>
+
+            <form id="form-auth" onsubmit="handleAuthAction(event)">
+                <div class="input-group">
+                    <label for="auth-user">Nombre de Usuario</label>
+                    <input type="text" id="auth-user" placeholder="Ej. Emmanuel_Dev" required autocomplete="username">
                 </div>
 
-                <div class="input-field">
-                    <label>Contraseña</label>
-                    <input type="password" id="auth-pass" placeholder="••••••••" required>
+                <div id="group-email" class="input-group hide">
+                    <label for="auth-email">Correo Electrónico</label>
+                    <input type="email" id="auth-email" placeholder="emma@ejemplo.com" autocomplete="email">
                 </div>
 
-                <button type="submit" class="btn-primary">Sincronizar Acceso</button>
+                <div class="input-group">
+                    <label for="auth-pass">Contraseña Maestra</label>
+                    <div style="position: relative;">
+                        <input type="password" id="auth-pass" placeholder="••••••••" required autocomplete="current-password">
+                        <i class="fa fa-eye" id="toggle-pass" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #86868b;" onclick="togglePasswordVisibility()"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Sincronizar Acceso</button>
             </form>
-            
-            <div class="auth-footer">
-                <small>© 2026 Emmanuel Store. Todos los derechos reservados.</small>
+
+            <div style="margin-top: 30px; border-top: 1px solid #f5f5f7; padding-top: 20px;">
+                <p style="font-size: 0.75rem; color: #86868b;">Al acceder aceptas los protocolos de seguridad de <strong>ECNHACA Style</strong>.</p>
             </div>
         </div>
     </section>
 
-    <div id="app-view" class="app-view hide">
+    <div id="view-app" class="app-container hide">
         
         <aside class="sidebar">
-            <div class="sidebar-brand">
-                <span class="brand-dot"></span>
-                <span>ECNHACA WHITE</span>
+            <div class="brand-area">
+                <div class="brand-icon"></div>
+                <span>ECNHACA STYLE</span>
             </div>
 
-            <nav class="nav-menu">
-                <div class="nav-label">General</div>
-                <button class="nav-link active" onclick="showTab('dashboard')">
-                    <i class="fa fa-house"></i> Panel General
+            <nav class="nav-section">
+                <div class="nav-title">Principal</div>
+                <button class="nav-btn active" onclick="switchSection('dashboard')">
+                    <i class="fa fa-layer-group"></i> <span>Dashboard</span>
                 </button>
-                <button class="nav-link" onclick="showTab('catalog')">
-                    <i class="fa fa-tags"></i> Emmanuel Store
+                <button class="nav-btn" onclick="switchSection('store')">
+                    <i class="fa fa-shopping-bag"></i> <span>Emmanuel Store</span>
                 </button>
-                <button class="nav-link" onclick="showTab('stats')">
-                    <i class="fa fa-chart-simple"></i> Estadísticas
+                <button class="nav-btn" onclick="switchSection('vibeblox')">
+                    <i class="fa fa-shirt"></i> <span>VibeBlox Assets</span>
                 </button>
 
-                <div id="admin-nav-label" class="nav-label admin-only hide">Administración</div>
-                <button id="admin-btn" class="nav-link admin-only hide" onclick="showTab('admin')">
-                    <i class="fa fa-user-gear"></i> Master Control
+                <div class="nav-title">Desarrollo</div>
+                <button class="nav-btn" onclick="switchSection('terminal')">
+                    <i class="fa fa-terminal"></i> <span>Consola CMD</span>
                 </button>
-                <button class="nav-link" onclick="showTab('terminal')">
-                    <i class="fa fa-code"></i> Consola CMD
+                <button class="nav-btn" onclick="switchSection('db-manager')">
+                    <i class="fa fa-database"></i> <span>DB PostgreSQL</span>
                 </button>
+
+                <div id="admin-nav-group" class="hide">
+                    <div class="nav-title">Administración</div>
+                    <button class="nav-btn" onclick="switchSection('master-search')">
+                        <i class="fa fa-users-viewfinder"></i> <span>Buscador Master</span>
+                    </button>
+                    <button class="nav-btn" onclick="switchSection('vexo-bot')">
+                        <i class="fa fa-robot"></i> <span>Vexo Bot Logic</span>
+                    </button>
+                </div>
             </nav>
 
             <div class="sidebar-user">
-                <div class="u-info">
-                    <span id="u-display-name">Emmanuel</span>
-                    <small id="u-display-role">Desarrollador</small>
+                <div class="u-avatar-circle" id="user-initials">E</div>
+                <div class="u-meta">
+                    <b id="display-username">Emmanuel</b>
+                    <small id="display-role">Master Admin</small>
                 </div>
-                <button class="btn-logout" onclick="logout()">
-                    <i class="fa fa-right-from-bracket"></i>
+                <button onclick="executeLogout()" style="margin-left: auto; background: none; color: #ff3b30; cursor: pointer; font-size: 1.1rem;">
+                    <i class="fa fa-power-off"></i>
                 </button>
             </div>
         </aside>
 
-        <main class="main-content">
-            <header class="content-header">
-                <div class="search-global">
-                    <i class="fa fa-search"></i>
-                    <input type="text" placeholder="Buscar en la base de datos global...">
+        <main class="main-view">
+            
+            <header class="view-header">
+                <div class="header-text">
+                    <p id="header-date">Viernes, 27 de Marzo de 2026</p>
+                    <h2 id="section-title">Dashboard General</h2>
                 </div>
-                <div class="header-actions">
-                    <button class="btn-icon"><i class="fa fa-bell"></i></button>
-                    <button class="btn-icon"><i class="fa fa-gear"></i></button>
+                <div class="header-actions" style="display: flex; gap: 15px;">
+                    <button class="btn-icon-round" onclick="refreshData()"><i class="fa fa-rotate"></i></button>
+                    <button class="btn-icon-round"><i class="fa fa-bell"></i></button>
+                    <div style="width: 1px; height: 30px; background: #d2d2d7; margin: 0 5px;"></div>
+                    <button class="btn-main-sm" onclick="openGlobalModal()"><i class="fa fa-plus"></i> Nuevo</button>
                 </div>
             </header>
 
-            <section id="tab-dashboard" class="tab-sec">
-                <div class="welcome-banner">
-                    <h2>Bienvenido, <span id="welcome-name">Usuario</span></h2>
-                    <p>Hoy es <span id="current-date">--/--/----</span>. El sistema está operando al 100%.</p>
+            <section id="sec-dashboard" class="content-sec">
+                <div class="bento-stats">
+                    <div class="stat-item">
+                        <span class="label">Usuarios Totales</span>
+                        <div class="value" id="stat-users-count">0</div>
+                        <span class="trend up"><i class="fa fa-arrow-up"></i> +4.2%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">Ventas Hoy</span>
+                        <div class="value" id="stat-sales-today">$0.00</div>
+                        <span class="trend stable">Sin cambios</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">Latencia Render</span>
+                        <div class="value" id="stat-ping">-- ms</div>
+                        <span class="trend up">Excelente</span>
+                    </div>
                 </div>
 
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <small>Usuarios Activos</small>
-                        <h3 id="stat-users">0</h3>
-                        <div class="trend up">+12% esta semana</div>
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+                    <div class="control-panel">
+                        <div class="panel-top">
+                            <h3 style="font-weight: 800; font-size: 1rem;">Log de Actividad del Sistema</h3>
+                            <button class="btn-text-sm">Ver Todo</button>
+                        </div>
+                        <div id="activity-log" style="padding: 20px;">
+                            <div style="color: #86868b; text-align: center; padding: 40px;">No hay actividad reciente registrada.</div>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <small>Ventas Store</small>
-                        <h3 id="stat-sales">$0.00</h3>
-                        <div class="trend">Estable</div>
-                    </div>
-                    <div class="stat-card">
-                        <small>Database Latency</small>
-                        <h3 id="stat-latency">14ms</h3>
-                        <div class="trend up">Óptimo</div>
+                    
+                    <div class="stat-item">
+                        <h3 style="font-weight: 800; font-size: 1rem; margin-bottom: 20px;">Accesos Rápidos</h3>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <button class="nav-btn" style="background: #f5f5f7;"><i class="fa fa-plus"></i> Crear Gamepass</button>
+                            <button class="nav-btn" style="background: #f5f5f7;"><i class="fa fa-envelope"></i> Gmail Support</button>
+                            <button class="nav-btn" style="background: #f5f5f7;"><i class="fa fa-code-commit"></i> GitHub Push</button>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <section id="tab-admin" class="tab-sec hide">
-                <div class="sec-header">
-                    <h3>Base de Datos de Usuarios</h3>
-                    <div class="sec-tools">
-                        <input type="text" id="admin-search-input" placeholder="Buscar UID, Nombre o Gmail..." oninput="filterDatabase()">
-                        <button class="btn-secondary" onclick="syncUsers()"><i class="fa fa-rotate"></i></button>
+            <section id="sec-master-search" class="content-sec hide">
+                <div class="control-panel">
+                    <div class="panel-top">
+                        <div class="panel-search">
+                            <i class="fa fa-magnifying-glass"></i>
+                            <input type="text" id="master-search-input" placeholder="Buscar por ID, Usuario, Email o Rango..." oninput="executeMasterFilter()">
+                        </div>
+                        <div class="panel-actions">
+                            <button class="btn-main-sm" onclick="syncMasterDatabase()"><i class="fa fa-sync"></i> Sincronizar PostgreSQL</button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-scroll">
+                        <table class="ecnhaca-table">
+                            <thead>
+                                <tr>
+                                    <th>UID</th>
+                                    <th>Identidad</th>
+                                    <th>Contacto (Gmail)</th>
+                                    <th>Rango / Rol</th>
+                                    <th>Última Conexión</th>
+                                    <th>Gestión</th>
+                                </tr>
+                            </thead>
+                            <tbody id="master-table-body">
+                                </tbody>
+                        </table>
                     </div>
                 </div>
+            </section>
 
-                <div class="table-wrapper">
-                    <table class="master-table">
-                        <thead>
-                            <tr>
-                                <th># ID</th>
-                                <th>Nombre de Usuario</th>
-                                <th>Email Registrado</th>
-                                <th>Rango</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-table-body">
-                            </tbody>
-                    </table>
+            <section id="sec-terminal" class="content-sec hide">
+                <div class="cmd-view">
+                    <div class="cmd-bar">
+                        <div class="cmd-dot" style="background: #ff5f56;"></div>
+                        <div class="cmd-dot" style="background: #ffbd2e;"></div>
+                        <div class="cmd-dot" style="background: #27c93f;"></div>
+                        <span style="margin-left: 10px; font-size: 0.7rem; font-weight: 700; color: #86868b; text-transform: uppercase;">ECNHACA Terminal v1.0 — bash</span>
+                    </div>
+                    <div id="cmd-output" class="cmd-output">
+                        <div class="cmd-line">
+                            <span class="cmd-prefix">emmanuel@ecnhaca:~$</span>
+                            <span style="color: #1d1d1f;">system --init-protocol "WhiteMinimalist"</span>
+                        </div>
+                        <div class="cmd-line">
+                            <span style="color: #28a745;">[SUCCESS] ECNHACA Style cargado correctamente.</span>
+                        </div>
+                    </div>
+                    <div style="background: #fff; padding: 10px 20px; border-top: 1px solid #f5f5f7; display: flex; align-items: center; gap: 10px;">
+                        <span class="cmd-prefix" style="font-size: 0.8rem;">➜</span>
+                        <input type="text" id="cmd-input" placeholder="Escribe un comando..." style="flex: 1; border: none; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; outline: none;" onkeydown="handleTerminalCommand(event)">
+                    </div>
                 </div>
             </section>
 
             </main>
     </div>
 
-    <div id="product-modal" class="modal hide">
-        <div class="modal-content">
-            </div>
+    <div id="modal-overlay" class="modal-overlay hide" onclick="closeAllModals()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div id="modal-content-area">
+                </div>
+            <button class="modal-close" onclick="closeAllModals()"><i class="fa fa-xmark"></i></button>
+        </div>
     </div>
 
     <script src="script.js"></script>
     <script src="app.js"></script>
-</body>
+
+    <script>
+        // Reloj en tiempo real
+        function startClock() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('header-date').innerText = now.toLocaleDateString('es-ES', options);
+            }, 1000);
+        }
+        startClock();
+
+        // Manejo del toggle de visibilidad de contraseña
+        function togglePasswordVisibility() {
+            const passInput = document.getElementById('auth-pass');
+            const icon = document.getElementById('toggle-pass');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                passInput.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+    </script>
+
+    </body>
 </html>
