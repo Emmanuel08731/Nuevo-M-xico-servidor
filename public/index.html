@@ -2,172 +2,83 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ECNHACA v120 | Master Dashboard</title>
+    <title>ECNHACA V125 | Master Terminal</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&display=swap" rel="stylesheet">
 </head>
-<body class="dark-mode">
+<body>
 
-    <div id="loader-layer" class="loader-layer">
-        <div class="minimal-spinner"></div>
-        <div class="loader-status">ECNHACA OS v120</div>
+    <div id="boot-loader" class="boot-loader">
+        <div class="terminal-loader">
+            <div id="boot-text">Sincronizando con Emmanuel Store...</div>
+            <div class="progress-bar"><div id="progress-fill"></div></div>
+        </div>
     </div>
 
-    <div id="toast-container" class="toast-stack"></div>
+    <div id="toast-wrapper"></div>
 
-    <section id="auth-view" class="auth-wrapper hide">
+    <section id="auth-view" class="view-center hide">
         <div class="auth-card">
-            <div class="auth-header">
-                <h2>ECNHACA <span>TERMINAL</span></h2>
-                <p>Gestión de servicios Emmanuel Store</p>
+            <h1>ECN<span>HACA</span></h1>
+            <div class="auth-tabs">
+                <button id="tab-login" class="active" onclick="setAuthMode('login')">LOGIN</button>
+                <button id="tab-reg" onclick="setAuthMode('reg')">REGISTRO</button>
             </div>
-            
-            <div class="auth-switch">
-                <button id="btn-t-login" class="sw-active" onclick="toggleAuthMode('login')">Entrar</button>
-                <button id="btn-t-reg" onclick="toggleAuthMode('reg')">Registrar</button>
-            </div>
-
-            <form id="form-auth" class="auth-form" onsubmit="processAuth(event)">
-                <div class="input-group">
-                    <label>Usuario Identificado</label>
-                    <input type="text" id="auth-username" placeholder="Dev_Emmanuel" required>
-                </div>
-                
-                <div id="reg-email-container" class="input-group hide">
-                    <label>Correo de Recuperación</label>
-                    <input type="email" id="auth-email" placeholder="ejemplo@gmail.com">
-                </div>
-
-                <div class="input-group">
-                    <label>Código de Acceso</label>
-                    <input type="password" id="auth-password" placeholder="••••••••" required>
-                </div>
-
-                <button type="submit" class="btn-neon-glow">Ejecutar Comando</button>
+            <form id="auth-form" onsubmit="handleAuth(event)">
+                <input type="text" id="auth-user" placeholder="Nombre de Usuario" required>
+                <input type="email" id="auth-email" class="hide" placeholder="correo@gmail.com">
+                <input type="password" id="auth-pass" placeholder="Contraseña Master" required>
+                <button type="submit" class="btn-glow">ACCEDER AL NÚCLEO</button>
             </form>
         </div>
     </section>
 
-    <div id="app-view" class="dashboard-layout hide">
-        
-        <aside class="side-panel">
-            <div class="panel-brand">ECNHACA <span>v120</span></div>
-            
-            <nav class="panel-nav">
-                <div class="nav-btn active" onclick="navigate('feed')">
-                    <i class="fa fa-grid-2"></i> Dashboard
-                </div>
-                <div class="nav-btn" onclick="navigate('my-posts')">
-                    <i class="fa fa-code-merge"></i> Mis Proyectos
-                </div>
-                <div class="nav-btn" onclick="navigate('profile')">
-                    <i class="fa fa-user-shield"></i> Perfil Dev
-                </div>
-                
-                <div id="admin-nav-item" class="nav-btn admin-link hide" onclick="navigate('admin')">
-                    <i class="fa fa-database"></i> PANEL MAESTRO
-                </div>
+    <main id="app-view" class="app-layout hide">
+        <aside class="sidebar">
+            <div class="brand">ECNHACA v125</div>
+            <nav>
+                <div class="nav-link active" onclick="nav('dashboard')"><i class="fa fa-home"></i> Dashboard</div>
+                <div class="nav-link" onclick="nav('feed')"><i class="fa fa-rss"></i> Global Feed</div>
+                <div id="admin-nav" class="nav-link admin-only hide" onclick="nav('admin')"><i class="fa fa-shield-halved"></i> MASTER PANEL</div>
             </nav>
-
-            <div class="panel-footer">
-                <div class="user-info-sidebar">
-                    <div id="side-av" class="av-small">E</div>
-                    <div class="side-details">
-                        <span id="side-name">Emmanuel</span>
-                        <small id="side-role">Administrador</small>
-                    </div>
-                </div>
-                <button class="logout-link" onclick="handleLogout()">
-                    <i class="fa fa-power-off"></i> Desconectar
-                </button>
+            <div class="user-card-small">
+                <div id="u-av" class="av">E</div>
+                <div class="u-info"><span id="u-name">Emmanuel</span><small id="u-role">Admin</small></div>
             </div>
+            <button class="logout" onclick="logout()">LOGOUT</button>
         </aside>
 
-        <main class="main-workspace">
-            
-            <section id="sec-feed" class="workspace-sec">
-                <div class="sec-header">
-                    <div class="title-box">
-                        <h1>Muro de Operaciones</h1>
-                        <p>Feed de publicaciones en tiempo real.</p>
-                    </div>
-                    <button class="btn-create" onclick="openPostModal()">
-                        <i class="fa fa-plus"></i> Nueva Entrada
-                    </button>
+        <section class="content-area">
+            <header class="top-bar">
+                <div class="search-box">
+                    <i class="fa fa-search"></i>
+                    <input type="text" placeholder="Buscar en la red..." oninput="globalSearch()">
                 </div>
-                
-                <div id="posts-container" class="posts-grid">
-                    </div>
-            </section>
+            </header>
 
-            <section id="sec-admin" class="workspace-sec hide">
-                <div class="sec-header">
-                    <div class="title-box">
-                        <h1>Terminal Admin (PostgreSQL)</h1>
-                        <p>Gestión completa de usuarios registrados.</p>
-                    </div>
+            <div id="sec-dashboard" class="sec">
+                <h2>Bienvenido al Centro de Control</h2>
+                <div class="stats-grid">
+                    <div class="stat-item"><h3>Users</h3><p id="st-users">0</p></div>
+                    <div class="stat-item"><h3>Posts</h3><p id="st-posts">0</p></div>
                 </div>
+            </div>
 
-                <div class="admin-tools">
-                    <div class="search-bar-neon">
-                        <i class="fa fa-search"></i>
-                        <input type="text" id="admin-user-search" placeholder="Buscar por ID, Nombre o Gmail..." oninput="searchUsers()">
-                    </div>
-                    <div class="admin-stats-box">
-                        Usuarios Totales: <span id="count-users">0</span>
-                    </div>
+            <section id="sec-admin" class="sec hide">
+                <h2>Terminal de Usuarios</h2>
+                <div class="admin-search">
+                    <input type="text" id="admin-q" placeholder="Buscar por ID, Nombre o Gmail..." oninput="filterAdminUsers()">
                 </div>
-
-                <div class="table-wrapper">
+                <div class="table-container">
                     <table class="master-table">
-                        <thead>
-                            <tr>
-                                <th>#UID</th>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Rango</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-users-body">
-                            </tbody>
+                        <thead><tr><th>ID</th><th>Usuario</th><th>Email</th><th>Rol</th><th>Acción</th></tr></thead>
+                        <tbody id="admin-tbody"></tbody>
                     </table>
                 </div>
             </section>
-
-            </main>
-
-    </div>
-
-    <div id="modal-post" class="modal-overlay hide">
-        <div class="modal-card animate-zoom">
-            <div class="modal-head">
-                <h3>Nueva Publicación Técnica</h3>
-                <button onclick="closePostModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="input-group">
-                    <label>Título del Proyecto</label>
-                    <input type="text" id="p-title" placeholder="Ej: Vexo Bot v2.0">
-                </div>
-                <div class="input-group">
-                    <label>Detalles Técnicos</label>
-                    <textarea id="p-content" placeholder="Escribe los comandos o descripción del sistema..."></textarea>
-                </div>
-                <div class="input-group">
-                    <label>Categoría</label>
-                    <select id="p-category">
-                        <option value="Bot">Discord Bot</option>
-                        <option value="Web">Página Web</option>
-                        <option value="Logic">Backend Script</option>
-                    </select>
-                </div>
-                <button class="btn-neon-glow" onclick="submitNewPost()">Lanzar a la Red</button>
-            </div>
-        </div>
-    </div>
+            
+            </section>
+    </main>
 
     <script src="script.js"></script>
     <script src="app.js"></script>
