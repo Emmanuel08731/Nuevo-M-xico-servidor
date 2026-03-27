@@ -7,11 +7,8 @@ require('dotenv').config();
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-// SERVIR ARCHIVOS ESTÁTICOS (MUY IMPORTANTE PARA EL CSS)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// CONFIGURACIÓN DE POSTGRES RENDER (OREGON)
 const pool = new Pool({
     host: 'dpg-d6u5u3fkijhs73fhh1hg-a.oregon-postgres.render.com',
     user: 'base_datos_global_user',
@@ -21,56 +18,82 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// TABLAS DE EMMANUEL STORE
-const conectarDB = async () => {
+const initEcnhaca = async () => {
     try {
+        // RESET: Aseguramos que las tablas existan con los nuevos campos
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 username TEXT UNIQUE NOT NULL,
                 email TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
-                color TEXT DEFAULT '#fe2c55',
-                bio TEXT DEFAULT 'Miembro de DevRoot',
-                followers_count INTEGER DEFAULT 0
+                color TEXT DEFAULT '#6366f1',
+                bio TEXT DEFAULT 'Explorando Ecnhaca...',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS follows (
+                id SERIAL PRIMARY KEY,
+                follower_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                following_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE(follower_id, following_id)
             );
         `);
-        console.log("🔥 [SISTEMA] Base de Datos conectada en OREGON");
-    } catch (e) { console.log("❌ Error DB:", e.message); }
+        console.log("🚀 [ECNHACA] Sistema reseteado y listo.");
+    } catch (e) { console.log(e); }
 };
-conectarDB();
+initEcnhaca();
 
-// --- API ---
+// API AUTH
 app.post('/api/register', async (req, res) => {
     const { username, email, password } = req.body;
     try {
+        const colors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#ef4444'];
+        const color = colors[Math.floor(Math.random()*colors.length)];
         const result = await pool.query(
-            "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
-            [username.toLowerCase(), email.toLowerCase(), password]
+            "INSERT INTO users (username, email, password, color) VALUES ($1, $2, $3, $4) RETURNING *",
+            [username.toLowerCase(), email.toLowerCase(), password, color]
         );
         res.json(result.rows[0]);
-    } catch (e) { res.status(500).json({ error: "El usuario ya existe" }); }
+    } catch (e) { res.status(400).json({error: "Usuario ya existe"}); }
 });
 
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
-    try {
-        const resu = await pool.query("SELECT * FROM users WHERE username = $1 AND password = $2", [username.toLowerCase(), password]);
-        if (resu.rows.length > 0) res.json(resu.rows[0]);
-        else res.status(401).json({ error: "Datos incorrectos" });
-    } catch (e) { res.status(500).json({ error: "Error" }); }
+    const result = await pool.query("SELECT * FROM users WHERE username = $1 AND password = $2", [username.toLowerCase(), password]);
+    if (result.rows.length > 0) res.json(result.rows[0]);
+    else res.status(401).json({error: "Error"});
 });
 
+// BUSCADOR (No muestra nada si el query está vacío)
 app.get('/api/search', async (req, res) => {
-    const { q } = req.query;
-    const resu = await pool.query("SELECT * FROM users WHERE username ILIKE $1", [`%${q}%`]);
-    res.json(resu.rows);
+    const { q, myId } = req.query;
+    if(!q) return res.json([]);
+    const result = await pool.query(`
+        SELECT u.id, u.username, u.color, u.bio,
+        (SELECT COUNT(*) FROM follows WHERE following_id = u.id) as followers,
+        (SELECT COUNT(*) FROM follows WHERE follower_id = ${myId} AND following_id = u.id) as am_following
+        FROM users u WHERE u.username ILIKE $1 AND u.id != $2 LIMIT 10`, 
+        [`%${q}%`, myId]);
+    res.json(result.rows);
 });
 
-// ESTO HACE QUE EL INDEX.HTML CARGUE AL ENTRAR A LA WEB
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// SEGUIR
+app.post('/api/follow', async (req, res) => {
+    const { myId, targetId } = req.body;
+    try {
+        await pool.query("INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [myId, targetId]);
+        res.json({success: true});
+    } catch (e) { res.status(500).send(); }
 });
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Puerto: ${PORT}`));
+// DATOS DE PERFIL (CONTADORES)
+app.get('/api/profile-stats/:id', async (req, res) => {
+    const { id } = req.params;
+    const followers = await pool.query("SELECT COUNT(*) FROM follows WHERE following_id = $1", [id]);
+    const following = await pool.query("SELECT COUNT(*) FROM follows WHERE follower_id = $1", [id]);
+    res.json({ followers: followers.rows[0].count, following: following.rows[0].count });
+});
+
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+app.listen(10000, () => console.log("Ecnhaca Online"));
