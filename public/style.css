@@ -1,60 +1,52 @@
-/* DISEÑO EMMANUEL STORE 2026 */
-:root { --main: #fe2c55; --bg: #ffffff; --gray: #f1f1f2; }
+:root { --p: #6366f1; --bg: #f8fafc; --txt: #1e293b; }
+* { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', sans-serif; }
+body { background: var(--bg); color: var(--txt); }
 
-* { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', sans-serif; }
+.hide { display: none !important; }
 
-body { background: var(--bg); color: #121212; }
+/* AUTH */
+.auth-container { height:100vh; display:flex; align-items:center; justify-content:center; background:#fff; }
+.auth-card { width:360px; text-align:center; padding:20px; }
+.logo-text { font-size:3rem; font-weight:900; letter-spacing:-2px; color: var(--p); margin-bottom:10px; }
+.auth-tabs { display:flex; justify-content:center; gap:15px; margin-bottom:20px; }
+.auth-tabs button { background:none; border:none; font-weight:bold; cursor:pointer; color:#94a3b8; padding:5px; transition:0.3s; }
+.auth-tabs button.active { color: var(--p); border-bottom:2px solid var(--p); }
 
-.hidden { display: none !important; }
+input { width:100%; padding:14px; margin-bottom:12px; border:1.5px solid #e2e8f0; border-radius:12px; background:#f1f5f9; outline:none; }
+input:focus { border-color: var(--p); background:#fff; }
+#btnA { width:100%; padding:14px; background:var(--p); color:#fff; border:none; border-radius:12px; font-weight:bold; cursor:pointer; box-shadow:0 10px 15px -3px rgba(99,102,241,0.3); }
 
-/* PANTALLA DE AUTH */
-.auth-screen {
-    height: 100vh; display: flex; align-items: center; justify-content: center;
-    background: white;
-}
-.card { width: 340px; text-align: center; }
-.card h1 { font-size: 3rem; font-weight: 900; letter-spacing: -2px; }
-.card h1 b { color: var(--main); }
+/* NAV */
+.nav { background:#fff; border-bottom:1.5px solid #e2e8f0; position:fixed; top:0; width:100%; height:70px; z-index:100; }
+.nav-content { max-width:1000px; margin:0 auto; height:100%; display:flex; align-items:center; justify-content:space-between; padding:0 20px; }
+.nav .logo { font-size:1.5rem; font-weight:800; color: var(--p); }
 
-.tabs { display: flex; justify-content: center; gap: 20px; margin: 20px 0; }
-.tabs button { background: none; border: none; font-weight: bold; cursor: pointer; color: #888; }
-.tabs button.active { color: var(--main); border-bottom: 2px solid var(--main); }
+.search-box { background:#f1f5f9; padding:10px 20px; border-radius:12px; display:flex; align-items:center; gap:10px; width:400px; }
+.search-box input { border:none; background:none; margin:0; padding:0; width:100%; }
 
-input {
-    width: 100%; padding: 14px; margin-bottom: 10px;
-    border: 1px solid #eee; border-radius: 8px; background: var(--gray);
-}
+/* MENU DESPLEGABLE */
+.user-menu-wrapper { position:relative; }
+.mini-av { width:40px; height:40px; border-radius:50%; background:var(--p); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold; cursor:pointer; border:2px solid #fff; box-shadow:0 0 0 2px var(--p); }
+.dropdown { position:absolute; right:0; top:55px; background:#fff; border:1.5px solid #e2e8f0; border-radius:12px; width:200px; padding:8px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); animation: pop 0.2s ease; }
+@keyframes pop { from { opacity:0; transform: scale(0.9); } to { opacity:1; transform: scale(1); } }
+.drop-item { padding:10px; border-radius:8px; cursor:pointer; font-size:0.9rem; display:flex; align-items:center; gap:10px; transition:0.2s; }
+.drop-item:hover { background:#f1f5f9; }
+.logout { color:#ef4444; }
 
-#mainBtn {
-    width: 100%; padding: 14px; background: var(--main);
-    color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
-}
+/* FEED / RESULTADOS */
+.content { max-width:600px; margin:90px auto; padding:20px; }
+.user-card { background:#fff; border:1.5px solid #e2e8f0; border-radius:16px; padding:15px; display:flex; align-items:center; gap:15px; margin-bottom:15px; transition:0.3s; animation: fadeInUp 0.4s ease; }
+.user-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.05); }
 
-/* NAVBAR */
-.navbar {
-    position: fixed; top: 0; width: 100%; height: 65px;
-    background: white; border-bottom: 1px solid #eee;
-    display: flex; align-items: center; justify-content: space-between; padding: 0 30px;
-}
-.navbar .logo { font-size: 1.5rem; font-weight: 900; }
+.btn-follow { margin-left:auto; padding:8px 16px; background:var(--p); color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
+.btn-follow.following { background:#e2e8f0; color: #64748b; }
 
-.search { background: var(--gray); padding: 8px 15px; border-radius: 50px; width: 300px; }
-.search input { background: none; border: none; margin: 0; padding: 5px; }
+/* PERFIL VISTA */
+.profile-header { text-align:center; background:#fff; padding:40px; border-radius:24px; border:1.5px solid #e2e8f0; }
+.big-av { width:100px; height:100px; border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center; font-size:2.5rem; font-weight:bold; color:#fff; }
+.stats-row { display:flex; justify-content:center; gap:30px; margin:20px 0; }
+.stat b { display:block; color:#64748b; font-size:0.8rem; text-transform:uppercase; }
+.stat span { font-size:1.5rem; font-weight:bold; }
+.btn-back { margin-top:20px; background:none; border:none; color:var(--p); font-weight:bold; cursor:pointer; }
 
-/* FEED */
-.main-feed { max-width: 600px; margin: 80px auto; padding: 20px; }
-
-.user-item {
-    display: flex; align-items: center; gap: 15px; padding: 15px;
-    border-bottom: 1px solid var(--gray); animation: slide 0.3s ease;
-}
-
-@keyframes slide { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:0; } }
-
-.av {
-    width: 50px; height: 50px; border-radius: 50%; background: var(--main);
-    display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;
-}
-
-.u-name { font-weight: bold; font-size: 1.1rem; }
-.u-bio { color: #777; font-size: 0.9rem; }
+@keyframes fadeInUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
