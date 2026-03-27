@@ -3,94 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ecnhaca | Community</title>
+    <title>Ecnhaca | Red de Creadores</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div id="toast-box"></div>
+    <div id="toast-container"></div>
 
-    <button id="btn-add-post" class="fab-btn" onclick="openPostModal()">
-        <i class="fa fa-plus"></i>
+    <button id="main-fab" class="fab-left hide" onclick="togglePostModal(true)">
+        <i class="fa fa-pencil-alt"></i>
+        <span>Publicar</span>
     </button>
 
-    <div id="modal-post" class="modal hide">
-        <div class="modal-content animate-pop">
+    <div id="post-modal" class="modal-overlay hide">
+        <div class="modal-box animate-pop">
             <div class="modal-header">
-                <h3>Nueva Publicación</h3>
-                <i class="fa fa-times" onclick="closePostModal()"></i>
+                <h2>¿Qué has creado hoy?</h2>
+                <button class="close-btn" onclick="togglePostModal(false)">&times;</button>
             </div>
-            <form id="postForm" onsubmit="handlePostSubmit(event)">
-                <input type="text" id="postTitle" placeholder="Título del proyecto" required>
-                <textarea id="postDesc" placeholder="Describe tu creación..." required></textarea>
-                <input type="text" id="postImg" placeholder="URL de la imagen (Opcional)">
-                <select id="postTag">
-                    <option value="Dev Web">Dev Web</option>
-                    <option value="Discord Bot">Discord Bot</option>
-                    <option value="Diseño UI">Diseño UI</option>
-                    <option value="Roblox Assets">Roblox Assets</option>
-                    <option value="Otros">Otros</option>
-                </select>
-                <button type="submit" class="btn-send">Publicar en Ecnhaca</button>
+            <form id="newPostForm" onsubmit="submitPost(event)">
+                <div class="form-group">
+                    <label>Título del Proyecto</label>
+                    <input type="text" id="postTitle" placeholder="Ej: Mi nuevo Bot de Discord" required>
+                </div>
+                <div class="form-group">
+                    <label>Descripción detallada</label>
+                    <textarea id="postDesc" placeholder="Explica cómo lo hiciste..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>URL de Imagen (Opcional)</label>
+                    <input type="text" id="postImg" placeholder="https://imagen-de-tu-proyecto.png">
+                </div>
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <select id="postCat">
+                        <option value="Dev Discord Bot">Dev Discord Bot</option>
+                        <option value="Web Development">Web Development</option>
+                        <option value="Roblox Dev">Roblox Dev</option>
+                        <option value="Diseño Gráfico">Diseño Gráfico</option>
+                        <option value="Database / API">Database / API</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-gradient">Publicar Proyecto</button>
             </form>
         </div>
     </div>
 
-    <section id="auth" class="auth-view hide">
-        <div class="auth-card">
-            <h1>Ecnhaca</h1>
+    <section id="auth-screen" class="auth-section">
+        <div class="auth-card animate-fade">
+            <div class="auth-logo">Ecnhaca</div>
             <div class="auth-tabs">
-                <button id="tab-l" class="active" onclick="setMode('login')">Entrar</button>
-                <button id="tab-r" onclick="setMode('reg')">Registro</button>
+                <button id="loginTab" class="active" onclick="setAuthMode('login')">Entrar</button>
+                <button id="regTab" onclick="setAuthMode('reg')">Crear Cuenta</button>
             </div>
-            <form id="authForm" onsubmit="authSubmit(event)">
-                <input type="text" id="uIn" placeholder="Usuario" required>
-                <input type="email" id="eIn" class="hide" placeholder="Email">
-                <input type="password" id="pIn" placeholder="Contraseña" required>
-                <button type="submit" id="btnAuth">Acceder</button>
+            
+            <form id="authForm" onsubmit="handleAuth(event)">
+                <div class="input-box">
+                    <i class="fa fa-user"></i>
+                    <input type="text" id="authUser" placeholder="Nombre de usuario" required>
+                </div>
+                <div id="emailBox" class="input-box hide">
+                    <i class="fa fa-envelope"></i>
+                    <input type="email" id="authEmail" placeholder="Correo electrónico">
+                </div>
+                <div class="input-box">
+                    <i class="fa fa-lock"></i>
+                    <input type="password" id="authPass" placeholder="Contraseña segura" required>
+                </div>
+                <button type="submit" id="authBtn" class="btn-gradient">Acceder a Ecnhaca</button>
             </form>
+            <p class="auth-footer">Protección de datos activa &copy; 2026</p>
         </div>
     </section>
 
-    <div id="app" class="hide">
-        <nav class="top-nav">
-            <div class="nav-wrap">
-                <div class="logo" onclick="showView('feed')">Ecnhaca</div>
-                <div class="search-bar">
+    <div id="app-screen" class="hide">
+        <nav class="navbar">
+            <div class="nav-content">
+                <div class="brand" onclick="changeView('feed')">Ecnhaca</div>
+                <div class="search-engine">
                     <i class="fa fa-search"></i>
-                    <input type="text" placeholder="Buscar creadores..." oninput="searchUsers(this.value)">
+                    <input type="text" placeholder="Buscar creadores o código..." oninput="liveSearch(this.value)">
                 </div>
-                <div class="nav-user" onclick="toggleMenu()">
-                    <div id="myAv" class="av-sm"></div>
-                    <div id="navMenu" class="drop hide">
-                        <div onclick="showMyProfile()">Mi Perfil</div>
-                        <div onclick="logout()" class="red">Cerrar Sesión</div>
+                <div class="user-pill" onclick="toggleNavMenu()">
+                    <div id="navAv" class="avatar-sm"></div>
+                    <div id="navMenu" class="drop-menu hide">
+                        <div class="menu-item" onclick="viewMyProfile()"><i class="fa fa-user"></i> Perfil</div>
+                        <div class="menu-item out" onclick="logout()"><i class="fa fa-sign-out-alt"></i> Cerrar Sesión</div>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <main class="container">
-            <section id="v-feed" class="view">
-                <div id="post-list" class="posts-grid"></div>
+        <main class="content-wrapper">
+            <section id="view-feed" class="view">
+                <div class="feed-header">
+                    <h1>Descubre Proyectos</h1>
+                    <p>Las últimas creaciones de la comunidad Ecnhaca</p>
+                </div>
+                <div id="posts-container" class="posts-grid"></div>
             </section>
 
-            <section id="v-search" class="view hide">
-                <div id="search-results" class="user-list"></div>
+            <section id="view-search" class="view hide">
+                <div id="search-results" class="user-grid"></div>
             </section>
 
-            <section id="v-profile" class="view hide">
-                <div class="profile-card">
-                    <div id="pBanner" class="banner"></div>
-                    <div class="p-info">
-                        <div id="pAvLarge" class="av-lg"></div>
-                        <h2 id="pUser">@username</h2>
-                        <p id="pBio">Bio del usuario...</p>
-                        <div class="p-stats">
-                            <div><b id="pFolCount">0</b> seguidores</div>
+            <section id="view-profile" class="view hide">
+                <div class="profile-header">
+                    <div id="profileBanner" class="banner-gradient"></div>
+                    <div class="profile-meta">
+                        <div id="profileAv" class="avatar-xl"></div>
+                        <h2 id="profileName">@username</h2>
+                        <p id="profileBio">Biografía del usuario de Ecnhaca.</p>
+                        <div class="profile-stats">
+                            <div class="stat"><b>Seguidores</b><span id="statFol">0</span></div>
+                            <div class="stat"><b>Siguiendo</b><span id="statIng">0</span></div>
                         </div>
-                        <button id="btnFollow" onclick="toggleFollow()">Seguir</button>
+                        <button id="followBtn" class="btn-follow" onclick="processFollow()">Seguir</button>
                     </div>
                 </div>
             </section>
