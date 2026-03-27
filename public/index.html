@@ -3,156 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ECNHACA v140 | Titanium Enterprise</title>
-    <link rel="stylesheet" href="style.css">
+    <title>ECNHACA White | Professional Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="theme-dark">
+<body class="loading">
 
-    <div id="master-loader" class="master-loader">
-        <div class="loader-content">
-            <div class="glitch-logo">ECNHACA <span>OS</span></div>
-            <div class="loading-bar-container">
-                <div id="loading-fill" class="loading-fill"></div>
-            </div>
-            <div id="loader-status" class="loader-status">INICIALIZANDO PROTOCOLOS...</div>
-        </div>
+    <div id="preloader" class="preloader">
+        <div class="loader-ring"></div>
+        <div class="loader-text">ECNHACA OS</div>
     </div>
 
-    <div id="notification-area" class="toast-container"></div>
+    <div id="toast-container" class="toast-container"></div>
 
-    <section id="view-auth" class="auth-wrapper hide">
-        <div class="auth-glass-card">
-            <header class="auth-header">
-                <h2>MASTER <span>ACCESS</span></h2>
-                <p>Identificación requerida para Emmanuel Store</p>
-            </header>
-
-            <div class="auth-toggle">
-                <button id="tab-login" class="t-btn active" onclick="switchAuth('login')">LOGIN</button>
-                <button id="tab-reg" class="t-btn" onclick="switchAuth('reg')">NUEVA CUENTA</button>
+    <section id="auth-view" class="auth-view">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <i class="fa fa-shield-halved"></i>
+                <h1>White Access</h1>
+                <p>Identificación necesaria para Emmanuel Store</p>
+            </div>
+            
+            <div class="auth-tabs">
+                <button id="tab-btn-login" class="active" onclick="toggleAuthMode('login')">Ingresar</button>
+                <button id="tab-btn-reg" onclick="toggleAuthMode('reg')">Crear Cuenta</button>
             </div>
 
-            <form id="main-auth-form" class="auth-form" onsubmit="executeAuth(event)">
-                <div class="field-box">
-                    <label><i class="fa fa-user"></i> Usuario</label>
-                    <input type="text" id="inp-user" placeholder="Dev_Emmanuel" required>
+            <form id="auth-form" onsubmit="executeAuth(event)">
+                <div class="input-field">
+                    <label>Nombre de Usuario</label>
+                    <input type="text" id="auth-user" placeholder="Ej. Emmanuel_Master" required>
+                </div>
+                
+                <div id="email-field" class="input-field hide">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="auth-email" placeholder="emma@ejemplo.com">
                 </div>
 
-                <div id="email-field" class="field-box hide">
-                    <label><i class="fa fa-envelope"></i> Email Corporativo</label>
-                    <input type="email" id="inp-email" placeholder="admin@emmanuel.store">
+                <div class="input-field">
+                    <label>Contraseña</label>
+                    <input type="password" id="auth-pass" placeholder="••••••••" required>
                 </div>
 
-                <div class="field-box">
-                    <label><i class="fa fa-lock"></i> Llave de Acceso</label>
-                    <input type="password" id="inp-pass" placeholder="••••••••" required>
-                </div>
-
-                <button type="submit" class="btn-primary-glow">
-                    <span>INICIAR SESIÓN</span>
-                    <i class="fa fa-arrow-right"></i>
-                </button>
+                <button type="submit" class="btn-primary">Sincronizar Acceso</button>
             </form>
+            
+            <div class="auth-footer">
+                <small>© 2026 Emmanuel Store. Todos los derechos reservados.</small>
+            </div>
         </div>
     </section>
 
-    <div id="view-app" class="app-layout hide">
+    <div id="app-view" class="app-view hide">
         
-        <aside class="sidebar-main">
+        <aside class="sidebar">
             <div class="sidebar-brand">
-                <div class="brand-icon">E</div>
-                <div class="brand-text">ECNHACA <span>v140</span></div>
+                <span class="brand-dot"></span>
+                <span>ECNHACA WHITE</span>
             </div>
 
-            <nav class="sidebar-nav">
-                <div class="nav-label">Módulos Principales</div>
-                <button class="nav-item active" onclick="changeTab('dashboard')">
-                    <i class="fa fa-chart-line"></i> Dashboard
+            <nav class="nav-menu">
+                <div class="nav-label">General</div>
+                <button class="nav-link active" onclick="showTab('dashboard')">
+                    <i class="fa fa-house"></i> Panel General
                 </button>
-                <button class="nav-item" onclick="changeTab('store')">
-                    <i class="fa fa-shopping-bag"></i> Store Assets
+                <button class="nav-link" onclick="showTab('catalog')">
+                    <i class="fa fa-tags"></i> Emmanuel Store
                 </button>
-                <button class="nav-item" onclick="changeTab('feed')">
-                    <i class="fa fa-broadcast-tower"></i> Global Feed
+                <button class="nav-link" onclick="showTab('stats')">
+                    <i class="fa fa-chart-simple"></i> Estadísticas
                 </button>
 
-                <div class="nav-label admin-label hide">Administración</div>
-                <button id="nav-admin" class="nav-item admin-only hide" onclick="changeTab('admin-panel')">
-                    <i class="fa fa-user-shield"></i> Master Control
+                <div id="admin-nav-label" class="nav-label admin-only hide">Administración</div>
+                <button id="admin-btn" class="nav-link admin-only hide" onclick="showTab('admin')">
+                    <i class="fa fa-user-gear"></i> Master Control
                 </button>
-                <button class="nav-item" onclick="changeTab('terminal')">
-                    <i class="fa fa-terminal"></i> Terminal CMD
+                <button class="nav-link" onclick="showTab('terminal')">
+                    <i class="fa fa-code"></i> Consola CMD
                 </button>
             </nav>
 
-            <div class="sidebar-footer">
-                <div class="user-pill">
-                    <div id="user-avatar" class="u-av">E</div>
-                    <div class="u-details">
-                        <span id="user-display-name">Emmanuel</span>
-                        <small id="user-display-role">Root Admin</small>
-                    </div>
+            <div class="sidebar-user">
+                <div class="u-info">
+                    <span id="u-display-name">Emmanuel</span>
+                    <small id="u-display-role">Desarrollador</small>
                 </div>
-                <button class="btn-logout" onclick="performLogout()">
-                    <i class="fa fa-power-off"></i> Cerrar Sesión
+                <button class="btn-logout" onclick="logout()">
+                    <i class="fa fa-right-from-bracket"></i>
                 </button>
             </div>
         </aside>
 
-        <main class="content-wrapper">
-            
-            <section id="tab-dashboard" class="tab-content">
-                <div class="header-main">
-                    <h1>Resumen de Operaciones</h1>
-                    <p>Métricas en tiempo real de Emmanuel Store.</p>
+        <main class="main-content">
+            <header class="content-header">
+                <div class="search-global">
+                    <i class="fa fa-search"></i>
+                    <input type="text" placeholder="Buscar en la base de datos global...">
                 </div>
-                
-                <div class="bento-grid">
-                    <div class="bento-item stat-card blue">
-                        <i class="fa fa-users"></i>
-                        <div class="val" id="stat-total-users">0</div>
-                        <div class="lab">Usuarios Registrados</div>
+                <div class="header-actions">
+                    <button class="btn-icon"><i class="fa fa-bell"></i></button>
+                    <button class="btn-icon"><i class="fa fa-gear"></i></button>
+                </div>
+            </header>
+
+            <section id="tab-dashboard" class="tab-sec">
+                <div class="welcome-banner">
+                    <h2>Bienvenido, <span id="welcome-name">Usuario</span></h2>
+                    <p>Hoy es <span id="current-date">--/--/----</span>. El sistema está operando al 100%.</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <small>Usuarios Activos</small>
+                        <h3 id="stat-users">0</h3>
+                        <div class="trend up">+12% esta semana</div>
                     </div>
-                    <div class="bento-item stat-card green">
-                        <i class="fa fa-server"></i>
-                        <div class="val">Active</div>
-                        <div class="lab">Estado Render</div>
+                    <div class="stat-card">
+                        <small>Ventas Store</small>
+                        <h3 id="stat-sales">$0.00</h3>
+                        <div class="trend">Estable</div>
                     </div>
-                    <div class="bento-item stat-card purple">
-                        <i class="fa fa-code-branch"></i>
-                        <div class="val">v140.2</div>
-                        <div class="lab">Versión del Núcleo</div>
+                    <div class="stat-card">
+                        <small>Database Latency</small>
+                        <h3 id="stat-latency">14ms</h3>
+                        <div class="trend up">Óptimo</div>
                     </div>
                 </div>
             </section>
 
-            <section id="tab-admin-panel" class="tab-content hide">
-                <div class="header-main">
-                    <h1>Base de Datos PostgreSQL</h1>
-                    <p>Gestión directa de usuarios por ID, Nombre o Gmail.</p>
-                </div>
-
-                <div class="admin-toolbar">
-                    <div class="master-search-box">
-                        <i class="fa fa-search"></i>
-                        <input type="text" id="admin-search-input" placeholder="Buscar por UID, Usuario o Email..." oninput="filterAdminDatabase()">
+            <section id="tab-admin" class="tab-sec hide">
+                <div class="sec-header">
+                    <h3>Base de Datos de Usuarios</h3>
+                    <div class="sec-tools">
+                        <input type="text" id="admin-search-input" placeholder="Buscar UID, Nombre o Gmail..." oninput="filterDatabase()">
+                        <button class="btn-secondary" onclick="syncUsers()"><i class="fa fa-rotate"></i></button>
                     </div>
-                    <button class="btn-refresh" onclick="syncAdminData()">
-                        <i class="fa fa-sync"></i> Sincronizar
-                    </button>
                 </div>
 
-                <div class="table-container-master">
-                    <table class="data-table">
+                <div class="table-wrapper">
+                    <table class="master-table">
                         <thead>
                             <tr>
                                 <th># ID</th>
-                                <th>IDENTIDAD</th>
-                                <th>CONTACTO</th>
-                                <th>RANGO</th>
-                                <th>ACCIONES</th>
+                                <th>Nombre de Usuario</th>
+                                <th>Email Registrado</th>
+                                <th>Rango</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="admin-table-body">
@@ -161,24 +158,12 @@
                 </div>
             </section>
 
-            <section id="tab-terminal" class="tab-content hide">
-                <div class="terminal-container">
-                    <div class="terminal-header">
-                        <div class="dots"><span></span><span></span><span></span></div>
-                        <div class="term-title">emmanuel@ecnhaca-os: ~</div>
-                    </div>
-                    <div id="terminal-body" class="terminal-body">
-                        <div class="line">Sistema ECNHACA v140.0.0 listo.</div>
-                        <div class="line">Escribe 'help' para ver los comandos disponibles.</div>
-                    </div>
-                    <div class="terminal-input-line">
-                        <span class="prompt">>></span>
-                        <input type="text" id="term-input" autofocus>
-                    </div>
-                </div>
-            </section>
-
             </main>
+    </div>
+
+    <div id="product-modal" class="modal hide">
+        <div class="modal-content">
+            </div>
     </div>
 
     <script src="script.js"></script>
