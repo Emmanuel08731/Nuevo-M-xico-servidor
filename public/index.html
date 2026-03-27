@@ -2,79 +2,95 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Ecnhaca | Social App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecnhaca | Red Social Profesional</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-    <div id="authBox" class="auth-container">
-        <div class="auth-card animate-fade">
-            <h1 class="logo-text">Ecnhaca</h1>
-            <div class="auth-tabs">
-                <button id="tL" class="active" onclick="setMode('login')">Entrar</button>
-                <button id="tR" onclick="setMode('reg')">Registrarse</button>
-            </div>
-            <form onsubmit="doAuth(event)">
-                <input type="text" id="u" placeholder="Usuario" required>
-                <input type="email" id="e" placeholder="Correo" class="hide">
-                <input type="password" id="p" placeholder="Contraseña" required>
-                <button type="submit" id="btnA">Iniciar Sesión</button>
-            </form>
+    <div id="splash" class="splash-screen">
+        <div class="loader-content">
+            <h1 class="logo-anim">Ecnhaca</h1>
+            <div class="bar"></div>
         </div>
     </div>
 
-    <div id="app" class="hide">
-        <nav class="nav">
-            <div class="nav-content">
-                <div class="logo">Ecnhaca</div>
-                <div class="search-box">
-                    <i class="fa fa-search"></i>
-                    <input type="text" placeholder="Buscar en Ecnhaca..." oninput="search(this.value)">
+    <section id="auth" class="auth-view hide">
+        <div class="auth-card">
+            <h1 class="brand">Ecnhaca</h1>
+            <div class="auth-nav">
+                <button id="tabL" class="active" onclick="toggleAuth('login')">Entrar</button>
+                <button id="tabR" onclick="toggleAuth('reg')">Unirse</button>
+            </div>
+            <form id="fAuth" onsubmit="handleAuth(event)">
+                <div class="input-box">
+                    <i class="fa fa-user"></i>
+                    <input type="text" id="uIn" placeholder="Usuario" required>
                 </div>
-                <div class="user-menu-wrapper">
-                    <div class="user-trigger" onclick="toggleMenu()">
-                        <div id="myAv" class="mini-av">E</div>
+                <div class="input-box hide" id="eBox">
+                    <i class="fa fa-envelope"></i>
+                    <input type="email" id="eIn" placeholder="Correo">
+                </div>
+                <div class="input-box">
+                    <i class="fa fa-lock"></i>
+                    <input type="password" id="pIn" placeholder="Contraseña" required>
+                </div>
+                <button type="submit" class="btn-main" id="btnA">Iniciar Sesión</button>
+            </form>
+        </div>
+    </section>
+
+    <div id="app" class="hide">
+        <nav class="navbar">
+            <div class="nav-container">
+                <h2 class="logo" onclick="goHome()">Ecnhaca</h2>
+                <div class="search-wrapper">
+                    <i class="fa fa-search"></i>
+                    <input type="text" id="sIn" placeholder="Buscar personas en Ecnhaca..." oninput="liveSearch(this.value)">
+                </div>
+                <div class="user-actions">
+                    <div class="profile-trigger" onclick="toggleDrop()">
+                        <div id="myAvatar" class="av-small"></div>
+                        <i class="fa fa-chevron-down"></i>
                     </div>
-                    <div id="dropdown" class="dropdown hide">
-                        <div class="drop-item" onclick="showView('profile')"><i class="fa fa-user"></i> Perfil</div>
-                        <div class="drop-item" onclick="showView('settings')"><i class="fa fa-cog"></i> Configuración</div>
+                    <div id="drop" class="dropdown hide">
+                        <div class="drop-item" onclick="viewMyProfile()"><i class="fa fa-user-circle"></i> Perfil</div>
+                        <div class="drop-item" onclick="showSettings()"><i class="fa fa-sliders"></i> Ajustes</div>
                         <hr>
-                        <div class="drop-item logout" onclick="logout()"><i class="fa fa-sign-out"></i> Cerrar Sesión</div>
+                        <div class="drop-item out" onclick="logout()"><i class="fa fa-power-off"></i> Salir</div>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <main class="content">
-            <div id="view-feed" class="view">
-                <div id="results" class="results-list"></div>
-                <div id="empty-msg" class="empty-state">
-                    <i class="fa fa-bolt"></i>
-                    <p>Busca a alguien para empezar</p>
+        <main class="main-content">
+            <section id="v-search" class="view">
+                <div id="search-results" class="results"></div>
+                <div id="empty-state" class="empty">
+                    <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" width="80">
+                    <p>Busca usuarios para interactuar</p>
                 </div>
-            </div>
+            </section>
 
-            <div id="view-profile" class="view hide">
-                <div class="profile-header">
-                    <div id="pAv" class="big-av"></div>
-                    <h2 id="pName"></h2>
-                    <p id="pBio"></p>
-                    <div class="stats-row">
-                        <div class="stat"><b>Seguidores</b> <span id="s-followers">0</span></div>
-                        <div class="stat"><b>Siguiendo</b> <span id="s-following">0</span></div>
+            <section id="v-profile" class="view hide">
+                <div class="profile-card-full">
+                    <div class="cover" id="pColor"></div>
+                    <div class="p-info">
+                        <div id="pAv" class="av-huge"></div>
+                        <h2 id="pUsername">@usuario</h2>
+                        <p id="pBio" class="bio">Cargando biografía...</p>
+                        <div class="p-stats">
+                            <div class="s-box"><b>Seguidores</b><span id="pFol">0</span></div>
+                            <div class="s-box"><b>Siguiendo</b><span id="pIng">0</span></div>
+                        </div>
+                        <div class="p-actions">
+                            <button id="btnFollow" class="btn-follow-big" onclick="toggleFollowAction()">Seguir</button>
+                            <button class="btn-msg"><i class="fa fa-paper-plane"></i></button>
+                        </div>
                     </div>
-                    <button class="btn-back" onclick="showView('feed')">Volver al inicio</button>
                 </div>
-            </div>
-
-            <div id="view-settings" class="view hide">
-                <div class="settings-card">
-                    <h2>Configuración</h2>
-                    <p><i class="fa fa-clock"></i> Próximamente: Cambiar foto, biografía y privacidad.</p>
-                    <button class="btn-back" onclick="showView('feed')">Volver</button>
-                </div>
-            </div>
+            </section>
         </main>
     </div>
 
