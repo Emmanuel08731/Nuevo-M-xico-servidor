@@ -1,172 +1,242 @@
 /**
- * EMMANUEL SOCIAL ENGINE v5.0
- * SISTEMA DE INTERACCIÓN EN TIEMPO REAL
+ * EMMANUEL SOCIAL ENGINE - FRONTEND v5.0
+ * Este script maneja toda la lógica interactiva de la red social.
  */
 
-const state = {
-    currentUser: JSON.parse(localStorage.getItem('emmanuel_session')) || null,
+// --- 1. ESTADO GLOBAL DE LA APLICACIÓN ---
+const App = {
+    user: JSON.parse(localStorage.getItem('emmanuel_session')) || null,
     isSearching: false,
-    lastQuery: ''
+    currentTab: 'para-ti',
+    apiBase: '/api',
+    config: {
+        debounceTime: 400, // Tiempo de espera para no saturar Postgres
+        colors: {
+            primary: '#fe2c55',
+            accent: '#25f4ee'
+        }
+    }
 };
 
-// 1. INICIALIZADOR
+// --- 2. INICIALIZACIÓN AL CARGAR LA PÁGINA ---
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 Red Social de Emmanuel Iniciada");
+    console.log("🚀 Sistema Emmanuel Social cargado...");
     initApp();
 });
 
 function initApp() {
-    if (!state.currentUser) {
-        document.getElementById('authWall').classList.remove('hidden');
+    // Verificamos si hay una sesión activa en el navegador
+    if (!App.user) {
+        showScreen('authWall');
     } else {
-        document.getElementById('authWall').classList.add('hidden');
-        setupUI();
-        loadInitialFeed();
+        showScreen('mainLayout');
+        updateHeaderUI();
+        loadDynamicFeed(""); // Carga inicial de usuarios sugeridos
+    }
+    setupEventListeners();
+}
+
+// --- 3. GESTIÓN DE PANTALLAS (SPA LOGIC) ---
+function showScreen(screenId) {
+    const screens = ['authWall', 'mainLayout'];
+    screens.forEach(s => {
+        const el = document.getElementById(s);
+        if (el) {
+            s === screenId ? el.classList.remove('hidden') : el.classList.add('hidden');
+        }
+    });
+}
+
+// --- 4. SISTEMA DE AUTENTICACIÓN (LOGIN/REGISTRO) ---
+let authMode = 'login';
+
+function switchAuth(mode) {
+    authMode = mode;
+    const emailGroup = document.getElementById('emailGroup'); // Asegúrate de tener este ID en el HTML
+    const btn = document.getElementById('authSubmitBtn');
+    const tabs = document.querySelectorAll('.auth-tab');
+
+    if (mode === 'register') {
+        emailGroup?.classList.remove('hidden');
+        btn.innerText = "Crear Mi Cuenta";
+        tabs[1].classList.add('active');
+        tabs[0].classList.remove('active');
+    } else {
+        emailGroup?.classList.add('hidden');
+        btn.innerText = "Entrar Ahora";
+        tabs[0].classList.add('active');
+        tabs[1].classList.remove('active');
     }
 }
 
-// 2. SISTEMA DE REGISTRO / LOGIN
-async function handleRegister(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
+async function handleAuth(event) {
+    event.preventDefault();
+    const btn = event.target.querySelector('button');
+    const originalBtnText = btn.innerText;
+    
+    // Bloqueamos el botón para evitar doble clic
+    btn.disabled = true;
+    btn.innerText = "Conectando con Postgres...";
+
+    const formData = new FormData(event.target);
     const data = Object.fromEntries(formData.entries());
 
+    const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+
     try {
-        showToast("Conectando con Postgres...", "info");
-        const res = await fetch('/api/auth/register', {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
 
-        const result = await res.json();
+        const result = await response.json();
 
-        if (res.ok) {
-            state.currentUser = result.user;
-            localStorage.setItem('emmanuel_session', JSON.stringify(result.user));
-            showToast("¡Bienvenido a tu nueva red!", "success");
-            setTimeout(() => location.reload(), 1500);
+        if (response.ok) {
+            // Guardamos la sesión en el navegador (LocalStorage)
+            App.user = result;
+            localStorage.setItem('emmanuel_session', JSON.stringify(result));
+            
+            showNotification("¡Éxito! Entrando al sistema...", "success");
+            setTimeout(() => location.reload(), 1000);
         } else {
-            showToast(result.error, "error");
+            showNotification(result.error || "Error en la autenticación", "error");
+            btn.disabled = false;
+            btn.innerText = originalBtnText;
         }
     } catch (err) {
-        showToast("Error de conexión al servidor", "error");
+        showNotification("Fallo de red: ¿Está Render encendido?", "error");
+        btn.disabled = false;
+        btn.innerText = originalBtnText;
     }
 }
 
-// 3. BUSCADOR INTELIGENTE (ESTILO TIKTOK)
-let searchTimer;
-function performSearch(query) {
-    state.lastQuery = query;
-    clearTimeout(searchTimer);
+// --- 5. BUSCADOR EN TIEMPO REAL (ALTA VELOCIDAD) ---
+let searchDebounce;
+function liveSearch(query) {
+    clearTimeout(searchDebounce);
     
+    // No buscamos si el texto es muy corto (ahorro de recursos)
     if (query.trim().length === 0) {
-        return loadInitialFeed();
+        return loadDynamicFeed("");
     }
 
-    searchTimer = setTimeout(async () => {
-        const feed = document.getElementById('mainFeed');
-        feed.innerHTML = '<div class="loader-spinner"></div>';
-
-        try {
-            const res = await fetch(`/api/social/search?query=${query}`);
-            const users = await res.json();
-            renderUsers(users);
-        } catch (err) {
-            console.error("Error en búsqueda");
-        }
-    }, 400);
+    searchDebounce = setTimeout(async () => {
+        console.log(`🔍 Buscando a: ${query}`);
+        const feedContainer = document.getElementById('feedList');
+        feedContainer.innerHTML = '<div class="loader-skeleton">Buscando...</div>';
+        
+        loadDynamicFeed(query);
+    }, App.config.debounceTime);
 }
 
-// 4. RENDERIZADO DE PERFILES
+async function loadDynamicFeed(query) {
+    const feedContainer = document.getElementById('feedList');
+    
+    try {
+        const response = await fetch(`/api/social/search?q=${query}`);
+        const users = await response.json();
+        
+        renderUsers(users);
+    } catch (err) {
+        console.error("Error cargando el feed");
+        feedContainer.innerHTML = '<p>Error al conectar con la base de datos de Oregon.</p>';
+    }
+}
+
+// --- 6. RENDERIZADO DE COMPONENTES ---
 function renderUsers(users) {
-    const feed = document.getElementById('mainFeed');
-    feed.innerHTML = '';
+    const container = document.getElementById('feedList');
+    container.innerHTML = '';
 
     if (users.length === 0) {
-        feed.innerHTML = `
-            <div class="empty-state">
-                <i class="fa-solid fa-user-slash"></i>
-                <p>No encontramos a "${state.lastQuery}" en Emmanuel Store</p>
+        container.innerHTML = `
+            <div class="empty-state animate-up">
+                <i class="fa fa-search"></i>
+                <p>No hay resultados para tu búsqueda.</p>
             </div>
         `;
         return;
     }
 
-    users.forEach((u, i) => {
+    users.forEach((u, index) => {
         const card = document.createElement('div');
         card.className = 'profile-card animate-up';
-        card.style.animationDelay = `${i * 0.1}s`;
+        card.style.animationDelay = `${index * 0.05}s`;
 
         card.innerHTML = `
-            <div class="avatar-circle" style="background: ${u.color || '#fe2c55'}">
-                ${u.username[0].toUpperCase()}
-            </div>
-            <div class="profile-info">
-                <h4>${u.username} ${u.is_verified ? '<i class="fa-solid fa-circle-check verified"></i>' : ''}</h4>
-                <p>${u.bio || 'Sin biografía disponible.'}</p>
-                <div class="profile-stats">
-                    <span><b>${u.followers_count}</b> seguidores</span>
+            <div class="profile-left">
+                <div class="avatar-big" style="background: ${u.color || '#fe2c55'}">
+                    ${u.username[0].toUpperCase()}
+                </div>
+                <div class="profile-main-info">
+                    <h4>@${u.username} ${u.is_verified ? '<i class="fa fa-check-circle verified"></i>' : ''}</h4>
+                    <p class="user-bio">${u.bio || 'Desarrollador en Emmanuel Store'}</p>
+                    <div class="user-stats-mini">
+                        <span><b>${u.followers_count || 0}</b> seguidores</span>
+                    </div>
                 </div>
             </div>
-            <button class="btn-follow" id="btn-${u.id}" onclick="followAction(${u.id})">
-                Seguir
-            </button>
+            <div class="profile-right">
+                <button class="btn-follow" id="btn-follow-${u.id}" onclick="executeFollow(${u.id})">
+                    Seguir
+                </button>
+            </div>
         `;
-        feed.appendChild(card);
+        container.appendChild(card);
     });
 }
 
-// 5. ACCIÓN DE SEGUIR (DATABASE CONNECT)
-async function followAction(targetId) {
-    const btn = document.getElementById(`btn-${targetId}`);
+// --- 7. ACCIONES SOCIALES (FOLLOW SYSTEM) ---
+async function executeFollow(targetId) {
+    const btn = document.getElementById(`btn-follow-${targetId}`);
     
     if (btn.classList.contains('following')) return;
 
     try {
-        const res = await fetch('/api/social/follow', {
+        const response = await fetch('/api/social/follow', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                follower_id: state.currentUser.id,
+                follower_id: App.user.id,
                 following_id: targetId
             })
         });
 
-        if (res.ok) {
+        if (response.ok) {
             btn.innerText = "Siguiendo";
             btn.classList.add('following');
-            showToast("¡Nuevo amigo seguido!", "success");
+            showNotification("¡Ahora sigues a este usuario!", "success");
+        } else {
+            const err = await response.json();
+            showNotification(err.error, "info");
         }
     } catch (err) {
-        showToast("Error al seguir usuario", "error");
+        showNotification("Error al procesar el follow", "error");
     }
 }
 
-// 6. UI Y UTILIDADES
-function setupUI() {
-    document.getElementById('navUsername').innerText = state.currentUser.username;
-    const avatar = document.getElementById('navAvatar');
-    avatar.innerText = state.currentUser.username[0].toUpperCase();
-    avatar.style.background = state.currentUser.color || '#fe2c55';
+// --- 8. UI HELPERS ---
+function updateHeaderUI() {
+    if (!App.user) return;
     
-    document.getElementById('userFollowers').innerText = state.currentUser.followers_count || 0;
-    document.getElementById('userFollowing').innerText = state.currentUser.following_count || 0;
+    const nameLabel = document.getElementById('userNameHeader');
+    const avatar = document.getElementById('userAvHeader');
+    
+    if (nameLabel) nameLabel.innerText = App.user.username;
+    if (avatar) {
+        avatar.innerText = App.user.username[0].toUpperCase();
+        avatar.style.background = App.user.color;
+    }
 }
 
-async function loadInitialFeed() {
-    // Carga usuarios por defecto para que la web no esté vacía
-    const res = await fetch('/api/social/search?query=');
-    const users = await res.json();
-    renderUsers(users);
-}
-
-function showToast(msg, type) {
-    const container = document.getElementById('toastContainer');
+function showNotification(msg, type) {
+    // Emmanuel, aquí puedes crear un div de alerta dinámico
+    console.log(`[${type.toUpperCase()}] ${msg}`);
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `<i class="fa-solid fa-info-circle"></i> ${msg}`;
-    container.appendChild(toast);
+    toast.className = `toast-notif ${type} animate-up`;
+    toast.innerText = msg;
+    document.body.appendChild(toast);
     
     setTimeout(() => {
         toast.style.opacity = '0';
@@ -174,11 +244,12 @@ function showToast(msg, type) {
     }, 3000);
 }
 
-function toggleAuth() {
-    showToast("Función de Login próximamente...", "info");
-}
-
 function logout() {
     localStorage.removeItem('emmanuel_session');
     location.reload();
+}
+
+// --- 9. CONFIGURACIÓN DE EVENTOS ---
+function setupEventListeners() {
+    // Aquí puedes añadir más clics o efectos
 }
