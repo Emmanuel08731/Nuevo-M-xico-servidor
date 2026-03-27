@@ -1,29 +1,22 @@
 /**
- * ==========================================================
- * ECNHACA DATA ENGINE v150
- * CORE: API COMMUNICATION & POSTGRESQL CRUD
- * DEVELOPER: EMMANUEL
- * ==========================================================
+ * ECNHACA DATA ENGINE V200
+ * API CRUD & BUSCADOR MASTER: EMMANUEL
  */
 
-let USER_DATABASE_CACHE = [];
+let MASTER_DB_CACHE = [];
 
-// --- MANEJADOR DE AUTENTICACIÓN ---
-async function handleAuthAction(event) {
-    event.preventDefault();
-    const mode = document.getElementById('auth-mode').value; // 'login' o 'register'
+// --- AUTENTICACIÓN ---
+async function executeAuth(e) {
+    e.preventDefault();
+    const mode = document.getElementById('tab-btn-reg').classList.contains('active') ? 'register' : 'login';
+    
     const payload = {
-        username: document.getElementById('inp-user').value.trim().toLowerCase(),
-        email: document.getElementById('inp-email').value.trim().toLowerCase(),
-        password: document.getElementById('inp-pass').value.trim()
+        username: document.getElementById('auth-user').value,
+        password: document.getElementById('auth-pass').value,
+        email: document.getElementById('auth-email').value
     };
 
-    // Validaciones de Front-End para Emmanuel
-    if (payload.username.length < 3) return showNotification("Usuario demasiado corto", "error");
-    if (payload.password.length < 5) return showNotification("La contraseña debe tener +5 caracteres", "error");
-
     try {
-        logSystem(`Intentando ${mode} para ${payload.username}...`);
         const res = await fetch(`/api/auth/${mode}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -34,121 +27,105 @@ async function handleAuthAction(event) {
 
         if (res.ok) {
             localStorage.setItem('ec_session', JSON.stringify(data.user));
-            showNotification(`Éxito: Sesión iniciada como ${data.user.username}`);
+            notify("Sincronización Exitosa", "success");
             setTimeout(() => location.reload(), 1000);
         } else {
-            showNotification(data.error || "Fallo en la autenticación", "error");
-            logSystem(`ERROR AUTH: ${data.error}`);
+            notify(data.error, "error");
         }
     } catch (err) {
-        showNotification("Error de red: Render no responde", "error");
-        logSystem("Fallo crítico de conexión.");
+        notify("Error al conectar con Render", "error");
     }
 }
 
-// --- SINCRONIZACIÓN DE BASE DE DATOS (ADMIN PANEL) ---
-async function syncDatabase() {
+function toggleAuthMode(mode) {
+    const emailField = document.getElementById('email-field');
+    const btnLogin = document.getElementById('tab-btn-login');
+    const btnReg = document.getElementById('tab-btn-reg');
+
+    if (mode === 'reg') {
+        emailField.classList.remove('hide');
+        btnReg.classList.add('active');
+        btnLogin.classList.remove('active');
+    } else {
+        emailField.classList.add('hide');
+        btnLogin.classList.add('active');
+        btnReg.classList.remove('active');
+    }
+}
+
+// --- GESTIÓN DE BASE DE DATOS (ADMIN PANEL) ---
+async function syncUsers() {
     const tableBody = document.getElementById('admin-table-body');
-    tableBody.innerHTML = '<tr><td colspan="5" class="t-center">Sincronizando registros con PostgreSQL...</td></tr>';
-    
+    tableBody.innerHTML = '<tr><td colspan="5" align="center">Consultando PostgreSQL...</td></tr>';
+
     try {
         const res = await fetch('/api/admin/users');
-        if (!res.ok) throw new Error("Acceso denegado");
-        
-        USER_DATABASE_CACHE = await res.json();
-        renderUserTable(USER_DATABASE_CACHE);
-        logSystem(`Base de datos sincronizada: ${USER_DATABASE_CACHE.length} registros.`);
+        MASTER_DB_CACHE = await res.json();
+        renderTable(MASTER_DB_CACHE);
+        document.getElementById('stat-users').innerText = MASTER_DB_CACHE.length;
     } catch (err) {
-        showNotification("Error al cargar la DB", "error");
-        tableBody.innerHTML = '<tr><td colspan="5" class="t-center" style="color:red">ERROR DE ACCESO</td></tr>';
+        notify("Error de sincronización de DB", "error");
     }
 }
 
 /**
- * EMMANUEL SEARCH ENGINE
- * Filtra por UID (#), Nombre de Usuario o Correo Gmail.
+ * BUSCADOR MASTER EMMANUEL
+ * Filtra por ID, Usuario o Gmail instantáneamente.
  */
-function executeMasterSearch() {
-    const query = document.getElementById('master-search').value.toLowerCase().trim();
-    logSystem(`Buscando: "${query}"`);
-
-    if (!query) {
-        renderUserTable(USER_DATABASE_CACHE);
-        return;
-    }
-
-    const filtered = USER_DATABASE_CACHE.filter(u => {
-        const idMatch = u.id.toString().includes(query);
-        const nameMatch = u.username.toLowerCase().includes(query);
-        const emailMatch = u.email.toLowerCase().includes(query);
-        return idMatch || nameMatch || emailMatch;
+function filterDatabase() {
+    const query = document.getElementById('admin-search-input').value.toLowerCase();
+    
+    const filtered = MASTER_DB_CACHE.filter(u => {
+        return (
+            u.id.toString().includes(query) ||
+            u.username.toLowerCase().includes(query) ||
+            u.email.toLowerCase().includes(query)
+        );
     });
 
-    renderUserTable(filtered);
+    renderTable(filtered);
 }
 
-function renderUserTable(data) {
-    const container = document.getElementById('admin-table-body');
+function renderTable(data) {
+    const tableBody = document.getElementById('admin-table-body');
     
     if (data.length === 0) {
-        container.innerHTML = '<tr><td colspan="5" class="t-center">No se encontraron registros coincidentes.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="5" align="center">No se encontraron registros.</td></tr>';
         return;
     }
 
-    container.innerHTML = data.map(user => `
-        <tr class="row-user">
-            <td><span style="color:#555">#</span>${user.id}</td>
+    tableBody.innerHTML = data.map(u => `
+        <tr>
+            <td>#${u.id}</td>
+            <td><strong>${u.username}</strong></td>
+            <td>${u.email}</td>
+            <td><span class="badge ${u.role}">${u.role}</span></td>
             <td>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <div style="width:10px; height:10px; border-radius:50%; background:${user.avatar_color}"></div>
-                    <b>${user.username}</b>
-                </div>
-            </td>
-            <td>${user.email}</td>
-            <td>
-                <span class="${user.role === 'admin' ? 'badge-admin' : 'badge-user'}">
-                    ${user.role.toUpperCase()}
-                </span>
-            </td>
-            <td>
-                ${user.role !== 'admin' ? `
-                    <button class="btn-delete" onclick="deleteUserRecord(${user.id})">
-                        <i class="fa fa-trash"></i> Purgar
+                ${u.role !== 'admin' ? `
+                    <button class="btn-delete" onclick="purgarUsuario(${u.id})">
+                        <i class="fa fa-trash"></i> Eliminar
                     </button>
-                ` : '<small style="color:#444">PROTEGIDO</small>'}
+                ` : 'Master Access'}
             </td>
         </tr>
     `).join('');
 }
 
-// --- FUNCIÓN DE ELIMINACIÓN DE USUARIOS ---
-async function deleteUserRecord(id) {
-    if (!confirm(`EMMANUEL: ¿Estás 100% seguro de purgar el ID #${id}?`)) return;
+async function purgarUsuario(id) {
+    if (!confirm("EMMANUEL: ¿Confirmas la eliminación permanente de este registro?")) return;
 
     try {
-        logSystem(`Solicitando purga del registro #${id}...`);
         const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
-        
         if (res.ok) {
-            showNotification(`Usuario #${id} eliminado permanentemente.`);
-            syncDatabase(); // Recargar datos
+            notify("Usuario purgado con éxito");
+            syncUsers();
         } else {
-            const err = await res.json();
-            showNotification(err.error, "error");
+            const data = await res.json();
+            notify(data.error, "error");
         }
-    } catch (e) {
-        showNotification("Error de servidor", "error");
+    } catch (err) {
+        notify("Error al procesar purga", "error");
     }
 }
 
-// --- ACTUALIZACIÓN DE PERFIL ---
-async function updateProfileSettings() {
-    const newBio = document.getElementById('user-bio').value;
-    const newColor = document.getElementById('user-color').value;
-
-    logSystem("Actualizando configuración de perfil...");
-    // Aquí iría el fetch PATCH /api/user/update
-    showNotification("Perfil actualizado (Modo Simulado)");
-}
-
-// [CONTINÚAN 50 LÍNEAS DE MANEJO DE IMÁGENES, PREVENCIÓN DE XSS Y LÓGICA DE TIENDA]
+// [MÁS LÓGICA DE CRUD DE PRODUCTOS PARA EMMANUEL STORE Y MANEJO DE IMÁGENES]
