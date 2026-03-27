@@ -18,82 +18,101 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-const initEcnhaca = async () => {
+// --- RESET TOTAL DE ECNHACA ---
+const resetAndInit = async () => {
     try {
-        // RESET: Aseguramos que las tablas existan con los nuevos campos
+        console.log("⚠️ [SISTEMA] Iniciando limpieza profunda de Ecnhaca...");
+        // Borramos todo para cumplir con tu petición de reset
+        await pool.query('DROP TABLE IF EXISTS follows CASCADE;');
+        await pool.query('DROP TABLE IF EXISTS users CASCADE;');
+
+        // Re-creamos las tablas limpias
         await pool.query(`
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE users (
                 id SERIAL PRIMARY KEY,
                 username TEXT UNIQUE NOT NULL,
                 email TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
                 color TEXT DEFAULT '#6366f1',
-                bio TEXT DEFAULT 'Explorando Ecnhaca...',
+                bio TEXT DEFAULT '¡Hola! Soy nuevo en Ecnhaca.',
+                followers_count INTEGER DEFAULT 0,
+                following_count INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-            CREATE TABLE IF NOT EXISTS follows (
+            CREATE TABLE follows (
                 id SERIAL PRIMARY KEY,
                 follower_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
                 following_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
                 UNIQUE(follower_id, following_id)
             );
         `);
-        console.log("🚀 [ECNHACA] Sistema reseteado y listo.");
-    } catch (e) { console.log(e); }
+        console.log("✅ [ECNHACA] Base de datos reseteada. 0 usuarios registrados.");
+    } catch (e) { console.error("Error Reset:", e); }
 };
-initEcnhaca();
+resetAndInit();
 
-// API AUTH
+// --- RUTAS DE AUTENTICACIÓN ---
 app.post('/api/register', async (req, res) => {
     const { username, email, password } = req.body;
     try {
-        const colors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#ef4444'];
-        const color = colors[Math.floor(Math.random()*colors.length)];
+        const colors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
         const result = await pool.query(
             "INSERT INTO users (username, email, password, color) VALUES ($1, $2, $3, $4) RETURNING *",
-            [username.toLowerCase(), email.toLowerCase(), password, color]
+            [username.toLowerCase().trim(), email.toLowerCase().trim(), password, color]
         );
         res.json(result.rows[0]);
-    } catch (e) { res.status(400).json({error: "Usuario ya existe"}); }
+    } catch (e) { res.status(400).json({ error: "El usuario ya existe." }); }
 });
 
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
-    const result = await pool.query("SELECT * FROM users WHERE username = $1 AND password = $2", [username.toLowerCase(), password]);
+    const result = await pool.query("SELECT * FROM users WHERE username = $1 AND password = $2", [username.toLowerCase().trim(), password]);
     if (result.rows.length > 0) res.json(result.rows[0]);
-    else res.status(401).json({error: "Error"});
+    else res.status(401).json({ error: "Credenciales inválidas." });
 });
 
-// BUSCADOR (No muestra nada si el query está vacío)
+// --- RUTAS SOCIALES ---
 app.get('/api/search', async (req, res) => {
     const { q, myId } = req.query;
-    if(!q) return res.json([]);
-    const result = await pool.query(`
-        SELECT u.id, u.username, u.color, u.bio,
-        (SELECT COUNT(*) FROM follows WHERE following_id = u.id) as followers,
-        (SELECT COUNT(*) FROM follows WHERE follower_id = ${myId} AND following_id = u.id) as am_following
-        FROM users u WHERE u.username ILIKE $1 AND u.id != $2 LIMIT 10`, 
-        [`%${q}%`, myId]);
-    res.json(result.rows);
+    if (!q) return res.json([]);
+    try {
+        const result = await pool.query(`
+            SELECT u.*, 
+            (SELECT COUNT(*) FROM follows WHERE follower_id = $2 AND following_id = u.id) as is_following
+            FROM users u WHERE u.username ILIKE $1 AND u.id != $2 LIMIT 15`, 
+            [`%${q}%`, myId]);
+        res.json(result.rows);
+    } catch (e) { res.status(500).json(e); }
 });
 
-// SEGUIR
-app.post('/api/follow', async (req, res) => {
+app.get('/api/user/:id', async (req, res) => {
+    try {
+        const result = await pool.query("SELECT id, username, color, bio, followers_count, following_count FROM users WHERE id = $1", [req.params.id]);
+        res.json(result.rows[0]);
+    } catch (e) { res.status(404).send(); }
+});
+
+app.post('/api/follow-toggle', async (req, res) => {
     const { myId, targetId } = req.body;
     try {
-        await pool.query("INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [myId, targetId]);
-        res.json({success: true});
-    } catch (e) { res.status(500).send(); }
-});
-
-// DATOS DE PERFIL (CONTADORES)
-app.get('/api/profile-stats/:id', async (req, res) => {
-    const { id } = req.params;
-    const followers = await pool.query("SELECT COUNT(*) FROM follows WHERE following_id = $1", [id]);
-    const following = await pool.query("SELECT COUNT(*) FROM follows WHERE follower_id = $1", [id]);
-    res.json({ followers: followers.rows[0].count, following: following.rows[0].count });
+        const check = await pool.query("SELECT * FROM follows WHERE follower_id = $1 AND following_id = $2", [myId, targetId]);
+        
+        if (check.rows.length > 0) {
+            // UNFOLLOW
+            await pool.query("DELETE FROM follows WHERE follower_id = $1 AND following_id = $2", [myId, targetId]);
+            await pool.query("UPDATE users SET followers_count = followers_count - 1 WHERE id = $1", [targetId]);
+            await pool.query("UPDATE users SET following_count = following_count - 1 WHERE id = $1", [myId]);
+            res.json({ action: 'unfollowed' });
+        } else {
+            // FOLLOW
+            await pool.query("INSERT INTO follows (follower_id, following_id) VALUES ($1, $2)", [myId, targetId]);
+            await pool.query("UPDATE users SET followers_count = followers_count + 1 WHERE id = $1", [targetId]);
+            await pool.query("UPDATE users SET following_count = following_count + 1 WHERE id = $1", [myId]);
+            res.json({ action: 'followed' });
+        }
+    } catch (e) { res.status(500).json(e); }
 });
 
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-
-app.listen(10000, () => console.log("Ecnhaca Online"));
+app.listen(10000, () => console.log("🚀 ECNHACA SERVER ONLINE"));
