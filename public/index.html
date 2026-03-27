@@ -2,66 +2,43 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Emmanuel Social | Red de Desarrolladores</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevRoot | Emmanuel Store</title>
+    <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="authWall" class="auth-overlay">
-        <div class="auth-card">
-            <h1 class="logo">Dev<b>Root</b></h1>
-            <div id="authTabs">
-                <button class="active" onclick="switchAuth('login')">Login</button>
-                <button onclick="switchAuth('register')">Registro</button>
+
+    <div id="authBox" class="auth-screen">
+        <div class="card">
+            <h1>Dev<b>Root</b></h1>
+            <p>Red Social de Emmanuel</p>
+            <div class="tabs">
+                <button onclick="setAuth('login')" id="tabL" class="active">Login</button>
+                <button onclick="setAuth('reg')" id="tabR">Registro</button>
             </div>
-            <form id="authForm" onsubmit="handleAuth(event)">
-                <input type="text" id="auth_user" placeholder="Nombre de usuario" required>
-                <input type="email" id="auth_email" placeholder="Correo electrónico" class="hidden">
-                <input type="password" id="auth_pass" placeholder="Contraseña" required>
-                <button type="submit" id="authBtn">Entrar</button>
+            <form onsubmit="ejecutarAuth(event)">
+                <input type="text" id="user" placeholder="Usuario" required>
+                <input type="email" id="mail" placeholder="Email" class="hidden">
+                <input type="password" id="pass" placeholder="Contraseña" required>
+                <button type="submit" id="mainBtn">Entrar</button>
             </form>
         </div>
     </div>
 
-    <nav class="top-nav">
-        <div class="nav-content">
-            <h2 class="logo" onclick="location.reload()">Dev<b>Root</b></h2>
-            <div class="search-bar">
-                <i class="fa fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Buscar usuarios..." oninput="liveSearch()">
+    <div id="webContent" class="hidden">
+        <nav class="navbar">
+            <div class="logo">Dev<b>Root</b></div>
+            <div class="search">
+                <input type="text" placeholder="Buscar amigos..." oninput="buscarDB(this.value)">
             </div>
-            <div class="user-profile-top" id="topUser">
-                <span id="userNameHeader">Invitado</span>
-                <div class="avatar-mini" id="userAvHeader">?</div>
-                <button onclick="logout()" class="btn-logout"><i class="fa fa-sign-out"></i></button>
+            <div class="user-info" id="me">Cargando...</div>
+        </nav>
+
+        <div class="main-feed" id="feed">
             </div>
-        </div>
-    </nav>
-
-    <div class="main-layout">
-        <aside class="left-bar">
-            <div class="menu-item active"><i class="fa fa-home"></i> <span>Para ti</span></div>
-            <div class="menu-item"><i class="fa fa-users"></i> <span>Siguiendo</span></div>
-            <div class="menu-item"><i class="fa fa-heart"></i> <span>Favoritos</span></div>
-        </aside>
-
-        <main class="feed-container">
-            <div id="feedList">
-                </div>
-        </main>
-
-        <aside class="right-bar">
-            <div class="stats-box">
-                <h4>Tu Perfil</h4>
-                <p id="myBio">Cargando...</p>
-                <div class="stat">
-                    <span>Seguidores</span>
-                    <b id="myFollowers">0</b>
-                </div>
-            </div>
-        </aside>
     </div>
 
-    <script src="script.js"></script>
+    <script src="/app.js"></script>
 </body>
 </html>
