@@ -1,114 +1,111 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ecnhaca | Elite Community</title>
-    
+    <title>Network Hub | Connect</title>
     <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="light-mode">
 
-    <div id="loader" class="splash-layer">
-        <div class="loader-content">
-            <h1 class="logo-anim">ECNHACA</h1>
-            <div class="load-track"><div id="load-bar" class="load-fill"></div></div>
-            <p id="load-text">Sincronizando sistemas de Emmanuel...</p>
-        </div>
+    <div id="boot-loader" class="screen-loader">
+        <div class="spinner"></div>
+        <p>Syncing Infrastructure...</p>
     </div>
 
-    <div id="toast-stack"></div>
+    <section id="view-auth" class="auth-wrapper">
+        <div class="auth-panel animate-fade-in">
+            <div class="auth-branding">
+                <h1>Network Hub</h1>
+                <p>Join the professional developer community</p>
+            </div>
+            
+            <div class="auth-selector">
+                <button id="tab-login" class="active" onclick="setAuthMode('login')">Sign In</button>
+                <button id="tab-register" onclick="setAuthMode('register')">Create Account</button>
+            </div>
 
-    <section id="auth-screen" class="auth-box hide">
-        <div class="auth-card animate-pop">
-            <div class="auth-header">
-                <h2>Ecnhaca</h2>
-                <p>Tu espacio de desarrollo profesional</p>
-            </div>
-            <div class="auth-tabs">
-                <button id="t-login" class="active" onclick="switchAuth('login')">Entrar</button>
-                <button id="t-reg" onclick="switchAuth('reg')">Registrarse</button>
-            </div>
-            <form id="auth-form" onsubmit="handleAuth(event)">
-                <div class="input-group">
-                    <i class="fa fa-user"></i>
-                    <input type="text" id="a-user" placeholder="Usuario" required>
+            <form id="auth-main-form" onsubmit="executeAuth(event)">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="a-user" placeholder="Enter username" required>
                 </div>
-                <div id="email-group" class="input-group hide">
-                    <i class="fa fa-envelope"></i>
-                    <input type="email" id="a-email" placeholder="Email">
+                <div id="email-group" class="form-group hide">
+                    <label>Email Address</label>
+                    <input type="email" id="a-email" placeholder="name@example.com">
                 </div>
-                <div class="input-group">
-                    <i class="fa fa-lock"></i>
-                    <input type="password" id="a-pass" placeholder="Contraseña" required>
+                <div class="form-group">
+                    <label>Security Key</label>
+                    <input type="password" id="a-pass" placeholder="••••••••" required>
                 </div>
-                <button type="submit" id="auth-btn" class="btn-grad">Acceder a Ecnhaca</button>
+                <button type="submit" class="btn-primary-full">Authorize Access</button>
             </form>
         </div>
     </section>
 
-    <div id="app-screen" class="hide">
-        <nav class="navbar-glass">
+    <div id="view-app" class="hide">
+        <nav class="glass-navbar">
             <div class="nav-container">
-                <div class="brand" onclick="changeTab('feed')">Ecnhaca</div>
+                <div class="nav-brand" onclick="navigate('feed')">HUB</div>
                 
-                <div class="search-engine">
+                <div class="search-module">
                     <i class="fa fa-search"></i>
-                    <input type="text" id="main-search" placeholder="Buscar usuarios o bots..." oninput="performSearch(this.value)">
-                    <div id="search-results" class="search-drop hide">
+                    <input type="text" id="global-search" placeholder="Search people, tags or projects..." oninput="handleGlobalSearch(this.value)">
+                    <div id="search-results-panel" class="drop-results hide">
                         </div>
                 </div>
 
-                <div class="nav-right">
-                    <div id="my-av" class="av-nav" onclick="toggleUserMenu()"></div>
-                    <div id="user-menu" class="drop-menu hide">
-                        <div class="menu-item" onclick="changeTab('profile')"><i class="fa fa-user"></i> Perfil</div>
-                        <div class="menu-item logout" onclick="logout()"><i class="fa fa-sign-out-alt"></i> Cerrar Sesión</div>
+                <div class="nav-actions">
+                    <div id="user-trigger" class="profile-pill" onclick="toggleUserDropdown()">
+                        <div id="nav-avatar" class="av-small"></div>
+                        <span id="nav-username">Profile</span>
+                        <i class="fa fa-chevron-down"></i>
+                        
+                        <div id="user-menu" class="menu-dropdown hide">
+                            <div class="menu-link" onclick="navigate('profile')"><i class="fa fa-user-circle"></i> View Profile</div>
+                            <div class="menu-link" onclick="openSettings()"><i class="fa fa-sliders"></i> Configuration</div>
+                            <hr>
+                            <div class="menu-link logout" onclick="processSignOut()"><i class="fa fa-power-off"></i> Exit System</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <main class="content-wrapper">
-            <section id="view-feed" class="tab-view">
-                <div class="feed-header">
-                    <h1>Muro Global</h1>
-                    <p>Últimas publicaciones de todos los usuarios</p>
+        <main class="app-layout">
+            <section id="feed-container" class="content-view">
+                <div class="view-header">
+                    <h2>Global Activity</h2>
+                    <p>Live updates from the developer network</p>
                 </div>
-                <div id="posts-container" class="grid-layout"></div>
-            </section>
-
-            <section id="view-profile" class="tab-view hide">
-                <div id="profile-card-header"></div>
+                <div id="dynamic-grid" class="post-grid"></div>
             </section>
         </main>
 
-        <button class="fab-left" onclick="openPostModal()">
-            <i class="fa fa-pencil-alt"></i>
-            <span>PUBLICAR</span>
+        <button class="fab-action-left" onclick="openNewContentModal()">
+            <i class="fa fa-plus"></i>
+            <span>NEW POST</span>
         </button>
     </div>
 
-    <div id="post-modal" class="modal-overlay hide">
-        <div class="modal-card animate-up">
-            <div class="modal-head">
-                <h3>Nueva Publicación</h3>
-                <button onclick="closePostModal()" class="close-btn">&times;</button>
-            </div>
-            <form onsubmit="submitNewPost(event)">
-                <input type="text" id="p-title" placeholder="Título del proyecto" required>
-                <textarea id="p-desc" placeholder="Descripción del bot o web..." required></textarea>
-                <input type="text" id="p-img" placeholder="URL de la imagen (Opcional)">
-                <select id="p-cat">
-                    <option value="Discord Bot">Discord Bot</option>
-                    <option value="Web Development">Web Development</option>
-                    <option value="Roblox Dev">Roblox Dev</option>
-                    <option value="UI/UX Design">UI/UX Design</option>
+    <div id="modal-creation" class="modal-overlay hide">
+        <div class="modal-card">
+            <h3>Share Project</h3>
+            <form onsubmit="publishContent(event)">
+                <input type="text" id="c-title" placeholder="Project Title" required>
+                <textarea id="c-body" placeholder="Write description or code snippet..." required></textarea>
+                <input type="text" id="c-img" placeholder="Visual asset URL (Optional)">
+                <select id="c-cat">
+                    <option value="DevOps">DevOps</option>
+                    <option value="Frontend">Frontend</option>
+                    <option value="Backend">Backend</option>
+                    <option value="UI Design">UI Design</option>
                 </select>
-                <button type="submit" class="btn-grad">Subir a Ecnhaca</button>
+                <button type="submit" class="btn-confirm">Publish Now</button>
             </form>
+            <button class="btn-cancel" onclick="closeCreationModal()">Discard</button>
         </div>
     </div>
 
