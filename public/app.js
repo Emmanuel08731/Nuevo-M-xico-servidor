@@ -1,229 +1,152 @@
 /**
  * ==========================================================
- * ECNHACA SOCIAL DATA ENGINE v400.0
+ * ECNHACA SOCIAL DATA ENGINE v500.0
+ * CONEXIÓN: RENDER POSTGRESQL API
  * DESARROLLADOR: EMMANUEL
- * PROPÓSITO: CONEXIÓN POSTGRESQL & LÓGICA DE RED SOCIAL
- * PROTOCOLO: WHITE MINIMALIST (DATABASE LAYER)
  * ==========================================================
  */
 
-const API_URL = "/api"; // Tu endpoint en Render
+const API_BASE = "postgresql://base_datos_global_user:mEDJcu2NtduJqv662gaUvOIuPDh1HFi3@dpg-d6u5u3fkijhs73fhh1hg-a.virginia-postgres.render.com/base_datos_global"; // Cambia esto por tu URL de Render
 
-// --- MOTOR DE DATOS SOCIALES ---
-const SOCIAL_ENGINE = {
+const DB = {
     
-    // 1. GESTIÓN DE PUBLICACIONES (POSTS)
-    async createPost(postData) {
+    // 1. REGISTRO / LOGIN REAL
+    async authUser(userData, isRegister) {
+        const endpoint = isRegister ? '/auth/register' : '/auth/login';
         try {
-            const response = await fetch(`${API_URL}/posts`, {
+            const response = await fetch(`${API_BASE}${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(postData)
+                body: JSON.stringify(userData)
             });
-            
-            if (!response.ok) throw new Error("Error al publicar en ECNHACA");
-            
-            const result = await response.json();
-            notify("Publicación compartida con éxito", "success");
-            return result;
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "Error en Auth");
+            return data;
         } catch (err) {
-            console.error("Critical DB Error:", err);
-            notify("No se pudo conectar con la base de datos", "error");
+            this.handleError(err);
             return null;
         }
     },
 
-    async deletePost(postId) {
+    // 2. ENVIAR POST A POSTGRESQL
+    async savePost(postData) {
         try {
-            const response = await fetch(`${API_URL}/posts/${postId}`, {
-                method: 'DELETE'
+            const response = await fetch(`${API_BASE}/posts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(postData)
             });
-            
-            if (response.ok) {
-                notify("Publicación eliminada correctamente", "success");
-                return true;
-            }
+            return await response.json();
         } catch (err) {
-            notify("Error al purgar la publicación", "error");
-            return false;
+            this.handleError("Error al guardar post");
         }
     },
 
-    // 2. SISTEMA DE BÚSQUEDA DUAL (POSTS / USUARIOS)
-    async search(type, query) {
-        const endpoint = type === 'users' ? 'users/search' : 'posts/search';
+    // 3. OBTENER FEED GLOBAL
+    async fetchFeed() {
         try {
-            const response = await fetch(`${API_URL}/${endpoint}?q=${encodeURIComponent(query)}`);
-            const data = await response.json();
-            return data;
+            const response = await fetch(`${API_BASE}/posts`);
+            return await response.json();
         } catch (err) {
-            console.error("Search failed:", err);
             return [];
         }
     },
 
-    // 3. LÓGICA DE SEGUIDORES (FOLLOW SYSTEM)
-    async toggleFollow(targetUserId, isFollowing) {
-        const action = isFollowing ? 'unfollow' : 'follow';
+    // 4. SISTEMA DE SEGUIDORES (FOLLOW)
+    async toggleFollowInDB(targetId, action) {
         try {
-            const response = await fetch(`${API_URL}/users/${action}`, {
+            const response = await fetch(`${API_BASE}/users/follow`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ targetId: targetUserId })
+                body: JSON.stringify({
+                    followerId: STATE.user.id,
+                    targetId: targetId,
+                    type: action // 'follow' o 'unfollow'
+                })
             });
-
-            if (response.ok) {
-                const updatedData = await response.json();
-                // Actualizamos los contadores locales en tiempo real
-                this.updateLocalStats(updatedData.followers, updatedData.following);
-                return true;
-            }
+            return response.ok;
         } catch (err) {
-            notify("Error al actualizar seguimiento", "error");
-            return false;
+            this.handleError("Error de conexión con la DB");
         }
     },
 
-    // 4. ACTUALIZACIÓN DE INTERFAZ (STATS)
-    updateLocalStats(followers, following) {
-        const followersEl = document.getElementById('count-followers');
-        const followingEl = document.getElementById('count-following');
-        
-        if (followersEl) followersEl.innerText = followers;
-        if (followingEl) followingEl.innerText = following;
-        
-        // Sincronizamos con el STATE del script.js
-        STATE.currentUser.followers = followers;
-        STATE.currentUser.following = following;
-    },
-
-    // 5. CARGA DE PERFIL COMPLETO
-    async loadProfileData(username) {
+    // 5. BUSCADOR REAL EN TABLA DE USUARIOS
+    async searchUsers(query) {
         try {
-            const response = await fetch(`${API_URL}/users/profile/${username}`);
-            const profile = await response.json();
-            
-            if (response.ok) {
-                document.getElementById('profile-name').innerText = profile.username;
-                document.getElementById('count-followers').innerText = profile.followers_count;
-                document.getElementById('count-following').innerText = profile.following_count;
-                document.getElementById('count-posts').innerText = profile.posts_count;
-                
-                this.renderProfilePosts(profile.posts);
-            }
+            const response = await fetch(`${API_BASE}/users/search?q=${query}`);
+            return await response.json();
         } catch (err) {
-            console.error("Profile load error:", err);
+            return [];
         }
     },
 
-    renderProfilePosts(posts) {
-        const container = document.getElementById('profile-posts');
-        if (!container) return;
-        
-        container.innerHTML = posts.length > 0 ? '' : '<p class="m-t-20" style="color:#86868b">Aún no hay publicaciones.</p>';
-        
-        posts.forEach(post => {
-            const postEl = document.createElement('div');
-            postEl.className = 'post-card';
-            postEl.innerHTML = `
-                <div class="post-header">
-                    <div class="u-info">
-                        <div class="u-pic">E</div>
-                        <div>
-                            <b>${post.username}</b>
-                            <small>${new Date(post.created_at).toLocaleDateString()} • ${post.topic}</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="post-body">
-                    <h4>${post.title}</h4>
-                    <p>${post.content}</p>
-                </div>
-            `;
-            container.appendChild(postEl);
-        });
+    handleError(msg) {
+        console.error("ECNHACA DB ERROR:", msg);
+        if(typeof notify === 'function') notify(msg, "error");
     }
 };
 
 /**
- * INTEGRACIÓN CON EL FRONTEND (EVENTOS)
- * Emmanuel: Estas funciones conectan el script.js con este app.js
+ * SOBREESCRITURA DE FUNCIONES DEL SCRIPT.JS
+ * Emmanuel: Aquí conectamos la interfaz con la base de datos.
  */
 
-// Sobrescribimos la función de publicación para que use la DB
-async function submitPost() {
-    const title = document.getElementById('post-title').value;
-    const desc = document.getElementById('post-desc').value;
-    const tag = document.getElementById('post-tag').value;
+// Modificamos handleAuth para que sea asíncrono
+async function handleAuth(event) {
+    event.preventDefault();
+    const user = document.getElementById('auth-user').value.trim();
+    const pass = document.getElementById('auth-pass').value.trim();
+    const isReg = !document.getElementById('reg-email-group').classList.contains('hide');
 
-    if (!title || !desc) {
-        notify("Completa los campos obligatorios", "error");
-        return;
+    const result = await DB.authUser({ username: user, password: pass }, isReg);
+
+    if (result) {
+        STATE.user = result.user; // Cargamos ID, seguidores y posts reales desde Render
+        localStorage.setItem('ec_session', JSON.stringify(STATE.user));
+        launchApp();
+        loadInitialFeed();
     }
+}
+
+// Modificamos publishPost para que guarde en la nube
+async function publishPost() {
+    const title = document.getElementById('post-title').value;
+    const content = document.getElementById('post-content').value;
+    const topic = document.getElementById('post-topic').value || "Web Develop";
+
+    if (!title || !content) return;
 
     const payload = {
-        title: title,
-        content: desc,
-        topic: tag || "Web Develop",
-        user_id: STATE.currentUser.id
+        userId: STATE.user.id,
+        title,
+        content,
+        topic
     };
 
-    const success = await SOCIAL_ENGINE.createPost(payload);
+    const saved = await DB.savePost(payload);
     
-    if (success) {
-        // Recargar el feed o insertar el post visualmente
+    if (saved) {
+        // En lugar de recargar, podemos insertar el post arriba
         location.reload(); 
     }
 }
 
-// Sobrescribimos la búsqueda para que sea real
-async function executeSearch() {
-    const type = document.getElementById('search-type').value;
-    const query = document.getElementById('global-search').value.toLowerCase().trim();
-
-    if (!query) return;
-
-    const results = await SOCIAL_ENGINE.search(type, query);
-
-    if (type === 'users') {
-        showView('search-users');
-        const container = document.getElementById('users-result');
-        container.innerHTML = results.map(u => `
-            <div class="user-card">
-                <div class="u-avatar-lg">${u.username.charAt(0).toUpperCase()}</div>
-                <h4>${u.username}</h4>
-                <p>${u.bio || 'Miembro de ECNHACA'}</p>
-                <button class="btn-follow ${u.is_following ? 'active' : ''}" 
-                        onclick="handleFollowClick(this, ${u.id})">
-                    ${u.is_following ? 'Siguiendo' : 'Seguir'}
-                </button>
-            </div>
-        `).join('');
-    } else {
-        // Lógica para mostrar posts encontrados
-        notify(`Encontradas ${results.length} publicaciones`, "success");
-    }
-}
-
-async function handleFollowClick(btn, targetId) {
-    const isCurrentlyFollowing = btn.classList.contains('active');
-    const success = await SOCIAL_ENGINE.toggleFollow(targetId, isCurrentlyFollowing);
+// Cargar posts reales al iniciar
+async function loadInitialFeed() {
+    const posts = await DB.fetchFeed();
+    const container = document.getElementById('feed-container');
     
-    if (success) {
-        btn.classList.toggle('active');
-        btn.innerText = btn.classList.contains('active') ? 'Siguiendo' : 'Seguir';
+    if (posts.length > 0) {
+        container.innerHTML = "";
+        posts.forEach(post => {
+            // Aquí reusamos la lógica de pintar el HTML del post del script.js
+            renderPostCard(post);
+        });
     }
-}
-
-// Inicializar datos al cargar perfil
-if (STATE.view === 'profile') {
-    SOCIAL_ENGINE.loadProfileData(STATE.currentUser.username);
 }
 
 /**
- * FIN DEL ARCHIVO APP.JS
- * Emmanuel, este código está listo para conectarse a tus tablas de:
- * - users (id, username, bio, followers_count, following_count)
- * - posts (id, user_id, title, content, topic, created_at)
- * - follows (follower_id, followed_id)
+ * FIN DE APP.JS
+ * Este archivo es el puente entre tu diseño minimalista 
+ * y el servidor de base de datos en Render.
  */
