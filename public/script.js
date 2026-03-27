@@ -1,160 +1,112 @@
 /**
- * ==========================================================
- * ECNHACA SCRIPT MASTER v150
- * ARCHITECTURE: SINGLE PAGE APPLICATION (SPA)
- * DEVELOPER: EMMANUEL
- * ==========================================================
+ * ECNHACA SCRIPT ENGINE V200
+ * FRONTEND MASTER: EMMANUEL
  */
 
-const APP_STATE = {
-    currentUser: null,
-    activeView: 'dashboard',
-    isLocked: false,
-    logs: [],
-    stats: { users: 0, bots: 12, sales: 0 }
+const UI = {
+    preloader: document.getElementById('preloader'),
+    authView: document.getElementById('auth-view'),
+    appView: document.getElementById('app-view'),
+    toastContainer: document.getElementById('toast-container'),
+    navLinks: document.querySelectorAll('.nav-link'),
+    sections: document.querySelectorAll('.tab-sec')
 };
 
-// --- DOM CACHE ---
-const DOM = {
-    loader: document.getElementById('master-loader'),
-    auth: document.getElementById('view-auth'),
-    app: document.getElementById('view-app'),
-    navItems: document.querySelectorAll('.nav-item'),
-    sections: document.querySelectorAll('.content-sec'),
-    terminalBody: document.getElementById('terminal-body'),
-    toastContainer: document.getElementById('toast-box')
+const STATE = {
+    user: null,
+    activeTab: 'dashboard',
+    lastSync: null,
+    logs: []
 };
 
-// --- INICIALIZACIÓN CRÍTICA ---
-document.addEventListener('DOMContentLoaded', async () => {
-    logSystem("Iniciando secuencia de arranque...");
-    await simulateSystemLoad();
-    checkAuthSession();
+// --- INICIALIZACIÓN ---
+window.addEventListener('DOMContentLoaded', () => {
+    initApp();
+    updateDateTime();
 });
 
-async function simulateSystemLoad() {
-    return new Promise(resolve => {
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += Math.random() * 15;
-            if (progress >= 100) {
-                clearInterval(interval);
-                DOM.loader.style.opacity = '0';
-                setTimeout(() => {
-                    DOM.loader.classList.add('hide');
-                    resolve();
-                }, 500);
-            }
-        }, 100);
-    });
+async function initApp() {
+    console.log("%c [SYSTEM] Iniciando Interfaz White...", "color: #000; font-weight: bold;");
+    
+    // Simular carga profesional
+    setTimeout(() => {
+        UI.preloader.style.opacity = '0';
+        setTimeout(() => UI.preloader.classList.add('hide'), 500);
+        checkSession();
+    }, 1500);
 }
 
-// --- GESTOR DE SESIÓN ---
-function checkAuthSession() {
+function checkSession() {
     const saved = localStorage.getItem('ec_session');
     if (saved) {
-        APP_STATE.currentUser = JSON.parse(saved);
-        logSystem(`Sesión recuperada: ${APP_STATE.currentUser.username}`);
-        launchInterface();
+        STATE.user = JSON.parse(saved);
+        launchApp();
     } else {
-        logSystem("No hay sesión activa. Mostrando Login.");
-        DOM.auth.classList.remove('hide');
+        UI.authView.classList.remove('hide');
     }
 }
 
-function launchInterface() {
-    DOM.auth.classList.add('hide');
-    DOM.app.classList.remove('hide');
+function launchApp() {
+    UI.authView.classList.add('hide');
+    UI.appView.classList.remove('hide');
     
-    // Configurar Perfil
-    document.getElementById('display-name').innerText = APP_STATE.currentUser.username;
-    if (APP_STATE.currentUser.role === 'admin') {
+    document.getElementById('u-display-name').innerText = STATE.user.username;
+    document.getElementById('u-display-role').innerText = STATE.user.role === 'admin' ? 'Master Developer' : 'Usuario';
+    document.getElementById('welcome-name').innerText = STATE.user.username;
+
+    if (STATE.user.role === 'admin') {
         document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hide'));
     }
     
-    switchView('dashboard');
-    showNotification(`Bienvenido de nuevo, ${APP_STATE.currentUser.username}`);
+    showTab('dashboard');
+    notify("Bienvenido a Emmanuel Store", "success");
 }
 
-// --- NAVEGACIÓN SPA ---
-function switchView(viewId) {
-    logSystem(`Cambiando vista a: ${viewId}`);
-    
-    // Actualizar UI de Navegación
-    DOM.navItems.forEach(item => {
-        item.classList.remove('active');
-        if (item.dataset.target === viewId) item.classList.add('active');
-    });
+// --- NAVEGACIÓN ---
+function showTab(tabId) {
+    UI.sections.forEach(sec => sec.classList.add('hide'));
+    UI.navLinks.forEach(link => link.classList.remove('active'));
 
-    // Cambiar Secciones
-    DOM.sections.forEach(sec => {
-        sec.classList.add('hide');
-        if (sec.id === `sec-${viewId}`) sec.classList.remove('hide');
-    });
+    const target = document.getElementById(`tab-${tabId}`);
+    if (target) {
+        target.classList.remove('hide');
+        STATE.activeTab = tabId;
+        logEvent(`Navegación a: ${tabId}`);
+    }
 
-    APP_STATE.activeView = viewId;
-    
-    // Cargas de datos dinámicas
-    if (viewId === 'admin') syncDatabase();
-    if (viewId === 'stats') calculateSchoolStats();
+    const activeBtn = document.querySelector(`[onclick="showTab('${tabId}')"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    if (tabId === 'admin') syncUsers();
 }
 
-// --- SISTEMA DE NOTIFICACIONES ---
-function showNotification(msg, type = 'success') {
+// --- UTILIDADES ---
+function notify(msg, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <i class="fa fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-        <span>${msg}</span>
-    `;
+    toast.innerHTML = `<span>${msg}</span>`;
+    UI.toastContainer.appendChild(toast);
     
-    DOM.toastContainer.appendChild(toast);
     setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(50px)';
-        setTimeout(() => toast.remove(), 400);
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => toast.remove(), 500);
     }, 4000);
 }
 
-// --- LOGS DE SISTEMA (TERMINAL) ---
-function logSystem(msg) {
-    const time = new Date().toLocaleTimeString();
-    const logEntry = `[${time}] ${msg}`;
-    APP_STATE.logs.push(logEntry);
-    
-    if (DOM.terminalBody) {
-        const line = document.createElement('div');
-        line.innerHTML = `<span class="terminal-prompt">></span> ${logEntry}`;
-        DOM.terminalBody.appendChild(line);
-        DOM.terminalBody.scrollTop = DOM.terminalBody.scrollHeight;
-    }
-    console.log(`%c ECNHACA: ${msg}`, 'color: #00f2ff');
+function logEvent(msg) {
+    const log = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    STATE.logs.push(log);
+    // Si la terminal está activa, inyectar allí
 }
 
-// --- SISTEMA DE TAREAS MATEMÁTICAS (MEDIA, MEDIANA, MODA) ---
-function calculateSchoolStats() {
-    logSystem("Calculando estadísticas de rendimiento escolar...");
-    const scores = [85, 90, 78, 92, 88, 85, 95]; // Ejemplo de notas de Emmanuel
-    
-    // Media
-    const sum = scores.reduce((a, b) => a + b, 0);
-    const mean = (sum / scores.length).toFixed(2);
-    
-    // Mediana
-    const sorted = [...scores].sort((a, b) => a - b);
-    const mid = Math.floor(sorted.length / 2);
-    const median = sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-
-    document.getElementById('stat-mean').innerText = mean;
-    document.getElementById('stat-median').innerText = median;
-    logSystem(`Estadísticas listas: Media ${mean}, Mediana ${median}`);
+function updateDateTime() {
+    const el = document.getElementById('current-date');
+    if (el) el.innerText = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 }
 
-// --- CIERRE DE SESIÓN ---
-function performLogout() {
-    logSystem("Cerrando sesión del usuario...");
+function logout() {
     localStorage.removeItem('ec_session');
     location.reload();
 }
 
-// [MÁS FUNCIONES DE VALIDACIÓN DE FORMULARIOS Y MANEJO DE EVENTOS DE TECLADO]
+// [MÁS LÓGICA DE CONTROL DE MODALES Y ANIMACIONES DE INTERFAZ]
