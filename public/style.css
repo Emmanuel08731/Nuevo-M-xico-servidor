@@ -1,231 +1,60 @@
-/* DESIGN SYSTEM BY EMMANUEL STORE
-   ESTILO: TIKTOK DARK & WHITE HYBRID
-*/
+/* DISEÑO EMMANUEL STORE 2026 */
+:root { --main: #fe2c55; --bg: #ffffff; --gray: #f1f1f2; }
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', sans-serif; }
 
-:root {
-    --tiktok-red: #fe2c55;
-    --tiktok-cyan: #25f4ee;
-    --pure-white: #ffffff;
-    --soft-gray: #f1f1f2;
-    --dark-text: #121212;
-    --glass-bg: rgba(255, 255, 255, 0.85);
-    --shadow-pro: 0 8px 30px rgba(0,0,0,0.08);
+body { background: var(--bg); color: #121212; }
+
+.hidden { display: none !important; }
+
+/* PANTALLA DE AUTH */
+.auth-screen {
+    height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: white;
+}
+.card { width: 340px; text-align: center; }
+.card h1 { font-size: 3rem; font-weight: 900; letter-spacing: -2px; }
+.card h1 b { color: var(--main); }
+
+.tabs { display: flex; justify-content: center; gap: 20px; margin: 20px 0; }
+.tabs button { background: none; border: none; font-weight: bold; cursor: pointer; color: #888; }
+.tabs button.active { color: var(--main); border-bottom: 2px solid var(--main); }
+
+input {
+    width: 100%; padding: 14px; margin-bottom: 10px;
+    border: 1px solid #eee; border-radius: 8px; background: var(--gray);
 }
 
-/* RESET GENERAL */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Inter', sans-serif;
-    outline: none;
+#mainBtn {
+    width: 100%; padding: 14px; background: var(--main);
+    color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
 }
 
-body {
-    background-color: var(--pure-white);
-    color: var(--dark-text);
-    overflow-x: hidden;
-    -webkit-font-smoothing: antialiased;
-}
-
-/* BARRA DE NAVEGACIÓN SUPERIOR */
+/* NAVBAR */
 .navbar {
-    height: 65px;
-    background: var(--glass-bg);
-    backdrop-filter: blur(15px);
-    border-bottom: 1px solid var(--soft-gray);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 24px;
-    position: fixed;
-    top: 0;
-    width: 100%;
-    z-index: 1000;
+    position: fixed; top: 0; width: 100%; height: 65px;
+    background: white; border-bottom: 1px solid #eee;
+    display: flex; align-items: center; justify-content: space-between; padding: 0 30px;
+}
+.navbar .logo { font-size: 1.5rem; font-weight: 900; }
+
+.search { background: var(--gray); padding: 8px 15px; border-radius: 50px; width: 300px; }
+.search input { background: none; border: none; margin: 0; padding: 5px; }
+
+/* FEED */
+.main-feed { max-width: 600px; margin: 80px auto; padding: 20px; }
+
+.user-item {
+    display: flex; align-items: center; gap: 15px; padding: 15px;
+    border-bottom: 1px solid var(--gray); animation: slide 0.3s ease;
 }
 
-.brand-logo {
-    font-size: 1.8rem;
-    font-weight: 800;
-    letter-spacing: -1.5px;
-    cursor: pointer;
-    background: linear-gradient(45deg, var(--tiktok-red), var(--tiktok-cyan));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+@keyframes slide { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:0; } }
+
+.av {
+    width: 50px; height: 50px; border-radius: 50%; background: var(--main);
+    display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;
 }
 
-/* BUSCADOR ESTILO TIKTOK */
-.search-wrapper {
-    position: relative;
-    width: 100%;
-    max-width: 450px;
-}
-
-#globalSearch {
-    width: 100%;
-    padding: 12px 24px;
-    border-radius: 50px;
-    border: 1px solid var(--soft-gray);
-    background: var(--soft-gray);
-    font-size: 0.95rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-#globalSearch:focus {
-    background: #fff;
-    border-color: #d1d1d1;
-    width: 110%;
-    box-shadow: var(--shadow-pro);
-}
-
-/* FEED Y CONTENIDO */
-.container {
-    margin-top: 85px;
-    display: flex;
-    justify-content: center;
-    padding: 20px;
-}
-
-.feed-grid {
-    width: 100%;
-    max-width: 600px;
-}
-
-/* TARJETAS DE PERFIL (PRO) */
-.profile-card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    border-bottom: 0.5px solid var(--soft-gray);
-    transition: transform 0.2s ease;
-    cursor: pointer;
-}
-
-.profile-card:hover {
-    background: #fafafa;
-}
-
-.avatar-circle {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 1.3rem;
-    color: #fff;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 2px var(--soft-gray);
-}
-
-.profile-info {
-    flex: 1;
-}
-
-.profile-info h4 {
-    font-weight: 700;
-    font-size: 1.05rem;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.verified-icon {
-    color: #20d5ec;
-    font-size: 0.9rem;
-}
-
-.profile-info p {
-    color: #8a8a8e;
-    font-size: 0.9rem;
-    margin-top: 2px;
-}
-
-/* BOTONES DE ACCIÓN */
-.btn-follow {
-    background: var(--tiktok-red);
-    color: #fff;
-    border: none;
-    padding: 8px 24px;
-    border-radius: 4px;
-    font-weight: 700;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: filter 0.2s;
-}
-
-.btn-follow:hover {
-    filter: brightness(1.1);
-}
-
-.btn-follow.following {
-    background: var(--soft-gray);
-    color: var(--dark-text);
-}
-
-/* MODALES Y FORMULARIOS */
-.auth-wall {
-    position: fixed;
-    inset: 0;
-    background: #fff;
-    z-index: 2000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.auth-form {
-    width: 100%;
-    max-width: 360px;
-    padding: 40px;
-    text-align: center;
-}
-
-.input-group {
-    margin-bottom: 12px;
-    text-align: left;
-}
-
-.input-group label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #555;
-    margin-bottom: 5px;
-    display: block;
-}
-
-.input-group input {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 1rem;
-}
-
-/* ANIMACIONES */
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-up {
-    animation: slideUp 0.5s ease forwards;
-}
-
-/* RESPONSIVE */
-@media (max-width: 600px) {
-    .search-wrapper { display: none; }
-    .navbar { padding: 0 16px; }
-}
-
-/* SCROLLBAR PERSONALIZADA */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
+.u-name { font-weight: bold; font-size: 1.1rem; }
+.u-bio { color: #777; font-size: 0.9rem; }
