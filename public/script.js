@@ -1,240 +1,110 @@
-/**
- * EMMANUEL SOCIAL ENGINE v5.0
- * CLIENT-SIDE INTERACTION LOGIC
- * Desarrollado para: Emmanuel Store
- */
+let currentUser = JSON.parse(localStorage.getItem('emmanuel_session')) || null;
+let mode = 'login';
 
-// --- CONFIGURACIÓN Y ESTADO ---
-const AppState = {
-    user: JSON.parse(localStorage.getItem('emmanuel_user')) || null,
-    isSearching: false,
-    lastQuery: '',
-    apiBase: '/api/social'
-};
-
-// --- INICIALIZADOR ---
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("🔥 Script de Emmanuel Store cargado correctamente");
-    initSocialEngine();
-});
-
-function initSocialEngine() {
-    // Si no hay sesión, mandamos al login (Auth Wall)
-    if (!AppState.user) {
-        showAuthWall();
-    } else {
-        hideAuthWall();
-        updateUIHeader();
-        loadInitialFeed();
+// 1. CONTROL DE ACCESO
+function checkSession() {
+    if (currentUser) {
+        document.getElementById('authWall').classList.add('hidden');
+        renderHeader();
+        loadFeed("");
     }
 }
 
-// --- SISTEMA DE AUTENTICACIÓN ---
-
-/**
- * Registra un nuevo usuario y guarda la sesión en el navegador
- */
-async function handleRegister(event) {
-    event.preventDefault();
-    const btn = event.target.querySelector('button');
-    const originalText = btn.innerText;
+function switchAuth(m) {
+    mode = m;
+    const emailInput = document.getElementById('auth_email');
+    const tabs = document.querySelectorAll('#authTabs button');
     
-    btn.disabled = true;
-    btn.innerText = "Conectando con Postgres...";
+    if (mode === 'register') {
+        emailInput.classList.remove('hidden');
+        tabs[1].classList.add('active');
+        tabs[0].classList.remove('active');
+        document.getElementById('authBtn').innerText = "Crear Cuenta";
+    } else {
+        emailInput.classList.add('hidden');
+        tabs[0].classList.add('active');
+        tabs[1].classList.remove('active');
+        document.getElementById('authBtn').innerText = "Entrar";
+    }
+}
 
-    const formData = new FormData(event.target);
-    const data = Object.fromEntries(formData.entries());
+// 2. REGISTRO Y LOGIN
+async function handleAuth(e) {
+    e.preventDefault();
+    const user = document.getElementById('auth_user').value;
+    const pass = document.getElementById('auth_pass').value;
+    const email = document.getElementById('auth_email').value;
+
+    const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
+    const body = mode === 'login' ? { username: user, password: pass } : { username: user, email, password: pass };
 
     try {
-        const res = await fetch('/api/auth/register', {
+        const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify(body)
         });
-
-        const result = await res.json();
+        const data = await res.json();
 
         if (res.ok) {
-            AppState.user = result.user;
-            localStorage.setItem('emmanuel_user', JSON.stringify(result.user));
-            notify("¡Cuenta creada con éxito!", "success");
-            setTimeout(() => location.reload(), 1000);
+            currentUser = data;
+            localStorage.setItem('emmanuel_session', JSON.stringify(data));
+            location.reload();
         } else {
-            notify(result.error, "error");
-            btn.disabled = false;
-            btn.innerText = originalText;
+            alert(data.error);
         }
-    } catch (err) {
-        notify("Error de red: El servidor no responde", "error");
-        btn.disabled = false;
-        btn.innerText = originalText;
-    }
+    } catch (err) { alert("Error al conectar con el servidor."); }
 }
 
-// --- BUSCADOR TIPO TIKTOK ---
-
-let searchTimeout;
-/**
- * Busca usuarios en tiempo real mientras Emmanuel escribe
- */
-function performSearch(query) {
-    const feed = document.getElementById('mainFeed');
-    AppState.lastQuery = query;
-
-    // Limpiamos el temporizador previo (Debounce)
-    clearTimeout(searchTimeout);
-
-    if (query.trim().length === 0) {
-        return loadInitialFeed();
-    }
-
-    // Esperamos 400ms antes de consultar a Postgres
-    searchTimeout = setTimeout(async () => {
-        feed.innerHTML = '<div class="loader-shimmer">Buscando en la base de datos...</div>';
-        
-        try {
-            const res = await fetch(`/api/social/search?query=${query}`);
-            const users = await res.json();
-            renderUserFeed(users);
-        } catch (err) {
-            console.error("Error en la búsqueda remota");
-        }
-    }, 400);
+// 3. BUSCADOR EN VIVO
+let timer;
+function liveSearch() {
+    clearTimeout(timer);
+    const q = document.getElementById('searchInput').value;
+    timer = setTimeout(() => loadFeed(q), 300);
 }
 
-// --- RENDERIZADO DE INTERFAZ ---
+async function loadFeed(q) {
+    const res = await fetch(`/api/social/search?q=${q}`);
+    const users = await res.json();
+    const feed = document.getElementById('feedList');
+    feed.innerHTML = '';
 
-/**
- * Dibuja las tarjetas de usuario en el feed principal
- */
-function renderUserFeed(users) {
-    const feed = document.getElementById('mainFeed');
-    feed.innerHTML = ''; // Limpiar feed actual
-
-    if (users.length === 0) {
-        feed.innerHTML = `
-            <div class="no-results animate-up">
-                <i class="fa-solid fa-ghost"></i>
-                <p>No encontramos a nadie llamado "${AppState.lastQuery}"</p>
-                <button onclick="loadInitialFeed()" class="btn-retry">Ver sugerencias</button>
+    users.forEach(u => {
+        feed.innerHTML += `
+            <div class="profile-card">
+                <div class="avatar-big" style="background: ${u.color}">${u.username[0].toUpperCase()}</div>
+                <div class="info-profile">
+                    <h4>@${u.username} ${u.is_verified ? '✅' : ''}</h4>
+                    <p>${u.bio}</p>
+                    <small>${u.followers_count} seguidores</small>
+                </div>
+                <button class="btn-follow" onclick="follow(${u.id})">Seguir</button>
             </div>
         `;
-        return;
-    }
-
-    users.forEach((u, index) => {
-        const card = document.createElement('div');
-        card.className = 'profile-card animate-up';
-        card.style.animationDelay = `${index * 0.05}s`;
-
-        // Generamos el HTML de la tarjeta
-        card.innerHTML = `
-            <div class="profile-left">
-                <div class="avatar-circle" style="background: ${u.color}">
-                    ${u.username[0].toUpperCase()}
-                </div>
-                <div class="profile-details">
-                    <h4>
-                        ${u.username} 
-                        ${u.is_verified ? '<i class="fa-solid fa-circle-check verified"></i>' : ''}
-                    </h4>
-                    <p class="bio-text">${u.bio || '¡Soy parte de la red de Emmanuel!'}</p>
-                    <div class="stats-row">
-                        <span><b>${u.followers_count}</b> seguidores</span>
-                    </div>
-                </div>
-            </div>
-            <div class="profile-actions">
-                <button class="btn-follow" id="f-btn-${u.id}" onclick="executeFollow(${u.id})">
-                    Seguir
-                </button>
-            </div>
-        `;
-        feed.appendChild(card);
     });
 }
 
-// --- ACCIONES SOCIALES (DB WRITE) ---
-
-/**
- * Registra la relación de seguimiento en Postgres
- */
-async function executeFollow(targetId) {
-    const btn = document.getElementById(`f-btn-${targetId}`);
-    
-    if (!AppState.user) return notify("Inicia sesión para seguir personas", "info");
-    if (btn.classList.contains('active')) return;
-
-    btn.innerText = "...";
-    
-    try {
-        const res = await fetch('/api/social/follow', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                follower_id: AppState.user.id,
-                following_id: targetId
-            })
-        });
-
-        if (res.ok) {
-            btn.innerText = "Siguiendo";
-            btn.classList.add('active');
-            btn.style.background = "#f1f1f2";
-            btn.style.color = "#000";
-            notify("¡Ahora sigues a este usuario!", "success");
-        } else {
-            notify("No puedes seguirte a ti mismo", "error");
-            btn.innerText = "Seguir";
-        }
-    } catch (err) {
-        notify("Error al conectar con Postgres", "error");
-        btn.innerText = "Seguir";
-    }
+async function follow(id) {
+    const res = await fetch('/api/social/follow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ follower_id: currentUser.id, following_id: id })
+    });
+    if (res.ok) alert("¡Ahora sigues a este usuario!");
 }
 
-// --- UTILIDADES DE UI ---
-
-function updateUIHeader() {
-    const navName = document.getElementById('navUsername');
-    const navAv = document.getElementById('navAvatar');
-    
-    if (navName && AppState.user) {
-        navName.innerText = AppState.user.username;
-        navAv.innerText = AppState.user.username[0].toUpperCase();
-        navAv.style.background = AppState.user.color;
-    }
-}
-
-async function loadInitialFeed() {
-    try {
-        const res = await fetch('/api/social/search?query='); // Carga global
-        const users = await res.json();
-        renderUserFeed(users);
-    } catch (e) {
-        console.log("Error cargando feed inicial");
-    }
-}
-
-function notify(msg, type) {
-    console.log(`[${type.toUpperCase()}] ${msg}`);
-    // Aquí puedes disparar un Toast si lo tienes en el CSS
-    const toast = document.createElement('div');
-    toast.className = `toast-notif ${type} animate-up`;
-    toast.innerText = msg;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
-
-function showAuthWall() {
-    document.getElementById('authWall').classList.remove('hidden');
-}
-
-function hideAuthWall() {
-    document.getElementById('authWall').classList.add('hidden');
+function renderHeader() {
+    document.getElementById('userNameHeader').innerText = currentUser.username;
+    document.getElementById('userAvHeader').innerText = currentUser.username[0].toUpperCase();
+    document.getElementById('userAvHeader').style.background = currentUser.color;
+    document.getElementById('myBio').innerText = currentUser.bio;
+    document.getElementById('myFollowers').innerText = currentUser.followers_count;
 }
 
 function logout() {
-    localStorage.removeItem('emmanuel_user');
+    localStorage.removeItem('emmanuel_session');
     location.reload();
 }
+
+window.onload = checkSession;
