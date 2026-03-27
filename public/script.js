@@ -1,43 +1,39 @@
 /**
- * ECNHACA UX ORCHESTRATOR
- * Manejo de precarga, vistas y notificaciones de Emmanuel Store.
+ * ==============================================================================
+ * NETWORK HUB UI ORCHESTRATOR
+ * ==============================================================================
  */
 
 window.addEventListener('load', () => {
-    let progress = 0;
-    const bar = document.getElementById('load-bar');
-    const text = document.getElementById('load-text');
-
-    const loaderSim = setInterval(() => {
-        progress += Math.random() * 18;
-        if (progress >= 100) {
-            progress = 100;
-            clearInterval(loaderSim);
-            setTimeout(() => {
-                document.getElementById('loader').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('loader').classList.add('hide');
-                    initApp();
-                }, 600);
-            }, 500);
-        }
-        bar.style.width = progress + '%';
-        text.innerText = progress > 60 ? 'Iniciando Red Social...' : 'Sincronizando con la DB de Emmanuel...';
-    }, 200);
+    const loader = document.getElementById('boot-loader');
+    setTimeout(() => {
+        loader.style.opacity = '0';
+        setTimeout(() => {
+            loader.classList.add('hide');
+            validateKernelSession();
+        }, 500);
+    }, 1500);
 });
 
-// SISTEMA DE NOTIFICACIONES (TOASTS)
-function showToast(msg, type = 'success') {
-    const stack = document.getElementById('toast-stack');
-    const toast = document.createElement('div');
-    toast.className = `toast animate-pop ${type}`;
-    toast.innerHTML = `<i class="fa ${type==='success'?'fa-check-circle':'fa-info-circle'}"></i> ${msg}`;
-    stack.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 500);
-    }, 3500);
+function setAuthMode(mode) {
+    const isRegister = mode === 'register';
+    document.getElementById('email-group').classList.toggle('hide', !isRegister);
+    document.getElementById('tab-login').classList.toggle('active', !isRegister);
+    document.getElementById('tab-register').classList.toggle('active', isRegister);
+    window.currentFlow = mode;
 }
 
-// [MÁS DE 700 LÍNEAS DE CONTROLADORES DE MODALES Y EFECTOS DE SCROLL]
+function validateKernelSession() {
+    const session = localStorage.getItem('hub_session');
+    if (session) {
+        document.getElementById('view-auth').classList.add('hide');
+        document.getElementById('view-app').classList.remove('hide');
+        ApplicationCore.init();
+    } else {
+        document.getElementById('view-auth').classList.remove('hide');
+        document.getElementById('view-app').classList.add('hide');
+    }
+}
+
+// [MODAL SYSTEM & NOTIFICATION ENGINE FOR 300 LINES]
 // ...
