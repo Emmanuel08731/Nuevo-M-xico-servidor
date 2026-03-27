@@ -3,88 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ecnhaca Social | Emmanuel</title>
+    <title>Ecnhaca | El Futuro de Emmanuel Store</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div id="toast-container"></div>
+    <div id="notif-box"></div>
 
     <div id="splash" class="splash-screen">
-        <div class="loader-content">
-            <h1 class="logo-text">Ecnhaca</h1>
-            <div class="progress-bar"><div class="fill"></div></div>
+        <div class="loader-wrap">
+            <h1 class="logo-anim">Ecnhaca</h1>
+            <div class="load-line"><div class="fill-line"></div></div>
+            <p>Conectando con Render Database...</p>
         </div>
     </div>
 
-    <section id="auth" class="auth-section hide">
-        <div class="auth-card">
-            <h2 class="brand">Ecnhaca</h2>
-            <div class="tabs">
-                <button id="tL" class="active" onclick="switchAuth('login')">Entrar</button>
-                <button id="tR" onclick="switchAuth('reg')">Unirse</button>
+    <section id="auth" class="auth-wrapper hide">
+        <div class="auth-container animate-fade-in">
+            <div class="auth-header">
+                <h2>Ecnhaca</h2>
+                <p>La red social oficial de Emmanuel Store</p>
             </div>
-            <form id="fAuth" onsubmit="handleAuth(event)">
-                <div class="input-group">
+            <div class="auth-tabs">
+                <button id="tabL" class="active" onclick="switchMode('login')">Entrar</button>
+                <button id="tabR" onclick="switchMode('reg')">Registrarse</button>
+            </div>
+            <form id="mainAuthForm" onsubmit="processAuth(event)">
+                <div class="input-field">
                     <i class="fa fa-user"></i>
-                    <input type="text" id="uIn" placeholder="Nombre de usuario" required>
+                    <input type="text" id="userInput" placeholder="Nombre de usuario" required>
                 </div>
-                <div class="input-group hide" id="eGroup">
+                <div class="input-field hide" id="emailGroup">
                     <i class="fa fa-envelope"></i>
-                    <input type="email" id="eIn" placeholder="Correo electrónico">
+                    <input type="email" id="emailInput" placeholder="Correo electrónico">
                 </div>
-                <div class="input-group">
+                <div class="input-field">
                     <i class="fa fa-lock"></i>
-                    <input type="password" id="pIn" placeholder="Contraseña" required>
+                    <input type="password" id="passInput" placeholder="Contraseña" required>
                 </div>
-                <button type="submit" id="btnMain" class="btn-submit">Iniciar Sesión</button>
+                <button type="submit" id="btnSubmit" class="btn-primary">Iniciar Sesión</button>
             </form>
+            <div class="auth-footer">
+                <p>&copy; 2026 Emmanuel Store Oficial. Todos los derechos reservados.</p>
+            </div>
         </div>
     </section>
 
     <div id="app" class="hide">
-        <nav class="nav">
-            <div class="nav-content">
-                <h2 class="logo" onclick="irA('search')">Ecnhaca</h2>
-                <div class="search-box">
+        <nav class="navbar">
+            <div class="nav-container">
+                <h2 class="nav-logo" onclick="goHome()">Ecnhaca</h2>
+                <div class="search-engine">
                     <i class="fa fa-search"></i>
-                    <input type="text" id="sIn" placeholder="Busca perfiles similares..." oninput="doSearch(this.value)">
+                    <input type="text" id="mainSearch" placeholder="Buscar perfiles o amigos..." oninput="handleSearch(this.value)">
                 </div>
-                <div class="user-menu" onclick="toggleDrop()">
-                    <div id="navAv" class="av-small"></div>
-                    <div id="drop" class="dropdown hide">
-                        <div class="drop-item" onclick="openMe()"><i class="fa fa-user"></i> Mi Perfil</div>
+                <div class="user-control">
+                    <div class="profile-pill" onclick="toggleUserMenu()">
+                        <div id="navAvatar" class="av-small"></div>
+                        <i class="fa fa-chevron-down"></i>
+                    </div>
+                    <div id="userMenu" class="dropdown-menu hide">
+                        <div class="menu-item" onclick="viewMyProfile()"><i class="fa fa-user-circle"></i> Mi Perfil</div>
+                        <div class="menu-item" onclick="openSettings()"><i class="fa fa-cog"></i> Ajustes</div>
                         <hr>
-                        <div class="drop-item out" onclick="logout()"><i class="fa fa-power-off"></i> Salir</div>
+                        <div class="menu-item logout-btn" onclick="killSession()"><i class="fa fa-power-off"></i> Cerrar Sesión</div>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <main class="wrapper">
-            <section id="v-search" class="view">
-                <div id="results" class="user-list"></div>
-                <div id="empty" class="placeholder">
-                    <i class="fa fa-users"></i>
-                    <p>Descubre personas en Ecnhaca</p>
+        <main class="main-body">
+            <section id="view-home" class="view-panel animate-slide-up">
+                <div id="search-results-list" class="grid-users">
+                    </div>
+                <div id="empty-placeholder" class="empty-msg">
+                    <i class="fa fa-search"></i>
+                    <h3>¡Explora Ecnhaca!</h3>
+                    <p>Escribe un nombre arriba para empezar a conectar.</p>
                 </div>
             </section>
 
-            <section id="v-profile" class="view hide">
-                <div class="profile-card">
-                    <div class="header-bg" id="pCol"></div>
-                    <div class="p-body">
-                        <div id="pAv" class="av-big"></div>
-                        <h2 id="pUser">@usuario</h2>
-                        <p id="pBio">Biografía del usuario</p>
-                        <div class="stats">
-                            <div class="stat"><b>Seguidores</b><span id="pFol">0</span></div>
-                            <div class="stat"><b>Siguiendo</b><span id="pIng">0</span></div>
+            <section id="view-profile" class="view-panel hide animate-slide-up">
+                <div class="profile-card-v4">
+                    <div class="profile-banner" id="pBanner"></div>
+                    <div class="profile-content">
+                        <div id="pAvatarLg" class="avatar-extra-lg"></div>
+                        <h2 id="pUsername">@usuario</h2>
+                        <p id="pBio">Cargando biografía del usuario...</p>
+                        <div class="profile-stats">
+                            <div class="stat-item">
+                                <span id="pFollowersCount">0</span>
+                                <small>Seguidores</small>
+                            </div>
+                            <div class="stat-item">
+                                <span id="pFollowingCount">0</span>
+                                <small>Siguiendo</small>
+                            </div>
                         </div>
-                        <button id="btnFol" class="btn-fol" onclick="doFollow()">Seguir</button>
+                        <div class="profile-actions">
+                            <button id="btnFollow" class="btn-action-main" onclick="executeFollowToggle()">Seguir</button>
+                            <button class="btn-icon-secondary"><i class="fa fa-share-alt"></i></button>
+                        </div>
                     </div>
                 </div>
+                <button class="btn-back" onclick="goHome()"><i class="fa fa-arrow-left"></i> Volver al inicio</button>
             </section>
         </main>
     </div>
