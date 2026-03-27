@@ -3,143 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ecnhaca | Red Social de Emmanuel</title>
-    
+    <title>Ecnhaca Social | Emmanuel</title>
     <link rel="stylesheet" href="/style.css">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
+    <div id="toast-container"></div>
+
     <div id="splash" class="splash-screen">
-        <div class="logo-anim">Ecnhaca</div>
-        <div class="loader-bar"></div>
-        <p style="margin-top: 15px; color: #64748b; font-weight: 600;">Cargando experiencia...</p>
+        <div class="loader-content">
+            <h1 class="logo-text">Ecnhaca</h1>
+            <div class="progress-bar"><div class="fill"></div></div>
+        </div>
     </div>
 
-    <section id="auth" class="auth-view hide">
+    <section id="auth" class="auth-section hide">
         <div class="auth-card">
-            <h1 class="brand">Ecnhaca</h1>
-            <div class="auth-nav">
-                <button id="tabL" class="active" onclick="toggleAuth('login')">Entrar</button>
-                <button id="tabR" onclick="toggleAuth('reg')">Unirse</button>
+            <h2 class="brand">Ecnhaca</h2>
+            <div class="tabs">
+                <button id="tL" class="active" onclick="switchAuth('login')">Entrar</button>
+                <button id="tR" onclick="switchAuth('reg')">Unirse</button>
             </div>
-            
             <form id="fAuth" onsubmit="handleAuth(event)">
-                <div class="input-box">
+                <div class="input-group">
                     <i class="fa fa-user"></i>
-                    <input type="text" id="uIn" placeholder="Usuario" required>
+                    <input type="text" id="uIn" placeholder="Nombre de usuario" required>
                 </div>
-                
-                <div class="input-box hide" id="eBox">
+                <div class="input-group hide" id="eGroup">
                     <i class="fa fa-envelope"></i>
                     <input type="email" id="eIn" placeholder="Correo electrónico">
                 </div>
-                
-                <div class="input-box">
+                <div class="input-group">
                     <i class="fa fa-lock"></i>
                     <input type="password" id="pIn" placeholder="Contraseña" required>
                 </div>
-                
-                <button type="submit" class="btn-main" id="btnA">Iniciar Sesión</button>
+                <button type="submit" id="btnMain" class="btn-submit">Iniciar Sesión</button>
             </form>
-            <p style="margin-top: 20px; font-size: 0.8rem; color: #94a3b8;">Emmanuel Store &copy; 2026</p>
         </div>
     </section>
 
     <div id="app" class="hide">
-        
-        <nav class="navbar">
-            <div class="nav-container">
-                <h2 class="logo" onclick="goHome()">Ecnhaca</h2>
-                
-                <div class="search-wrapper">
+        <nav class="nav">
+            <div class="nav-content">
+                <h2 class="logo" onclick="irA('search')">Ecnhaca</h2>
+                <div class="search-box">
                     <i class="fa fa-search"></i>
-                    <input type="text" id="sIn" placeholder="Buscar personas por nombre..." oninput="liveSearch(this.value)">
+                    <input type="text" id="sIn" placeholder="Busca perfiles similares..." oninput="doSearch(this.value)">
                 </div>
-                
-                <div class="user-actions">
-                    <div class="profile-trigger" onclick="toggleDrop()">
-                        <div id="myAvatar" class="av-small">E</div>
-                        <i class="fa fa-chevron-down" style="font-size: 0.7rem; color: #64748b;"></i>
-                    </div>
-                    
+                <div class="user-menu" onclick="toggleDrop()">
+                    <div id="navAv" class="av-small"></div>
                     <div id="drop" class="dropdown hide">
-                        <div class="drop-item" onclick="viewMyProfile()">
-                            <i class="fa fa-user-circle"></i> Mi Perfil
-                        </div>
-                        <div class="drop-item" onclick="switchView('v-settings')">
-                            <i class="fa fa-sliders"></i> Ajustes
-                        </div>
-                        <hr style="margin: 8px 0; border: 0; border-top: 1px solid #eee;">
-                        <div class="drop-item out" onclick="logout()">
-                            <i class="fa fa-power-off"></i> Cerrar Sesión
-                        </div>
+                        <div class="drop-item" onclick="openMe()"><i class="fa fa-user"></i> Mi Perfil</div>
+                        <hr>
+                        <div class="drop-item out" onclick="logout()"><i class="fa fa-power-off"></i> Salir</div>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <main class="main-content">
-            
-            <section id="v-search" class="view animate-up">
-                <div id="search-results" class="results-container">
-                    </div>
-                
-                <div id="empty-state" class="empty-placeholder">
-                    <i class="fa fa-users" style="font-size: 3rem; color: #e2e8f0; margin-bottom: 15px;"></i>
-                    <p>Escribe un nombre para buscar amigos en Ecnhaca</p>
+        <main class="wrapper">
+            <section id="v-search" class="view">
+                <div id="results" class="user-list"></div>
+                <div id="empty" class="placeholder">
+                    <i class="fa fa-users"></i>
+                    <p>Descubre personas en Ecnhaca</p>
                 </div>
             </section>
 
-            <section id="v-profile" class="view hide animate-up">
-                <div class="profile-card-full">
-                    <div class="cover" id="pColor"></div>
-                    <div class="p-info">
-                        <div id="pAv" class="av-huge">?</div>
-                        <h2 id="pUsername">@usuario</h2>
-                        <p id="pBio" class="bio-text">Cargando información del perfil...</p>
-                        
-                        <div class="p-stats">
-                            <div class="s-box">
-                                <b>Seguidores</b>
-                                <span id="pFol">0</span>
-                            </div>
-                            <div class="s-box">
-                                <b>Siguiendo</b>
-                                <span id="pIng">0</span>
-                            </div>
+            <section id="v-profile" class="view hide">
+                <div class="profile-card">
+                    <div class="header-bg" id="pCol"></div>
+                    <div class="p-body">
+                        <div id="pAv" class="av-big"></div>
+                        <h2 id="pUser">@usuario</h2>
+                        <p id="pBio">Biografía del usuario</p>
+                        <div class="stats">
+                            <div class="stat"><b>Seguidores</b><span id="pFol">0</span></div>
+                            <div class="stat"><b>Siguiendo</b><span id="pIng">0</span></div>
                         </div>
-                        
-                        <div class="p-actions">
-                            <button id="btnFollow" class="btn-follow-big" onclick="toggleFollowAction()">
-                                Seguir
-                            </button>
-                            <button class="btn-follow-big" style="background: #f1f5f9; color: #64748b; margin-left: 10px;">
-                                <i class="fa fa-envelope"></i>
-                            </button>
-                        </div>
+                        <button id="btnFol" class="btn-fol" onclick="doFollow()">Seguir</button>
                     </div>
                 </div>
-                <button onclick="goHome()" style="margin-top: 20px; background: none; border: none; color: #6366f1; font-weight: 700; cursor: pointer;">
-                    <i class="fa fa-arrow-left"></i> Volver a la búsqueda
-                </button>
             </section>
-
-            <section id="v-settings" class="view hide animate-up">
-                <div style="background: white; padding: 40px; border-radius: 24px; text-align: center; border: 1px solid #eee;">
-                    <i class="fa fa-tools" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 20px;"></i>
-                    <h2>Ajustes de Cuenta</h2>
-                    <p style="color: #64748b; margin: 15px 0;">Emmanuel, aquí podrás cambiar tu foto y biografía muy pronto.</p>
-                    <button class="btn-main" onclick="goHome()" style="width: auto; padding: 10px 30px;">Entendido</button>
-                </div>
-            </section>
-
         </main>
     </div>
 
     <script src="/script.js"></script>
     <script src="/app.js"></script>
-
 </body>
 </html>
