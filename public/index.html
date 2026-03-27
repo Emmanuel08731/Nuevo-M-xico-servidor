@@ -2,128 +2,73 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ecnhaca | Red de Creadores</title>
+    <title>Ecnhaca | Elite Community</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div id="toast-container"></div>
-
-    <button id="main-fab" class="fab-left hide" onclick="togglePostModal(true)">
-        <i class="fa fa-pencil-alt"></i>
-        <span>Publicar</span>
-    </button>
-
-    <div id="post-modal" class="modal-overlay hide">
-        <div class="modal-box animate-pop">
-            <div class="modal-header">
-                <h2>¿Qué has creado hoy?</h2>
-                <button class="close-btn" onclick="togglePostModal(false)">&times;</button>
-            </div>
-            <form id="newPostForm" onsubmit="submitPost(event)">
-                <div class="form-group">
-                    <label>Título del Proyecto</label>
-                    <input type="text" id="postTitle" placeholder="Ej: Mi nuevo Bot de Discord" required>
-                </div>
-                <div class="form-group">
-                    <label>Descripción detallada</label>
-                    <textarea id="postDesc" placeholder="Explica cómo lo hiciste..." required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>URL de Imagen (Opcional)</label>
-                    <input type="text" id="postImg" placeholder="https://imagen-de-tu-proyecto.png">
-                </div>
-                <div class="form-group">
-                    <label>Categoría</label>
-                    <select id="postCat">
-                        <option value="Dev Discord Bot">Dev Discord Bot</option>
-                        <option value="Web Development">Web Development</option>
-                        <option value="Roblox Dev">Roblox Dev</option>
-                        <option value="Diseño Gráfico">Diseño Gráfico</option>
-                        <option value="Database / API">Database / API</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn-gradient">Publicar Proyecto</button>
-            </form>
+    <div id="loader" class="loader-overlay">
+        <div class="loader-content">
+            <h1 class="logo-load">Ecnhaca</h1>
+            <div class="bar-container"><div class="bar-fill"></div></div>
+            <p>Sincronizando con la red...</p>
         </div>
     </div>
 
-    <section id="auth-screen" class="auth-section">
-        <div class="auth-card animate-fade">
-            <div class="auth-logo">Ecnhaca</div>
-            <div class="auth-tabs">
-                <button id="loginTab" class="active" onclick="setAuthMode('login')">Entrar</button>
-                <button id="regTab" onclick="setAuthMode('reg')">Crear Cuenta</button>
-            </div>
-            
-            <form id="authForm" onsubmit="handleAuth(event)">
-                <div class="input-box">
-                    <i class="fa fa-user"></i>
-                    <input type="text" id="authUser" placeholder="Nombre de usuario" required>
-                </div>
-                <div id="emailBox" class="input-box hide">
-                    <i class="fa fa-envelope"></i>
-                    <input type="email" id="authEmail" placeholder="Correo electrónico">
-                </div>
-                <div class="input-box">
-                    <i class="fa fa-lock"></i>
-                    <input type="password" id="authPass" placeholder="Contraseña segura" required>
-                </div>
-                <button type="submit" id="authBtn" class="btn-gradient">Acceder a Ecnhaca</button>
+    <button id="fab" class="fab hide" onclick="openModal()"><i class="fa fa-plus"></i></button>
+    <div id="modal" class="modal hide">
+        <div class="modal-card animate-up">
+            <h3>Crear Publicación</h3>
+            <form id="pForm" onsubmit="createPost(event)">
+                <input type="text" id="pT" placeholder="Título" required>
+                <textarea id="pD" placeholder="Descripción..."></textarea>
+                <input type="text" id="pI" placeholder="URL Imagen">
+                <select id="pC">
+                    <option>Dev Discord Bot</option>
+                    <option>Web Design</option>
+                    <option>Roblox Assets</option>
+                </select>
+                <button type="submit" class="btn-main">Subir Ahora</button>
             </form>
-            <p class="auth-footer">Protección de datos activa &copy; 2026</p>
+            <button onclick="closeModal()" class="btn-close">Cancelar</button>
+        </div>
+    </div>
+
+    <section id="auth" class="auth-box hide">
+        <div class="glass-card">
+            <h2>Ecnhaca</h2>
+            <div class="tabs">
+                <button id="tL" class="act" onclick="toggleAuth('L')">Entrar</button>
+                <button id="tR" onclick="toggleAuth('R')">Registro</button>
+            </div>
+            <form onsubmit="handleAuth(event)">
+                <input type="text" id="aU" placeholder="Usuario" required>
+                <input type="email" id="aE" class="hide" placeholder="Email">
+                <input type="password" id="aP" placeholder="Contraseña" required>
+                <button type="submit" class="btn-main">Continuar</button>
+            </form>
         </div>
     </section>
 
-    <div id="app-screen" class="hide">
-        <nav class="navbar">
-            <div class="nav-content">
-                <div class="brand" onclick="changeView('feed')">Ecnhaca</div>
-                <div class="search-engine">
+    <div id="app" class="hide">
+        <nav class="glass-nav">
+            <div class="nav-in">
+                <div class="brand" onclick="goHome()">Ecnhaca</div>
+                <div class="search-box">
                     <i class="fa fa-search"></i>
-                    <input type="text" placeholder="Buscar creadores o código..." oninput="liveSearch(this.value)">
+                    <input type="text" id="sIn" placeholder="Buscar usuarios o contenido..." oninput="doSearch(this.value)">
+                    <div id="sRes" class="search-results hide"></div>
                 </div>
-                <div class="user-pill" onclick="toggleNavMenu()">
-                    <div id="navAv" class="avatar-sm"></div>
-                    <div id="navMenu" class="drop-menu hide">
-                        <div class="menu-item" onclick="viewMyProfile()"><i class="fa fa-user"></i> Perfil</div>
-                        <div class="menu-item out" onclick="logout()"><i class="fa fa-sign-out-alt"></i> Cerrar Sesión</div>
-                    </div>
+                <div class="nav-right">
+                    <div id="myAv" class="av-nav" onclick="toggleUserMenu()"></div>
                 </div>
             </div>
         </nav>
 
-        <main class="content-wrapper">
-            <section id="view-feed" class="view">
-                <div class="feed-header">
-                    <h1>Descubre Proyectos</h1>
-                    <p>Las últimas creaciones de la comunidad Ecnhaca</p>
+        <main class="main-content">
+            <div id="feed" class="post-wall">
                 </div>
-                <div id="posts-container" class="posts-grid"></div>
-            </section>
-
-            <section id="view-search" class="view hide">
-                <div id="search-results" class="user-grid"></div>
-            </section>
-
-            <section id="view-profile" class="view hide">
-                <div class="profile-header">
-                    <div id="profileBanner" class="banner-gradient"></div>
-                    <div class="profile-meta">
-                        <div id="profileAv" class="avatar-xl"></div>
-                        <h2 id="profileName">@username</h2>
-                        <p id="profileBio">Biografía del usuario de Ecnhaca.</p>
-                        <div class="profile-stats">
-                            <div class="stat"><b>Seguidores</b><span id="statFol">0</span></div>
-                            <div class="stat"><b>Siguiendo</b><span id="statIng">0</span></div>
-                        </div>
-                        <button id="followBtn" class="btn-follow" onclick="processFollow()">Seguir</button>
-                    </div>
-                </div>
-            </section>
         </main>
     </div>
 
