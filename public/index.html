@@ -2,104 +2,160 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Ecnhaca | Elite Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ecnhaca | Platform</title>
     
     <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body class="light-mode">
+<body>
 
-    <div id="system-boot" class="boot-layer">
-        <div class="boot-container">
-            <div class="logo-text">ECNHACA</div>
-            <div class="loader-track"><div id="boot-progress" class="loader-fill"></div></div>
-            <p id="boot-status">Inicializando núcleo de seguridad...</p>
+    <div id="splash-screen" class="splash">
+        <div class="splash-box">
+            <h1 class="logo-text">ECNHACA</h1>
+            <div class="bar-container">
+                <div id="progress-bar" class="bar-fill"></div>
+            </div>
+            <p id="status-text">Cargando base de datos...</p>
         </div>
     </div>
 
-    <div id="toast-container"></div>
+    <div id="toast-stack" class="toasts"></div>
 
-    <section id="auth-view" class="auth-wrapper">
-        <div class="auth-card animate-slide-up">
-            <header class="auth-header">
+    <section id="auth-screen" class="auth-view hide">
+        <div class="auth-card">
+            <div class="auth-header">
                 <h2>Identificación</h2>
-                <p>Inicia sesión para acceder a la red Ecnhaca</p>
-            </header>
-
+                <p>Bienvenido a la red profesional Ecnhaca</p>
+            </div>
+            
             <div class="auth-tabs">
-                <button id="tab-login" class="active" onclick="toggleAuth('login')">Entrar</button>
-                <button id="tab-register" onclick="toggleAuth('register')">Registrarse</button>
+                <button id="tab-login" class="active" onclick="switchAuth('login')">Entrar</button>
+                <button id="tab-reg" onclick="switchAuth('reg')">Registrarse</button>
             </div>
 
-            <form id="auth-form" onsubmit="handleAuthSubmit(event)">
-                <div class="input-field">
-                    <label>Nombre de usuario</label>
-                    <div class="input-box">
+            <form id="auth-form" onsubmit="handleAuth(event)">
+                <div class="input-group">
+                    <label>Usuario</label>
+                    <div class="field">
                         <i class="fa fa-user"></i>
-                        <input type="text" id="a-user" placeholder="ej. usuario123" required>
+                        <input type="text" id="a-user" placeholder="Tu nombre de usuario" required>
                     </div>
                 </div>
-                <div id="email-group" class="input-field hide">
-                    <label>Correo electrónico</label>
-                    <div class="input-box">
-                        <i class="fa fa-envelope"></i>
-                        <input type="email" id="a-email" placeholder="email@ecnhaca.com">
+                
+                <div id="reg-fields" class="hide">
+                    <div class="input-group">
+                        <label>Correo Electrónico</label>
+                        <div class="field">
+                            <i class="fa fa-envelope"></i>
+                            <input type="email" id="a-email" placeholder="email@ejemplo.com">
+                        </div>
                     </div>
                 </div>
-                <div class="input-field">
+
+                <div class="input-group">
                     <label>Contraseña</label>
-                    <div class="input-box">
+                    <div class="field">
                         <i class="fa fa-lock"></i>
                         <input type="password" id="a-pass" placeholder="••••••••" required>
                     </div>
                 </div>
-                <button type="submit" id="btn-auth-action" class="btn-main">Acceder al Sistema</button>
+
+                <button type="submit" id="auth-submit-btn" class="btn-primary">Continuar</button>
             </form>
+            <div class="auth-footer">
+                <p>Al continuar, aceptas nuestros términos de servicio.</p>
+            </div>
         </div>
     </section>
 
-    <div id="app-view" class="hide">
+    <div id="app-screen" class="app-view hide">
+        
         <nav class="navbar">
-            <div class="nav-inner">
-                <div class="nav-logo" onclick="appNavigator.goHome()">ECNHACA</div>
+            <div class="nav-container">
+                <div class="nav-logo" onclick="goHome()">ECNHACA</div>
                 
-                <div class="search-module">
+                <div class="search-engine">
                     <i class="fa fa-search"></i>
-                    <input type="text" id="global-search" placeholder="Buscar perfiles o proyectos..." oninput="appSearch.execute(this.value)">
-                    <div id="search-dropdown" class="search-res-drop hide">
+                    <input type="text" id="main-search" placeholder="Buscar perfiles o contenido..." oninput="handleSearch(this.value)">
+                    
+                    <div id="search-results" class="search-dropdown hide">
+                        <div class="search-section">
+                            <h4>Personas</h4>
+                            <div id="users-results"></div>
                         </div>
+                        <div class="search-section">
+                            <h4>Contenido</h4>
+                            <div id="posts-results"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="nav-profile">
-                    <div id="profile-trigger" class="profile-btn" onclick="uiControl.toggleMenu()">
-                        <div id="me-avatar" class="av-circle"></div>
-                        <i class="fa fa-chevron-down"></i>
-                    </div>
-                    <div id="me-menu" class="drop-menu hide">
-                        <div class="menu-item" onclick="appNavigator.goProfile()"><i class="fa fa-user"></i> Mi Perfil</div>
-                        <div class="menu-item logout" onclick="authManager.logout()"><i class="fa fa-power-off"></i> Cerrar Sesión</div>
+                    <div id="my-avatar" class="avatar-nav" onclick="toggleMenu()"></div>
+                    <div id="drop-menu" class="dropdown hide">
+                        <div class="menu-item" onclick="openProfileTab()"><i class="fa fa-user"></i> Mi Perfil</div>
+                        <div class="menu-item" onclick="openSettings()"><i class="fa fa-cog"></i> Ajustes</div>
+                        <hr>
+                        <div class="menu-item logout" onclick="logout()"><i class="fa fa-sign-out-alt"></i> Cerrar Sesión</div>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <main class="app-content">
-            <section id="feed-section" class="active-tab">
-                <header class="content-header">
-                    <h1>Actividad Global</h1>
-                    <p>Contenido actualizado de la red profesional</p>
-                </header>
-                <div id="publications-grid" class="grid-layout">
+        <main class="main-content">
+            
+            <section id="view-feed" class="tab-view">
+                <div class="view-header">
+                    <h1>Muro Global</h1>
+                    <p>Descubre lo que la comunidad está creando hoy</p>
+                </div>
+                <div id="posts-feed" class="post-grid">
                     </div>
             </section>
+
+            <section id="view-profile" class="tab-view hide">
+                <div id="profile-render">
+                    </div>
+            </section>
+
         </main>
 
-        <button class="fab-btn-left" onclick="uiControl.openPostModal()">
+        <button class="fab-btn" onclick="openPostModal()">
             <i class="fa fa-plus"></i>
-            <span>NUEVO</span>
+            <span>CREAR</span>
         </button>
+
+    </div>
+
+    <div id="post-modal" class="modal-overlay hide">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Nueva Publicación</h3>
+                <button onclick="closePostModal()" class="close-btn">&times;</button>
+            </div>
+            <form id="create-post-form" onsubmit="submitPost(event)">
+                <div class="modal-body">
+                    <input type="text" id="p-title" placeholder="Título de tu proyecto" required>
+                    <textarea id="p-content" placeholder="Escribe aquí los detalles del bot o página web..." required></textarea>
+                    
+                    <div class="form-row">
+                        <select id="p-cat">
+                            <option value="Discord Bot">Discord Bot</option>
+                            <option value="Web Design">Web Design</option>
+                            <option value="Database">Database</option>
+                            <option value="Script">Script</option>
+                        </select>
+                        <input type="text" id="p-img" placeholder="URL de la imagen (Opcional)">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="closePostModal()" class="btn-sec">Cancelar</button>
+                    <button type="submit" class="btn-primary">Publicar en Ecnhaca</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="/script.js"></script>
