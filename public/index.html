@@ -2,83 +2,184 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>ECNHACA V125 | Master Terminal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECNHACA v140 | Titanium Enterprise</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="theme-dark">
 
-    <div id="boot-loader" class="boot-loader">
-        <div class="terminal-loader">
-            <div id="boot-text">Sincronizando con Emmanuel Store...</div>
-            <div class="progress-bar"><div id="progress-fill"></div></div>
+    <div id="master-loader" class="master-loader">
+        <div class="loader-content">
+            <div class="glitch-logo">ECNHACA <span>OS</span></div>
+            <div class="loading-bar-container">
+                <div id="loading-fill" class="loading-fill"></div>
+            </div>
+            <div id="loader-status" class="loader-status">INICIALIZANDO PROTOCOLOS...</div>
         </div>
     </div>
 
-    <div id="toast-wrapper"></div>
+    <div id="notification-area" class="toast-container"></div>
 
-    <section id="auth-view" class="view-center hide">
-        <div class="auth-card">
-            <h1>ECN<span>HACA</span></h1>
-            <div class="auth-tabs">
-                <button id="tab-login" class="active" onclick="setAuthMode('login')">LOGIN</button>
-                <button id="tab-reg" onclick="setAuthMode('reg')">REGISTRO</button>
+    <section id="view-auth" class="auth-wrapper hide">
+        <div class="auth-glass-card">
+            <header class="auth-header">
+                <h2>MASTER <span>ACCESS</span></h2>
+                <p>Identificación requerida para Emmanuel Store</p>
+            </header>
+
+            <div class="auth-toggle">
+                <button id="tab-login" class="t-btn active" onclick="switchAuth('login')">LOGIN</button>
+                <button id="tab-reg" class="t-btn" onclick="switchAuth('reg')">NUEVA CUENTA</button>
             </div>
-            <form id="auth-form" onsubmit="handleAuth(event)">
-                <input type="text" id="auth-user" placeholder="Nombre de Usuario" required>
-                <input type="email" id="auth-email" class="hide" placeholder="correo@gmail.com">
-                <input type="password" id="auth-pass" placeholder="Contraseña Master" required>
-                <button type="submit" class="btn-glow">ACCEDER AL NÚCLEO</button>
+
+            <form id="main-auth-form" class="auth-form" onsubmit="executeAuth(event)">
+                <div class="field-box">
+                    <label><i class="fa fa-user"></i> Usuario</label>
+                    <input type="text" id="inp-user" placeholder="Dev_Emmanuel" required>
+                </div>
+
+                <div id="email-field" class="field-box hide">
+                    <label><i class="fa fa-envelope"></i> Email Corporativo</label>
+                    <input type="email" id="inp-email" placeholder="admin@emmanuel.store">
+                </div>
+
+                <div class="field-box">
+                    <label><i class="fa fa-lock"></i> Llave de Acceso</label>
+                    <input type="password" id="inp-pass" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="btn-primary-glow">
+                    <span>INICIAR SESIÓN</span>
+                    <i class="fa fa-arrow-right"></i>
+                </button>
             </form>
         </div>
     </section>
 
-    <main id="app-view" class="app-layout hide">
-        <aside class="sidebar">
-            <div class="brand">ECNHACA v125</div>
-            <nav>
-                <div class="nav-link active" onclick="nav('dashboard')"><i class="fa fa-home"></i> Dashboard</div>
-                <div class="nav-link" onclick="nav('feed')"><i class="fa fa-rss"></i> Global Feed</div>
-                <div id="admin-nav" class="nav-link admin-only hide" onclick="nav('admin')"><i class="fa fa-shield-halved"></i> MASTER PANEL</div>
-            </nav>
-            <div class="user-card-small">
-                <div id="u-av" class="av">E</div>
-                <div class="u-info"><span id="u-name">Emmanuel</span><small id="u-role">Admin</small></div>
+    <div id="view-app" class="app-layout hide">
+        
+        <aside class="sidebar-main">
+            <div class="sidebar-brand">
+                <div class="brand-icon">E</div>
+                <div class="brand-text">ECNHACA <span>v140</span></div>
             </div>
-            <button class="logout" onclick="logout()">LOGOUT</button>
+
+            <nav class="sidebar-nav">
+                <div class="nav-label">Módulos Principales</div>
+                <button class="nav-item active" onclick="changeTab('dashboard')">
+                    <i class="fa fa-chart-line"></i> Dashboard
+                </button>
+                <button class="nav-item" onclick="changeTab('store')">
+                    <i class="fa fa-shopping-bag"></i> Store Assets
+                </button>
+                <button class="nav-item" onclick="changeTab('feed')">
+                    <i class="fa fa-broadcast-tower"></i> Global Feed
+                </button>
+
+                <div class="nav-label admin-label hide">Administración</div>
+                <button id="nav-admin" class="nav-item admin-only hide" onclick="changeTab('admin-panel')">
+                    <i class="fa fa-user-shield"></i> Master Control
+                </button>
+                <button class="nav-item" onclick="changeTab('terminal')">
+                    <i class="fa fa-terminal"></i> Terminal CMD
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-pill">
+                    <div id="user-avatar" class="u-av">E</div>
+                    <div class="u-details">
+                        <span id="user-display-name">Emmanuel</span>
+                        <small id="user-display-role">Root Admin</small>
+                    </div>
+                </div>
+                <button class="btn-logout" onclick="performLogout()">
+                    <i class="fa fa-power-off"></i> Cerrar Sesión
+                </button>
+            </div>
         </aside>
 
-        <section class="content-area">
-            <header class="top-bar">
-                <div class="search-box">
-                    <i class="fa fa-search"></i>
-                    <input type="text" placeholder="Buscar en la red..." oninput="globalSearch()">
+        <main class="content-wrapper">
+            
+            <section id="tab-dashboard" class="tab-content">
+                <div class="header-main">
+                    <h1>Resumen de Operaciones</h1>
+                    <p>Métricas en tiempo real de Emmanuel Store.</p>
                 </div>
-            </header>
+                
+                <div class="bento-grid">
+                    <div class="bento-item stat-card blue">
+                        <i class="fa fa-users"></i>
+                        <div class="val" id="stat-total-users">0</div>
+                        <div class="lab">Usuarios Registrados</div>
+                    </div>
+                    <div class="bento-item stat-card green">
+                        <i class="fa fa-server"></i>
+                        <div class="val">Active</div>
+                        <div class="lab">Estado Render</div>
+                    </div>
+                    <div class="bento-item stat-card purple">
+                        <i class="fa fa-code-branch"></i>
+                        <div class="val">v140.2</div>
+                        <div class="lab">Versión del Núcleo</div>
+                    </div>
+                </div>
+            </section>
 
-            <div id="sec-dashboard" class="sec">
-                <h2>Bienvenido al Centro de Control</h2>
-                <div class="stats-grid">
-                    <div class="stat-item"><h3>Users</h3><p id="st-users">0</p></div>
-                    <div class="stat-item"><h3>Posts</h3><p id="st-posts">0</p></div>
+            <section id="tab-admin-panel" class="tab-content hide">
+                <div class="header-main">
+                    <h1>Base de Datos PostgreSQL</h1>
+                    <p>Gestión directa de usuarios por ID, Nombre o Gmail.</p>
                 </div>
-            </div>
 
-            <section id="sec-admin" class="sec hide">
-                <h2>Terminal de Usuarios</h2>
-                <div class="admin-search">
-                    <input type="text" id="admin-q" placeholder="Buscar por ID, Nombre o Gmail..." oninput="filterAdminUsers()">
+                <div class="admin-toolbar">
+                    <div class="master-search-box">
+                        <i class="fa fa-search"></i>
+                        <input type="text" id="admin-search-input" placeholder="Buscar por UID, Usuario o Email..." oninput="filterAdminDatabase()">
+                    </div>
+                    <button class="btn-refresh" onclick="syncAdminData()">
+                        <i class="fa fa-sync"></i> Sincronizar
+                    </button>
                 </div>
-                <div class="table-container">
-                    <table class="master-table">
-                        <thead><tr><th>ID</th><th>Usuario</th><th>Email</th><th>Rol</th><th>Acción</th></tr></thead>
-                        <tbody id="admin-tbody"></tbody>
+
+                <div class="table-container-master">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th># ID</th>
+                                <th>IDENTIDAD</th>
+                                <th>CONTACTO</th>
+                                <th>RANGO</th>
+                                <th>ACCIONES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body">
+                            </tbody>
                     </table>
                 </div>
             </section>
-            
+
+            <section id="tab-terminal" class="tab-content hide">
+                <div class="terminal-container">
+                    <div class="terminal-header">
+                        <div class="dots"><span></span><span></span><span></span></div>
+                        <div class="term-title">emmanuel@ecnhaca-os: ~</div>
+                    </div>
+                    <div id="terminal-body" class="terminal-body">
+                        <div class="line">Sistema ECNHACA v140.0.0 listo.</div>
+                        <div class="line">Escribe 'help' para ver los comandos disponibles.</div>
+                    </div>
+                    <div class="terminal-input-line">
+                        <span class="prompt">>></span>
+                        <input type="text" id="term-input" autofocus>
+                    </div>
+                </div>
             </section>
-    </main>
+
+            </main>
+    </div>
 
     <script src="script.js"></script>
     <script src="app.js"></script>
