@@ -1,273 +1,229 @@
 /**
  * ==========================================================
- * ECNHACA DATA ENGINE v300.0
+ * ECNHACA SOCIAL DATA ENGINE v400.0
  * DESARROLLADOR: EMMANUEL
- * PROPÓSITO: GESTIÓN DE DATOS, API FETCH Y POSTGRESQL
+ * PROPÓSITO: CONEXIÓN POSTGRESQL & LÓGICA DE RED SOCIAL
  * PROTOCOLO: WHITE MINIMALIST (DATABASE LAYER)
  * ==========================================================
  */
 
-// --- CONFIGURACIÓN DE ENDPOINTS ---
-const API_BASE = "/api";
-const ENDPOINTS = {
-    AUTH_LOGIN: `${API_BASE}/auth/login`,
-    AUTH_REG: `${API_BASE}/auth/register`,
-    ADMIN_USERS: `${API_BASE}/admin/users`,
-    PRODUCTS: `${API_BASE}/products`,
-    DB_STATUS: `${API_BASE}/status`
-};
+const API_URL = "/api"; // Tu endpoint en Render
 
-// --- CACHÉ LOCAL DE DATOS MASTER ---
-let MASTER_CACHE = {
-    users: [],
-    products: [],
-    logs: [],
-    stats: {
-        totalUsers: 0,
-        totalSales: 0,
-        dbLatency: 0
-    }
-};
-
-/**
- * 1. GESTIÓN DE AUTENTICACIÓN (LOGIN & REGISTER)
- * Emmanuel: Aquí enviamos los datos al backend de Node.js.
- */
-async function handleAuthAction(event) {
-    event.preventDefault();
+// --- MOTOR DE DATOS SOCIALES ---
+const SOCIAL_ENGINE = {
     
-    const isRegister = !document.getElementById('group-email').classList.contains('hide');
-    const endpoint = isRegister ? ENDPOINTS.AUTH_REG : ENDPOINTS.AUTH_LOGIN;
-    
-    const payload = {
-        username: document.getElementById('auth-user').value.trim(),
-        password: document.getElementById('auth-pass').value.trim()
-    };
-
-    if (isRegister) {
-        payload.email = document.getElementById('auth-email').value.trim();
-    }
-
-    try {
-        logData(`Iniciando petición a ${endpoint}...`);
-        
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            // Guardar sesión y redirigir
-            localStorage.setItem('ec_session', JSON.stringify(result.user));
-            notify(isRegister ? "Cuenta creada con éxito." : "Acceso concedido.", "success");
+    // 1. GESTIÓN DE PUBLICACIONES (POSTS)
+    async createPost(postData) {
+        try {
+            const response = await fetch(`${API_URL}/posts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(postData)
+            });
             
-            setTimeout(() => {
-                location.reload(); // Recargar para entrar al Dashboard
-            }, 1000);
-        } else {
-            notify(result.error || "Error en la autenticación.", "error");
-            logError(result.error);
+            if (!response.ok) throw new Error("Error al publicar en ECNHACA");
+            
+            const result = await response.json();
+            notify("Publicación compartida con éxito", "success");
+            return result;
+        } catch (err) {
+            console.error("Critical DB Error:", err);
+            notify("No se pudo conectar con la base de datos", "error");
+            return null;
         }
-    } catch (error) {
-        notify("No se pudo conectar con el servidor de Render.", "error");
-        logError(error);
+    },
+
+    async deletePost(postId) {
+        try {
+            const response = await fetch(`${API_URL}/posts/${postId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                notify("Publicación eliminada correctamente", "success");
+                return true;
+            }
+        } catch (err) {
+            notify("Error al purgar la publicación", "error");
+            return false;
+        }
+    },
+
+    // 2. SISTEMA DE BÚSQUEDA DUAL (POSTS / USUARIOS)
+    async search(type, query) {
+        const endpoint = type === 'users' ? 'users/search' : 'posts/search';
+        try {
+            const response = await fetch(`${API_URL}/${endpoint}?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            return data;
+        } catch (err) {
+            console.error("Search failed:", err);
+            return [];
+        }
+    },
+
+    // 3. LÓGICA DE SEGUIDORES (FOLLOW SYSTEM)
+    async toggleFollow(targetUserId, isFollowing) {
+        const action = isFollowing ? 'unfollow' : 'follow';
+        try {
+            const response = await fetch(`${API_URL}/users/${action}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetId: targetUserId })
+            });
+
+            if (response.ok) {
+                const updatedData = await response.json();
+                // Actualizamos los contadores locales en tiempo real
+                this.updateLocalStats(updatedData.followers, updatedData.following);
+                return true;
+            }
+        } catch (err) {
+            notify("Error al actualizar seguimiento", "error");
+            return false;
+        }
+    },
+
+    // 4. ACTUALIZACIÓN DE INTERFAZ (STATS)
+    updateLocalStats(followers, following) {
+        const followersEl = document.getElementById('count-followers');
+        const followingEl = document.getElementById('count-following');
+        
+        if (followersEl) followersEl.innerText = followers;
+        if (followingEl) followingEl.innerText = following;
+        
+        // Sincronizamos con el STATE del script.js
+        STATE.currentUser.followers = followers;
+        STATE.currentUser.following = following;
+    },
+
+    // 5. CARGA DE PERFIL COMPLETO
+    async loadProfileData(username) {
+        try {
+            const response = await fetch(`${API_URL}/users/profile/${username}`);
+            const profile = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('profile-name').innerText = profile.username;
+                document.getElementById('count-followers').innerText = profile.followers_count;
+                document.getElementById('count-following').innerText = profile.following_count;
+                document.getElementById('count-posts').innerText = profile.posts_count;
+                
+                this.renderProfilePosts(profile.posts);
+            }
+        } catch (err) {
+            console.error("Profile load error:", err);
+        }
+    },
+
+    renderProfilePosts(posts) {
+        const container = document.getElementById('profile-posts');
+        if (!container) return;
+        
+        container.innerHTML = posts.length > 0 ? '' : '<p class="m-t-20" style="color:#86868b">Aún no hay publicaciones.</p>';
+        
+        posts.forEach(post => {
+            const postEl = document.createElement('div');
+            postEl.className = 'post-card';
+            postEl.innerHTML = `
+                <div class="post-header">
+                    <div class="u-info">
+                        <div class="u-pic">E</div>
+                        <div>
+                            <b>${post.username}</b>
+                            <small>${new Date(post.created_at).toLocaleDateString()} • ${post.topic}</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="post-body">
+                    <h4>${post.title}</h4>
+                    <p>${post.content}</p>
+                </div>
+            `;
+            container.appendChild(postEl);
+        });
     }
-}
+};
 
 /**
- * 2. BUSCADOR MASTER (EMMANUEL EXCLUSIVE)
- * Sincroniza y filtra la base de datos de usuarios en tiempo real.
+ * INTEGRACIÓN CON EL FRONTEND (EVENTOS)
+ * Emmanuel: Estas funciones conectan el script.js con este app.js
  */
-async function syncMasterDatabase() {
-    const tableBody = document.getElementById('master-table-body');
-    if (!tableBody) return;
 
-    tableBody.innerHTML = `
-        <tr>
-            <td colspan="6" style="text-align: center; padding: 50px;">
-                <i class="fa fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 15px; color: #86868b;"></i>
-                <p style="font-weight: 600; color: #86868b;">Consultando PostgreSQL en Render...</p>
-            </td>
-        </tr>
-    `;
+// Sobrescribimos la función de publicación para que use la DB
+async function submitPost() {
+    const title = document.getElementById('post-title').value;
+    const desc = document.getElementById('post-desc').value;
+    const tag = document.getElementById('post-tag').value;
 
-    try {
-        const response = await fetch(ENDPOINTS.ADMIN_USERS);
-        const users = await response.json();
-
-        if (response.ok) {
-            MASTER_CACHE.users = users;
-            renderMasterTable(users);
-            updateDashboardStats();
-            logData(`${users.length} usuarios sincronizados.`);
-        } else {
-            notify("Error al obtener usuarios.", "error");
-        }
-    } catch (error) {
-        logError("Fallo en sincronización master: " + error);
-        tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ff3b30;">Error de conexión.</td></tr>`;
-    }
-}
-
-/**
- * FILTRO AVANZADO EMMANUEL
- * Busca por ID, Usuario, Email o Rango simultáneamente.
- */
-function executeMasterFilter() {
-    const query = document.getElementById('master-search-input').value.toLowerCase().trim();
-    
-    const filteredResults = MASTER_CACHE.users.filter(user => {
-        return (
-            user.id.toString().includes(query) ||
-            user.username.toLowerCase().includes(query) ||
-            user.email.toLowerCase().includes(query) ||
-            user.role.toLowerCase().includes(query)
-        );
-    });
-
-    renderMasterTable(filteredResults);
-}
-
-function renderMasterTable(data) {
-    const tableBody = document.getElementById('master-table-body');
-    
-    if (data.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px;">No se encontraron coincidencias.</td></tr>`;
+    if (!title || !desc) {
+        notify("Completa los campos obligatorios", "error");
         return;
     }
 
-    tableBody.innerHTML = data.map(user => `
-        <tr>
-            <td><code style="background: #f5f5f7; padding: 2px 6px; border-radius: 4px;">#${user.id}</code></td>
-            <td style="font-weight: 800;">${user.username}</td>
-            <td style="color: #86868b;">${user.email}</td>
-            <td><span class="badge-${user.role === 'admin' ? 'admin' : 'user'}">${user.role.toUpperCase()}</span></td>
-            <td style="font-size: 0.8rem;">${user.last_login ? new Date(user.last_login).toLocaleString() : 'Nunca'}</td>
-            <td>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn-icon-sm" title="Editar" onclick="editUser(${user.id})"><i class="fa fa-pen"></i></button>
-                    ${user.role !== 'admin' ? `
-                        <button class="btn-purgar" title="Eliminar" onclick="purgeUser(${user.id})"><i class="fa fa-trash-can"></i></button>
-                    ` : ''}
-                </div>
-            </td>
-        </tr>
-    `).join('');
-}
+    const payload = {
+        title: title,
+        content: desc,
+        topic: tag || "Web Develop",
+        user_id: STATE.currentUser.id
+    };
 
-/**
- * 3. GESTIÓN DE PRODUCTOS (EMMANUEL STORE)
- */
-async function loadStoreProducts() {
-    try {
-        const response = await fetch(ENDPOINTS.PRODUCTS);
-        const products = await response.json();
-        
-        if (response.ok) {
-            MASTER_CACHE.products = products;
-            // Aquí iría la lógica para pintar el catálogo de VibeBlox
-            logData("Catálogo de productos cargado.");
-        }
-    } catch (error) {
-        logError("Error al cargar la tienda.");
-    }
-}
-
-/**
- * 4. ACCIONES DE ADMINISTRACIÓN (PURGA)
- */
-async function purgeUser(userId) {
-    const confirmPurge = confirm(`EMMANUEL: ¿Estás seguro de eliminar permanentemente al usuario #${userId}? Esta acción no se puede deshacer en PostgreSQL.`);
+    const success = await SOCIAL_ENGINE.createPost(payload);
     
-    if (!confirmPurge) return;
-
-    try {
-        const response = await fetch(`${ENDPOINTS.ADMIN_USERS}/${userId}`, {
-            method: 'DELETE'
-        });
-
-        if (response.ok) {
-            notify("Registro purgado correctamente.", "success");
-            syncMasterDatabase(); // Refrescar tabla
-        } else {
-            const err = await response.json();
-            notify(err.error || "No se pudo eliminar.", "error");
-        }
-    } catch (error) {
-        notify("Error crítico de servidor.", "error");
+    if (success) {
+        // Recargar el feed o insertar el post visualmente
+        location.reload(); 
     }
 }
 
-/**
- * 5. ESTADÍSTICAS Y DASHBOARD
- */
-function updateDashboardStats() {
-    const userCountEl = document.getElementById('stat-users-count');
-    if (userCountEl) {
-        userCountEl.innerText = MASTER_CACHE.users.length;
+// Sobrescribimos la búsqueda para que sea real
+async function executeSearch() {
+    const type = document.getElementById('search-type').value;
+    const query = document.getElementById('global-search').value.toLowerCase().trim();
+
+    if (!query) return;
+
+    const results = await SOCIAL_ENGINE.search(type, query);
+
+    if (type === 'users') {
+        showView('search-users');
+        const container = document.getElementById('users-result');
+        container.innerHTML = results.map(u => `
+            <div class="user-card">
+                <div class="u-avatar-lg">${u.username.charAt(0).toUpperCase()}</div>
+                <h4>${u.username}</h4>
+                <p>${u.bio || 'Miembro de ECNHACA'}</p>
+                <button class="btn-follow ${u.is_following ? 'active' : ''}" 
+                        onclick="handleFollowClick(this, ${u.id})">
+                    ${u.is_following ? 'Siguiendo' : 'Seguir'}
+                </button>
+            </div>
+        `).join('');
+    } else {
+        // Lógica para mostrar posts encontrados
+        notify(`Encontradas ${results.length} publicaciones`, "success");
     }
+}
+
+async function handleFollowClick(btn, targetId) {
+    const isCurrentlyFollowing = btn.classList.contains('active');
+    const success = await SOCIAL_ENGINE.toggleFollow(targetId, isCurrentlyFollowing);
     
-    // Simular latencia de DB
-    const pingEl = document.getElementById('stat-ping');
-    if (pingEl) {
-        const startTime = Date.now();
-        fetch(ENDPOINTS.DB_STATUS).finally(() => {
-            const latency = Date.now() - startTime;
-            pingEl.innerText = `${latency} ms`;
-        });
+    if (success) {
+        btn.classList.toggle('active');
+        btn.innerText = btn.classList.contains('active') ? 'Siguiendo' : 'Seguir';
     }
 }
 
-/**
- * 6. LOGS DE SISTEMA Y DEBUGGING
- */
-function logData(msg) {
-    console.log(`%c [DATA] %c ${msg}`, "color: #34c759; font-weight: bold;", "color: #1d1d1f;");
-}
-
-function logError(msg) {
-    console.error(`%c [ERROR DB] %c ${msg}`, "color: #ff3b30; font-weight: bold;", "color: #1d1d1f;");
+// Inicializar datos al cargar perfil
+if (STATE.view === 'profile') {
+    SOCIAL_ENGINE.loadProfileData(STATE.currentUser.username);
 }
 
 /**
- * 7. INTEGRACIÓN CON VEXO BOT & VIBEBLOX
- * Emmanuel: Funciones preparadas para expandir tus otros servicios.
+ * FIN DEL ARCHIVO APP.JS
+ * Emmanuel, este código está listo para conectarse a tus tablas de:
+ * - users (id, username, bio, followers_count, following_count)
+ * - posts (id, user_id, title, content, topic, created_at)
+ * - follows (follower_id, followed_id)
  */
-async function sendVexoNotification(message) {
-    logData("Enviando comando a Vexo Bot...");
-    // Lógica para conectar con el webhook de Discord del Bot
-}
-
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD'
-    }).format(amount);
-}
-
-// Iniciar carga automática de datos si el usuario es Admin
-if (localStorage.getItem('ec_session')) {
-    const user = JSON.parse(localStorage.getItem('ec_session'));
-    if (user.role === 'admin') {
-        setTimeout(syncMasterDatabase, 2000);
-    }
-    loadStoreProducts();
-}
-
-/**
- * 8. GESTIÓN DE ERRORES DE RED
- */
-window.addEventListener('offline', () => {
-    notify("Has perdido la conexión. ECNHACA Style funcionando en modo local.", "error");
-});
-
-window.addEventListener('online', () => {
-    notify("Conexión restablecida. Sincronizando...", "success");
-    syncMasterDatabase();
-});
-
-// --- FINAL DEL ARCHIVO APP.JS ---
-// Emmanuel: Este archivo gestiona toda la comunicación con tu base de datos global.
