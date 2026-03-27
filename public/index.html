@@ -2,98 +2,66 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emmanuel Store | Social Network</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Emmanuel Social | Red de Desarrolladores</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <div id="authWall" class="auth-wall hidden">
-        <div class="auth-form animate-up">
-            <h1 class="brand-logo" style="font-size: 3rem; margin-bottom: 10px;">DevRoot</h1>
-            <p style="color: #666; margin-bottom: 30px;">Únete a la comunidad de Emmanuel Store</p>
-            
-            <form id="registerForm" onsubmit="handleRegister(event)">
-                <div class="input-group">
-                    <label><i class="fa-solid fa-user"></i> Usuario</label>
-                    <input type="text" name="username" placeholder="ej. emmanuel_dev" required>
-                </div>
-                <div class="input-group">
-                    <label><i class="fa-solid fa-envelope"></i> Email</label>
-                    <input type="email" name="email" placeholder="correo@ejemplo.com" required>
-                </div>
-                <div class="input-group">
-                    <label><i class="fa-solid fa-lock"></i> Contraseña</label>
-                    <input type="password" name="password" placeholder="••••••••" required>
-                </div>
-                <button type="submit" class="btn-primary-big">Crear Cuenta Gratis</button>
+    <div id="authWall" class="auth-overlay">
+        <div class="auth-card">
+            <h1 class="logo">Dev<b>Root</b></h1>
+            <div id="authTabs">
+                <button class="active" onclick="switchAuth('login')">Login</button>
+                <button onclick="switchAuth('register')">Registro</button>
+            </div>
+            <form id="authForm" onsubmit="handleAuth(event)">
+                <input type="text" id="auth_user" placeholder="Nombre de usuario" required>
+                <input type="email" id="auth_email" placeholder="Correo electrónico" class="hidden">
+                <input type="password" id="auth_pass" placeholder="Contraseña" required>
+                <button type="submit" id="authBtn">Entrar</button>
             </form>
-            
-            <p class="switch-auth">¿Ya tienes cuenta? <a href="#" onclick="toggleAuth()">Inicia Sesión</a></p>
         </div>
     </div>
 
-    <nav class="navbar">
-        <div class="nav-left">
-            <h2 class="brand-logo" onclick="location.reload()">DevRoot</h2>
-        </div>
-
-        <div class="search-wrapper">
-            <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            <input type="text" id="globalSearch" placeholder="Buscar amigos en Emmanuel Store..." oninput="performSearch(this.value)">
-        </div>
-
-        <div class="nav-right" id="navActions">
-            <div class="user-pill">
-                <span id="navUsername">Cargando...</span>
-                <div class="mini-avatar" id="navAvatar">E</div>
+    <nav class="top-nav">
+        <div class="nav-content">
+            <h2 class="logo" onclick="location.reload()">Dev<b>Root</b></h2>
+            <div class="search-bar">
+                <i class="fa fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Buscar usuarios..." oninput="liveSearch()">
+            </div>
+            <div class="user-profile-top" id="topUser">
+                <span id="userNameHeader">Invitado</span>
+                <div class="avatar-mini" id="userAvHeader">?</div>
+                <button onclick="logout()" class="btn-logout"><i class="fa fa-sign-out"></i></button>
             </div>
         </div>
     </nav>
 
-    <div class="container">
-        <aside class="sidebar-left">
-            <div class="side-item active"><i class="fa-solid fa-house"></i> <span>Para ti</span></div>
-            <div class="side-item"><i class="fa-solid fa-users"></i> <span>Siguiendo</span></div>
-            <div class="side-item"><i class="fa-solid fa-video"></i> <span>Explorar</span></div>
-            <hr class="side-divider">
-            <p class="side-title">Cuentas recomendadas</p>
-            <div id="recommendedSidebar"></div>
+    <div class="main-layout">
+        <aside class="left-bar">
+            <div class="menu-item active"><i class="fa fa-home"></i> <span>Para ti</span></div>
+            <div class="menu-item"><i class="fa fa-users"></i> <span>Siguiendo</span></div>
+            <div class="menu-item"><i class="fa fa-heart"></i> <span>Favoritos</span></div>
         </aside>
 
-        <main class="feed-grid">
-            <div class="feed-header">
-                <h3>Tendencias Populares</h3>
-            </div>
-            
-            <div id="mainFeed">
-                <div class="loading-shimmer"></div>
-            </div>
+        <main class="feed-container">
+            <div id="feedList">
+                </div>
         </main>
 
-        <aside class="sidebar-right">
-            <div class="stats-card">
-                <h4>Tu Impacto</h4>
-                <div class="stat-row">
+        <aside class="right-bar">
+            <div class="stats-box">
+                <h4>Tu Perfil</h4>
+                <p id="myBio">Cargando...</p>
+                <div class="stat">
                     <span>Seguidores</span>
-                    <b id="userFollowers">0</b>
+                    <b id="myFollowers">0</b>
                 </div>
-                <div class="stat-row">
-                    <span>Siguiendo</span>
-                    <b id="userFollowing">0</b>
-                </div>
-            </div>
-            <div class="footer-links">
-                <p>© 2026 Emmanuel Store Oficial</p>
-                <p>PostgreSQL Cloud Database</p>
             </div>
         </aside>
     </div>
 
-    <div id="toastContainer"></div>
-
-    <script src="app.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
