@@ -3,92 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emmanuel Store | Red Global</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <title>Emmanuel Store | Social Network</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div id="toast-container"></div>
-
-    <section id="auth-wall">
-        <div class="auth-box animate-pop">
-            <h1 class="logo">Dev<span>Root</span></h1>
+    <div id="authWall" class="auth-wall hidden">
+        <div class="auth-form animate-up">
+            <h1 class="brand-logo" style="font-size: 3rem; margin-bottom: 10px;">DevRoot</h1>
+            <p style="color: #666; margin-bottom: 30px;">Únete a la comunidad de Emmanuel Store</p>
             
-            <div id="view-login">
-                <div class="header-auth">
-                    <h2>Bienvenido</h2>
-                    <p>Ingresa a tu cuenta global</p>
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="input-group">
+                    <label><i class="fa-solid fa-user"></i> Usuario</label>
+                    <input type="text" name="username" placeholder="ej. emmanuel_dev" required>
                 </div>
-                <div class="form">
-                    <div class="field"><i class="fa-solid fa-user"></i><input type="text" id="l-user" placeholder="Usuario"></div>
-                    <div class="field"><i class="fa-solid fa-lock"></i><input type="password" id="l-pass" placeholder="Contraseña"></div>
-                    <button onclick="App.auth('login')" class="btn-primary">Iniciar Sesión</button>
-                    <p class="footer-auth">¿No tienes cuenta? <a href="javascript:void(0)" onclick="App.switch('reg')">Regístrate gratis</a></p>
+                <div class="input-group">
+                    <label><i class="fa-solid fa-envelope"></i> Email</label>
+                    <input type="email" name="email" placeholder="correo@ejemplo.com" required>
                 </div>
-            </div>
+                <div class="input-group">
+                    <label><i class="fa-solid fa-lock"></i> Contraseña</label>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-primary-big">Crear Cuenta Gratis</button>
+            </form>
+            
+            <p class="switch-auth">¿Ya tienes cuenta? <a href="#" onclick="toggleAuth()">Inicia Sesión</a></p>
+        </div>
+    </div>
 
-            <div id="view-reg" class="hidden">
-                <div class="header-auth">
-                    <h2>Crear Cuenta</h2>
-                    <p>Únete a la base de datos de Emmanuel</p>
-                </div>
-                <div class="form">
-                    <div class="field"><i class="fa-solid fa-id-card"></i><input type="text" id="r-user" placeholder="Nombre de usuario"></div>
-                    <div class="field"><i class="fa-solid fa-envelope"></i><input type="email" id="r-email" placeholder="Correo Gmail"></div>
-                    <div class="field"><i class="fa-solid fa-key"></i><input type="password" id="r-pass" placeholder="Crea una contraseña"></div>
-                    <button onclick="App.auth('register')" class="btn-primary">Registrarme Ahora</button>
-                    <p class="footer-auth">¿Ya eres miembro? <a href="javascript:void(0)" onclick="App.switch('login')">Entrar</a></p>
-                </div>
+    <nav class="navbar">
+        <div class="nav-left">
+            <h2 class="brand-logo" onclick="location.reload()">DevRoot</h2>
+        </div>
+
+        <div class="search-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="globalSearch" placeholder="Buscar amigos en Emmanuel Store..." oninput="performSearch(this.value)">
+        </div>
+
+        <div class="nav-right" id="navActions">
+            <div class="user-pill">
+                <span id="navUsername">Cargando...</span>
+                <div class="mini-avatar" id="navAvatar">E</div>
             </div>
         </div>
-    </section>
+    </nav>
 
-    <main id="app-wall" class="hidden">
-        <nav class="top-nav">
-            <div class="nav-content">
-                <div class="brand">Dev<span>Root</span></div>
-                
-                <div class="search-bar">
-                    <div class="search-input">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" placeholder="Buscar usuarios en Postgres..." oninput="App.search(this.value)">
-                    </div>
-                    <div id="search-results" class="search-results hidden"></div>
+    <div class="container">
+        <aside class="sidebar-left">
+            <div class="side-item active"><i class="fa-solid fa-house"></i> <span>Para ti</span></div>
+            <div class="side-item"><i class="fa-solid fa-users"></i> <span>Siguiendo</span></div>
+            <div class="side-item"><i class="fa-solid fa-video"></i> <span>Explorar</span></div>
+            <hr class="side-divider">
+            <p class="side-title">Cuentas recomendadas</p>
+            <div id="recommendedSidebar"></div>
+        </aside>
+
+        <main class="feed-grid">
+            <div class="feed-header">
+                <h3>Tendencias Populares</h3>
+            </div>
+            
+            <div id="mainFeed">
+                <div class="loading-shimmer"></div>
+            </div>
+        </main>
+
+        <aside class="sidebar-right">
+            <div class="stats-card">
+                <h4>Tu Impacto</h4>
+                <div class="stat-row">
+                    <span>Seguidores</span>
+                    <b id="userFollowers">0</b>
                 </div>
-
-                <div class="user-profile">
-                    <div class="profile-btn" onclick="App.toggleMenu()">
-                        <span id="nav-user">Cargando...</span>
-                        <div id="nav-avatar" class="avatar-circle">?</div>
-                        <i class="fa-solid fa-chevron-down"></i>
-                    </div>
-                    
-                    <div id="user-menu" class="dropdown hidden">
-                        <div class="dropdown-header"><p id="menu-user-id"></p></div>
-                        <div class="drop-link"><i class="fa-regular fa-circle-user"></i> Ver Perfil</div>
-                        <div class="drop-link"><i class="fa-solid fa-shield-halved"></i> Seguridad</div>
-                        <div class="drop-link logout" onclick="location.reload()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión</div>
-                    </div>
+                <div class="stat-row">
+                    <span>Siguiendo</span>
+                    <b id="userFollowing">0</b>
                 </div>
             </div>
-        </nav>
-
-        <section class="main-container">
-            <div class="feed">
-                <div class="welcome-card animate-slide">
-                    <i class="fa-solid fa-cloud-bolt"></i>
-                    <h2>Sistema Activo</h2>
-                    <p>Bienvenido, <span id="welcome-user"></span>. Estás conectado a la red global de Emmanuel Store.</p>
-                </div>
-                <div class="empty-state">
-                    <i class="fa-solid fa-newspaper"></i>
-                    <p>No hay publicaciones nuevas en la base de datos.</p>
-                </div>
+            <div class="footer-links">
+                <p>© 2026 Emmanuel Store Oficial</p>
+                <p>PostgreSQL Cloud Database</p>
             </div>
-        </section>
-    </main>
+        </aside>
+    </div>
 
-    <script src="script.js"></script>
+    <div id="toastContainer"></div>
+
+    <script src="app.js"></script>
 </body>
 </html>
