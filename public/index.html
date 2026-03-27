@@ -3,115 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ecnhaca | Software Elite</title>
+    <title>Ecnhaca | Elite Software Platform</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="ec-white-theme">
 
-    <div id="success-anim" class="success-overlay hide">
-        <div class="success-card">
-            <div class="check-icon">
-                <i class="fa fa-check"></i>
+    <div id="boot-loader" class="system-loader">
+        <div class="loader-content">
+            <h1 class="logo-text">ECNHACA</h1>
+            <div class="track-bar">
+                <div id="fill-bar" class="fill-progress"></div>
             </div>
-            <h2>¡Cuenta Creada!</h2>
-            <p>Bienvenido a la red profesional Ecnhaca.</p>
+            <p id="boot-status">Inicializando base de datos...</p>
         </div>
     </div>
 
-    <div id="loader" class="full-loader">
-        <div class="loader-box">
-            <h1 class="logo-load">ECNHACA</h1>
-            <div class="progress-bar"><div id="bar" class="fill"></div></div>
-            <p id="load-txt">Iniciando protocolos...</p>
+    <div id="success-overlay" class="success-screen hide">
+        <div class="success-box">
+            <div class="check-container">
+                <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                    <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                    <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                </svg>
+            </div>
+            <h2 id="success-title">¡Operación Exitosa!</h2>
+            <p id="success-desc">Los datos han sido procesados correctamente.</p>
         </div>
     </div>
 
-    <section id="auth-view" class="auth-page hide">
-        <div class="auth-container animate-fade">
-            <header class="auth-header">
-                <h2>ECNHACA</h2>
-                <p id="auth-sub">Por favor, inicia sesión para continuar.</p>
-            </header>
+    <div id="toast-wrapper" class="toast-area"></div>
 
-            <div class="auth-tabs">
-                <button id="tab-in" class="active" onclick="setAuth('login')">Entrar</button>
-                <button id="tab-up" onclick="setAuth('reg')">Registrarse</button>
+    <section id="auth-view" class="auth-wrapper hide">
+        <div class="auth-card animate-slide-up">
+            <div class="auth-brand">
+                <h1>ECNHACA</h1>
+                <p id="auth-tagline">Inicia sesión para acceder a la red profesional.</p>
             </div>
 
-            <form id="auth-form" onsubmit="handleAuth(event)">
-                <div class="input-group">
+            <div class="tab-switcher">
+                <button id="btn-tab-login" class="active" onclick="switchAuthMode('login')">Entrar</button>
+                <button id="btn-tab-reg" onclick="switchAuthMode('reg')">Registrarse</button>
+            </div>
+
+            <form id="auth-form" onsubmit="processAuth(event)" novalidate>
+                <div class="input-block">
                     <label>Nombre de Usuario</label>
-                    <input type="text" id="a-user" placeholder="@usuario_dev" required>
+                    <div class="input-inner">
+                        <i class="fa fa-at"></i>
+                        <input type="text" id="inp-user" placeholder="ej: emmanuel_dev" required>
+                    </div>
                 </div>
-                <div id="email-group" class="input-group hide">
-                    <label>Correo Electrónico</label>
-                    <input type="email" id="a-email" placeholder="ejemplo@ecnhaca.net">
-                    <span class="error-msg hide" id="e-email">Email inválido o ya registrado.</span>
+
+                <div id="reg-fields" class="hide">
+                    <div class="input-block">
+                        <label>Correo Electrónico</label>
+                        <div class="input-inner">
+                            <i class="fa fa-envelope"></i>
+                            <input type="email" id="inp-email" placeholder="dev@ecnhaca.net">
+                        </div>
+                        <p id="email-err" class="input-err-msg hide">El correo no es válido.</p>
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label>Contraseña Maestra</label>
-                    <input type="password" id="a-pass" placeholder="••••••••" required>
+
+                <div class="input-block">
+                    <label>Contraseña</label>
+                    <div class="input-inner">
+                        <i class="fa fa-lock"></i>
+                        <input type="password" id="inp-pass" placeholder="••••••••" required>
+                    </div>
+                    <p id="pass-err" class="input-err-msg hide">La contraseña debe ser más larga.</p>
                 </div>
-                <button type="submit" id="auth-btn" class="btn-primary">Acceder al Sistema</button>
+
+                <button type="submit" id="auth-submit-btn" class="main-action-btn">Entrar al Sistema</button>
             </form>
+
+            <footer class="auth-foot">
+                <p>&copy; 2026 Ecnhaca Cloud Infrastructure</p>
+            </footer>
         </div>
     </section>
 
-    <div id="main-view" class="app-layout hide">
-        <nav class="navbar">
-            <div class="nav-left" onclick="location.reload()">ECNHACA</div>
-            
-            <div class="nav-center">
-                <div class="search-engine">
-                    <select id="s-type">
-                        <option value="users">Usuarios</option>
-                        <option value="posts">Publicaciones</option>
-                    </select>
-                    <input type="text" id="s-input" placeholder="Buscar..." oninput="doSearch(this.value)">
-                    <i class="fa fa-search"></i>
-                    <div id="s-results" class="search-drop hide"></div>
+    <div id="app-view" class="app-shell hide">
+        
+        <nav class="glass-nav">
+            <div class="nav-container">
+                <div class="nav-left">
+                    <span class="nav-logo" onclick="changeView('feed')">ECNHACA</span>
                 </div>
-            </div>
 
-            <div class="nav-right">
-                <div class="user-pill" onclick="toggleMenu()">
-                    <div id="nav-av" class="avatar">E</div>
-                    <i class="fa fa-chevron-down"></i>
-                </div>
-                <div id="menu-drop" class="dropdown-menu hide">
-                    <div class="menu-head">
-                        <p id="m-user">@usuario</p>
-                        <span>Miembro Elite</span>
+                <div class="nav-center">
+                    <div class="search-box">
+                        <select id="search-filter">
+                            <option value="users">Usuarios</option>
+                            <option value="posts">Publicaciones</option>
+                        </select>
+                        <input type="text" id="global-search" placeholder="Buscar en la red..." oninput="handleGlobalSearch(this.value)">
+                        <i class="fa fa-magnifying-glass"></i>
                     </div>
-                    <div class="menu-item" onclick="openProfile()"><i class="fa fa-user"></i> Mi Perfil</div>
-                    <div class="menu-item" onclick="openUpload()"><i class="fa fa-video"></i> Subir Vídeo</div>
-                    <hr>
-                    <div class="menu-item logout" onclick="logout()"><i class="fa fa-sign-out"></i> Salir</div>
+                    <div id="search-results-drop" class="search-dropdown hide"></div>
+                </div>
+
+                <div class="nav-right">
+                    <div class="profile-trigger" onclick="toggleDropdown('user-dropdown')">
+                        <div id="nav-user-av" class="nav-av">E</div>
+                        <i class="fa fa-chevron-down"></i>
+                    </div>
+
+                    <div id="user-dropdown" class="dropdown-box hide">
+                        <div class="drop-header">
+                            <p id="drop-username">@emmanuel</p>
+                            <span class="user-badge">Miembro Premium</span>
+                        </div>
+                        <div class="drop-body">
+                            <div class="drop-item" onclick="changeView('profile')">
+                                <i class="fa-regular fa-user"></i> Mi Perfil
+                            </div>
+                            <div class="drop-item" onclick="toggleTheme()">
+                                <i class="fa-regular fa-moon"></i> Modo Oscuro
+                            </div>
+                            <div class="drop-item" onclick="openSettings()">
+                                <i class="fa-solid fa-gear"></i> Ajustes
+                            </div>
+                            <hr>
+                            <div class="drop-item logout-btn" onclick="logoutSession()">
+                                <i class="fa-solid fa-power-off"></i> Cerrar Sesión
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>
 
-        <main class="content">
-            <div class="welcome-hero">
-                <h1>Hola, <span id="welcome-name">Dev</span></h1>
-                <p>Explora lo último en desarrollo de bots y diseño web.</p>
-            </div>
-            <div id="feed" class="post-grid"></div>
+        <main class="app-main">
+            
+            <section id="view-feed" class="content-view">
+                <div class="view-header">
+                    <h2>Muro de Actividad</h2>
+                    <p>Contenido actualizado de la red profesional.</p>
+                </div>
+                <div id="feed-container" class="feed-grid">
+                    </div>
+            </section>
+
+            <section id="view-profile" class="content-view hide">
+                <div id="profile-content">
+                    </div>
+            </section>
+
         </main>
 
-        <button class="fab" onclick="showPostModal()"><i class="fa fa-plus"></i></button>
+        <button class="fab-action" onclick="openCreateModal()">
+            <i class="fa fa-plus"></i>
+            <span>NUEVO</span>
+        </button>
+
     </div>
 
-    <div id="video-modal" class="modal hide">
-        <div class="modal-card">
-            <h3>Subir Contenido Multimedia</h3>
-            <input type="text" id="v-url" placeholder="Enlace del vídeo (MP4/YouTube)">
-            <textarea id="v-caption" placeholder="Escribe una descripción..."></textarea>
-            <div class="modal-btns">
-                <button onclick="closeVideoModal()">Cerrar</button>
-                <button class="btn-primary" onclick="uploadVideo()">Publicar Vídeo</button>
-            </div>
+    <div id="modal-create" class="modal-overlay hide">
+        <div class="modal-card animate-zoom">
+            <header class="modal-header">
+                <h3>Nueva Publicación</h3>
+                <button class="close-modal" onclick="closeCreateModal()">&times;</button>
+            </header>
+            <form id="post-form" onsubmit="handlePostSubmit(event)">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <input type="text" id="post-title" placeholder="Título del proyecto" required>
+                    </div>
+                    <div class="form-row">
+                        <textarea id="post-content" placeholder="¿Qué estás desarrollando hoy?" required></textarea>
+                    </div>
+                    <div class="form-row flex">
+                        <select id="post-category">
+                            <option value="Discord Bot">Discord Bot</option>
+                            <option value="Web Design">Web Design</option>
+                            <option value="Database">Base de Datos</option>
+                            <option value="Logic">Lógica de Programación</option>
+                        </select>
+                        <input type="text" id="post-media" placeholder="URL de imagen (opcional)">
+                    </div>
+                </div>
+                <footer class="modal-footer">
+                    <button type="button" class="btn-sec" onclick="closeCreateModal()">Cancelar</button>
+                    <button type="submit" class="btn-pri">Publicar Ahora</button>
+                </footer>
+            </form>
         </div>
     </div>
 
