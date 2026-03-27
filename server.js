@@ -1,6 +1,7 @@
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -14,71 +15,74 @@ const pool = new Pool({
     password: 'mEDJcu2NtduJqv662gaUvOIuPDh1HFi3',
     database: 'base_datos_global',
     port: 5432,
-    ssl: { rejectUnauthorized: false },
+    ssl: { rejectUnauthorized: false }
 });
 
-// --- REPARADOR DE TABLA (SOLUCIÓN AL ERROR) ---
-const repararTabla = async () => {
+// INICIALIZACIÓN DE TABLAS PRO
+const initDB = async () => {
     try {
-        // 1. Intentamos crear la tabla si no existe
+        // Tabla de Usuarios
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL
+                email TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                color TEXT DEFAULT '#0066ff',
+                bio TEXT DEFAULT '¡Hola! Soy nuevo en la red de Emmanuel.',
+                followers_count INTEGER DEFAULT 0
             );
         `);
-
-        // 2. FORZAMOS la columna email por si no existe
+        // Tabla de Seguidores
         await pool.query(`
-            ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
+            CREATE TABLE IF NOT EXISTS follows (
+                id SERIAL PRIMARY KEY,
+                follower_id INTEGER REFERENCES users(id),
+                following_id INTEGER REFERENCES users(id),
+                UNIQUE(follower_id, following_id)
+            );
         `);
-        
-        // 3. FORZAMOS la columna color por si no existe
-        await pool.query(`
-            ALTER TABLE users ADD COLUMN IF NOT EXISTS color TEXT DEFAULT '#0066ff';
-        `);
-
-        console.log("✅ [SISTEMA] ¡Tabla reparada! Columna 'email' añadida con éxito.");
-    } catch (err) {
-        console.error("❌ [ERROR REPARANDO]:", err.message);
-    }
+        console.log("🔥 [SISTEMA] Base de datos de Emmanuel Online");
+    } catch (e) { console.error("Error DB:", e.message); }
 };
-repararTabla();
+initDB();
 
 // --- RUTAS API ---
 
+// Registro
 app.post('/api/register', async (req, res) => {
     const { username, email, password } = req.body;
     try {
         const color = "#" + Math.floor(Math.random()*16777215).toString(16);
-        await pool.query(
-            "INSERT INTO users (username, email, password, color) VALUES ($1, $2, $3, $4)",
+        const result = await pool.query(
+            "INSERT INTO users (username, email, password, color) VALUES ($1, $2, $3, $4) RETURNING id, username, color",
             [username, email, password, color]
         );
-        res.status(201).json({ message: "¡Cuenta creada con éxito!" });
-    } catch (err) {
-        console.error("ERROR REGISTRO:", err.message);
-        res.status(500).json({ error: "Error de servidor: " + err.message });
-    }
+        res.status(201).json(result.rows[0]);
+    } catch (e) { res.status(500).json({ error: "Error al crear cuenta" }); }
 });
 
+// Login
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
+        const result = await pool.query("SELECT * FROM users WHERE username = $1 AND password = $2", [username, password]);
+        if (result.rows.length > 0) res.json(result.rows[0]);
+        else res.status(401).json({ error: "Datos incorrectos" });
+    } catch (e) { res.status(500).json({ error: "Error de conexión" }); }
+});
+
+// Buscador de perfiles (TikTok Style)
+app.get('/api/search', async (req, res) => {
+    const { q } = req.query;
+    try {
         const result = await pool.query(
-            "SELECT * FROM users WHERE username = $1 AND password = $2",
-            [username, password]
+            "SELECT id, username, color, bio, followers_count FROM users WHERE username ILIKE $1 LIMIT 5",
+            [`%${q}%`]
         );
-        if (result.rows.length > 0) {
-            res.json({ message: "¡Iniciaste sesión!", user: result.rows[0] });
-        } else {
-            res.status(401).json({ error: "Usuario o clave incorrectos." });
-        }
-    } catch (err) {
-        res.status(500).json({ error: "Error en login." });
-    }
+        res.json(result.rows);
+    } catch (e) { res.json([]); }
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Servidor de Emmanuel en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Emmanuel Store en puerto ${PORT}`));
