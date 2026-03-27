@@ -1,84 +1,132 @@
 /**
- * ECNHACA SCRIPT ENGINE
+ * ECNHACA UI ORCHESTRATOR
+ * GESTIÓN DE INTERFAZ Y TRANSICIONES
  */
+
 window.addEventListener('load', () => {
-    let bar = document.getElementById('load-bar');
-    let msg = document.getElementById('splash-msg');
+    const bar = document.getElementById('fill-bar');
+    const status = document.getElementById('boot-status');
     let p = 0;
-    let timer = setInterval(() => {
+
+    const bootInterval = setInterval(() => {
         p += Math.random() * 20;
         if (p >= 100) {
-            p = 100; clearInterval(timer);
+            p = 100;
+            clearInterval(bootInterval);
             setTimeout(() => {
-                document.getElementById('splash').style.opacity = '0';
+                document.getElementById('boot-loader').style.opacity = '0';
                 setTimeout(() => {
-                    document.getElementById('splash').classList.add('hide');
-                    checkSession();
-                }, 600);
-            }, 500);
+                    document.getElementById('boot-loader').classList.add('hide');
+                    initSessionManager();
+                }, 800);
+            }, 600);
         }
         bar.style.width = p + '%';
-        if (p > 70) msg.innerText = "Sincronizando perfiles...";
-        else if (p > 30) msg.innerText = "Validando infraestructura...";
+        if (p > 80) status.innerText = "Sincronizando perfiles...";
+        else if (p > 40) status.innerText = "Conectando al servidor Render...";
+        else if (p > 10) status.innerText = "Cargando módulos de seguridad...";
     }, 150);
 });
 
-function checkSession() {
+function initSessionManager() {
     const session = localStorage.getItem('ec_session');
     if (session) {
-        document.getElementById('main-screen').classList.remove('hide');
+        document.getElementById('app-view').classList.remove('hide');
         const user = JSON.parse(session);
-        renderNav(user);
-        initFeed();
+        updateUserUI(user);
+        loadFeed();
     } else {
-        document.getElementById('auth-screen').classList.remove('hide');
+        document.getElementById('auth-view').classList.remove('hide');
     }
 }
 
-function renderNav(u) {
-    const av = document.getElementById('nav-avatar');
-    av.style.background = u.color;
-    av.innerText = u.username[0].toUpperCase();
-    document.getElementById('menu-user-name').innerText = `@${u.username}`;
+function updateUserUI(user) {
+    const navAv = document.getElementById('nav-user-av');
+    navAv.style.background = user.color || '#007aff';
+    navAv.innerText = user.username[0].toUpperCase();
+    document.getElementById('drop-username').innerText = `@${user.username}`;
+    
+    // Si estamos en perfil, actualizar banner
+    const welcome = document.querySelector('.view-header h2');
+    if (welcome) welcome.innerHTML = `Hola, ${user.username} <span style="opacity:0.4">👋</span>`;
 }
 
-function toggleAuth(mode) {
+function switchAuthMode(mode) {
     const isLogin = mode === 'login';
-    document.getElementById('reg-box').classList.toggle('hide', isLogin);
-    document.getElementById('tab-login').classList.toggle('active', isLogin);
-    document.getElementById('tab-reg').classList.toggle('active', !isLogin);
-    document.getElementById('auth-action').innerText = isLogin ? 'Iniciar Sesión Ahora' : 'Crear Mi Cuenta Gratis';
-    document.getElementById('auth-desc').innerText = isLogin ? 'Acceso restringido. Por favor identifícate.' : 'Únete a la red elite de Ecnhaca.';
-}
-
-function openUserMenu() {
-    document.getElementById('user-menu').classList.toggle('hide');
-}
-
-function showModalPost() {
-    document.getElementById('modal-post').classList.remove('hide');
-}
-
-function hideModalPost() {
-    document.getElementById('modal-post').classList.add('hide');
-}
-
-function toast(msg, type = 'success') {
-    const box = document.getElementById('toast-box');
-    const t = document.createElement('div');
-    t.className = `toast ${type}`;
-    t.innerHTML = `<i class="fa ${type==='success'?'fa-circle-check':'fa-triangle-exclamation'}"></i> <span>${msg}</span>`;
-    box.appendChild(t);
-    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 500); }, 3500);
-}
-
-// CERRAR CON ESCAPE
-window.onkeydown = (e) => {
-    if (e.key === 'Escape') {
-        hideModalPost();
-        document.getElementById('user-menu').classList.add('hide');
-        document.getElementById('search-results').classList.add('hide');
+    document.getElementById('reg-fields').classList.toggle('hide', isLogin);
+    document.getElementById('btn-tab-login').classList.toggle('active', isLogin);
+    document.getElementById('btn-tab-reg').classList.toggle('active', !isLogin);
+    
+    const submitBtn = document.getElementById('auth-submit-btn');
+    const tagline = document.getElementById('auth-tagline');
+    
+    if (isLogin) {
+        submitBtn.innerText = "Entrar al Sistema";
+        tagline.innerText = "Inicia sesión para acceder a la red profesional.";
+    } else {
+        submitBtn.innerText = "Crear Cuenta Ahora";
+        tagline.innerText = "Únete a la comunidad de desarrolladores de Ecnhaca.";
     }
-};
+}
 
-// [RELLENO PARA 400 RENGLONES DE LÓGICA UX]
+function toggleDropdown(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle('hide');
+}
+
+function changeView(view) {
+    document.getElementById('view-feed').classList.add('hide');
+    document.getElementById('view-profile').classList.add('hide');
+    document.getElementById('user-dropdown').classList.add('hide');
+
+    if (view === 'feed') {
+        document.getElementById('view-feed').classList.remove('hide');
+        loadFeed();
+    } else if (view === 'profile') {
+        document.getElementById('view-profile').classList.remove('hide');
+        const me = JSON.parse(localStorage.getItem('ec_session'));
+        loadUserProfile(me.id);
+    }
+}
+
+function openCreateModal() {
+    document.getElementById('modal-create').classList.remove('hide');
+}
+
+function closeCreateModal() {
+    document.getElementById('modal-create').classList.add('hide');
+}
+
+function showSuccessAnim(title, desc) {
+    const overlay = document.getElementById('success-overlay');
+    document.getElementById('success-title').innerText = title;
+    document.getElementById('success-desc').innerText = desc;
+    
+    overlay.classList.remove('hide');
+    setTimeout(() => {
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            overlay.classList.add('hide');
+            overlay.style.opacity = '1';
+        }, 500);
+    }, 2500);
+}
+
+// CERRAR VENTANAS CON ESCAPE
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeCreateModal();
+        document.getElementById('user-dropdown').classList.add('hide');
+        document.getElementById('search-results-drop').classList.add('hide');
+    }
+});
+
+// CLIC FUERA PARA CERRAR
+window.addEventListener('click', (e) => {
+    if (!e.target.closest('.profile-trigger') && !e.target.closest('.dropdown-box')) {
+        document.getElementById('user-dropdown').classList.add('hide');
+    }
+    if (!e.target.closest('.search-box')) {
+        document.getElementById('search-results-drop').classList.add('hide');
+    }
+});
