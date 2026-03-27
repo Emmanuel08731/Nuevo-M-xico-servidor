@@ -2,41 +2,80 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevRoot | Emmanuel Store</title>
+    <title>Ecnhaca | Social App</title>
     <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-    <div id="authBox" class="auth-screen">
-        <div class="card">
-            <h1>Dev<b>Root</b></h1>
-            <p>Red Social de Emmanuel</p>
-            <div class="tabs">
-                <button onclick="setAuth('login')" id="tabL" class="active">Login</button>
-                <button onclick="setAuth('reg')" id="tabR">Registro</button>
+    <div id="authBox" class="auth-container">
+        <div class="auth-card animate-fade">
+            <h1 class="logo-text">Ecnhaca</h1>
+            <div class="auth-tabs">
+                <button id="tL" class="active" onclick="setMode('login')">Entrar</button>
+                <button id="tR" onclick="setMode('reg')">Registrarse</button>
             </div>
-            <form onsubmit="ejecutarAuth(event)">
-                <input type="text" id="user" placeholder="Usuario" required>
-                <input type="email" id="mail" placeholder="Email" class="hidden">
-                <input type="password" id="pass" placeholder="Contraseña" required>
-                <button type="submit" id="mainBtn">Entrar</button>
+            <form onsubmit="doAuth(event)">
+                <input type="text" id="u" placeholder="Usuario" required>
+                <input type="email" id="e" placeholder="Correo" class="hide">
+                <input type="password" id="p" placeholder="Contraseña" required>
+                <button type="submit" id="btnA">Iniciar Sesión</button>
             </form>
         </div>
     </div>
 
-    <div id="webContent" class="hidden">
-        <nav class="navbar">
-            <div class="logo">Dev<b>Root</b></div>
-            <div class="search">
-                <input type="text" placeholder="Buscar amigos..." oninput="buscarDB(this.value)">
+    <div id="app" class="hide">
+        <nav class="nav">
+            <div class="nav-content">
+                <div class="logo">Ecnhaca</div>
+                <div class="search-box">
+                    <i class="fa fa-search"></i>
+                    <input type="text" placeholder="Buscar en Ecnhaca..." oninput="search(this.value)">
+                </div>
+                <div class="user-menu-wrapper">
+                    <div class="user-trigger" onclick="toggleMenu()">
+                        <div id="myAv" class="mini-av">E</div>
+                    </div>
+                    <div id="dropdown" class="dropdown hide">
+                        <div class="drop-item" onclick="showView('profile')"><i class="fa fa-user"></i> Perfil</div>
+                        <div class="drop-item" onclick="showView('settings')"><i class="fa fa-cog"></i> Configuración</div>
+                        <hr>
+                        <div class="drop-item logout" onclick="logout()"><i class="fa fa-sign-out"></i> Cerrar Sesión</div>
+                    </div>
+                </div>
             </div>
-            <div class="user-info" id="me">Cargando...</div>
         </nav>
 
-        <div class="main-feed" id="feed">
+        <main class="content">
+            <div id="view-feed" class="view">
+                <div id="results" class="results-list"></div>
+                <div id="empty-msg" class="empty-state">
+                    <i class="fa fa-bolt"></i>
+                    <p>Busca a alguien para empezar</p>
+                </div>
             </div>
+
+            <div id="view-profile" class="view hide">
+                <div class="profile-header">
+                    <div id="pAv" class="big-av"></div>
+                    <h2 id="pName"></h2>
+                    <p id="pBio"></p>
+                    <div class="stats-row">
+                        <div class="stat"><b>Seguidores</b> <span id="s-followers">0</span></div>
+                        <div class="stat"><b>Siguiendo</b> <span id="s-following">0</span></div>
+                    </div>
+                    <button class="btn-back" onclick="showView('feed')">Volver al inicio</button>
+                </div>
+            </div>
+
+            <div id="view-settings" class="view hide">
+                <div class="settings-card">
+                    <h2>Configuración</h2>
+                    <p><i class="fa fa-clock"></i> Próximamente: Cambiar foto, biografía y privacidad.</p>
+                    <button class="btn-back" onclick="showView('feed')">Volver</button>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script src="/app.js"></script>
