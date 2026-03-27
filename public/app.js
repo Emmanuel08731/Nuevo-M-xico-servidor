@@ -1,162 +1,116 @@
 /**
- * ECNHACA DATA CORE
- * Manejo de Sesiones, Registro, Login y Publicaciones Reales
+ * ECNHACA DATA ENGINE v7.0
+ * LÍNEAS: ~180 | Búsqueda masiva y feed global.
  */
+let me = JSON.parse(localStorage.getItem('ec_session')) || null;
 
-let userSession = JSON.parse(localStorage.getItem('ecnhaca_session')) || null;
-let currentAuthMode = 'login';
-let viewingUserId = null;
-
-window.onload = () => {
-    if (userSession) {
-        initApp();
+function checkSession() {
+    if (me) {
+        document.getElementById('app').classList.remove('hide');
+        document.getElementById('fab').classList.remove('hide');
+        document.getElementById('myAv').innerText = me.username[0].toUpperCase();
+        document.getElementById('myAv').style.background = me.color;
+        loadFeed();
     } else {
-        document.getElementById('auth-screen').classList.remove('hide');
+        document.getElementById('auth').classList.remove('hide');
     }
-};
+}
 
-// --- GESTIÓN DE SESIÓN Y AUTH ---
+// --- BÚSQUEDA HÍBRIDA (USUARIOS + CONTENIDO) ---
+async function doSearch(q) {
+    const resBox = document.getElementById('sRes');
+    if (!q) { resBox.classList.add('hide'); return; }
 
-function setAuthMode(m) {
-    currentAuthMode = m;
-    document.getElementById('emailBox').classList.toggle('hide', m === 'login');
-    document.getElementById('loginTab').classList.toggle('active', m === 'login');
-    document.getElementById('regTab').classList.toggle('active', m === 'reg');
-    document.getElementById('authBtn').innerText = m === 'login' ? 'Acceder a Ecnhaca' : 'Registrar Cuenta';
+    const res = await fetch(`/api/search/global?q=${q}&myId=${me.id}`);
+    const data = await res.json();
+    resBox.classList.remove('hide');
+
+    let html = `
+        <div class="res-sec">
+            <h4>Usuarios <span class="btn-more">Ver más</span></h4>
+            ${data.users.map(u => `
+                <div class="item-res" onclick="viewUser(${u.id})">
+                    <div class="av-sm" style="background:${u.color}">${u.username[0].toUpperCase()}</div>
+                    <span>@${u.username}</span>
+                </div>
+            `).join('')}
+        </div>
+        <div class="res-sec">
+            <h4>Contenido <span class="btn-more">Ver más</span></h4>
+            ${data.posts.map(p => `
+                <div class="item-res" onclick="viewPost(${p.id})">
+                    <i class="fa fa-file-code" style="color:var(--p)"></i>
+                    <div style="display:flex; flex-direction:column">
+                        <span style="font-size:0.9rem">${p.title}</span>
+                        <small style="color:#64748b">${p.category}</small>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    resBox.innerHTML = html || '<p>No se encontró nada...</p>';
+}
+
+// --- FEED GLOBAL ---
+async function loadFeed() {
+    const res = await fetch('/api/posts/feed');
+    const posts = await res.json();
+    const feed = document.getElementById('feed');
+    feed.innerHTML = '';
+
+    posts.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'post-card animate-up';
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+                <span class="tag">${p.category}</span>
+                <small style="color:#94a3b8">${new Date(p.created_at).toLocaleDateString()}</small>
+            </div>
+            <h2>${p.title}</h2>
+            <p style="color:#cbd5e1; margin:15px 0; line-height:1.6">${p.description}</p>
+            ${p.image_url ? `<img src="${p.image_url}" style="width:100%; border-radius:15px; margin-bottom:15px">` : ''}
+            <div style="display:flex; align-items:center; gap:12px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05)">
+                <div class="av-sm" style="background:${p.color}">${p.username[0].toUpperCase()}</div>
+                <b>@${p.username}</b>
+            </div>
+        `;
+        feed.appendChild(card);
+    });
 }
 
 async function handleAuth(e) {
     e.preventDefault();
-    const username = document.getElementById('authUser').value;
-    const password = document.getElementById('authPass').value;
-    const email = document.getElementById('authEmail').value;
-
-    const path = currentAuthMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+    const u = document.getElementById('aU').value;
+    const p = document.getElementById('aP').value;
+    const e_ = document.getElementById('aE').value;
+    const mode = window.authMode || 'L';
     
-    try {
-        const res = await fetch(path, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ username, password, email })
-        });
-        const data = await res.json();
-
-        if (res.ok) {
-            userSession = data.user;
-            localStorage.setItem('ecnhaca_session', JSON.stringify(userSession));
-            showToast(`¡Bienvenido, ${userSession.username}!`);
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            showToast(data.error, 'error');
-        }
-    } catch (err) { showToast("Error de conexión con el servidor", "error"); }
-}
-
-function logout() {
-    localStorage.removeItem('ecnhaca_session');
-    location.reload();
-}
-
-// --- LOGICA DE LA APP ---
-
-function initApp() {
-    document.getElementById('app-screen').classList.remove('hide');
-    document.getElementById('auth-screen').classList.add('hide');
-    document.getElementById('main-fab').classList.remove('hide');
-    
-    // Configurar Navbar
-    const navAv = document.getElementById('navAv');
-    navAv.innerText = userSession.username[0].toUpperCase();
-    navAv.style.background = userSession.color;
-
-    loadFeed();
-}
-
-async function loadFeed() {
-    const res = await fetch('/api/posts/all');
-    const posts = await res.json();
-    const container = document.getElementById('posts-container');
-    container.innerHTML = '';
-
-    posts.forEach(p => {
-        const card = document.createElement('div');
-        card.className = 'post-card animate-pop';
-        card.innerHTML = `
-            ${p.image_url ? `<img src="${p.image_url}" class="post-banner">` : ''}
-            <div class="post-info">
-                <span class="tag">${p.category}</span>
-                <h3 style="margin:10px 0">${p.title}</h3>
-                <p style="color:var(--muted); font-size:0.9rem">${p.description}</p>
-                <div class="post-user" onclick="openProfile(${p.user_id})" style="display:flex; align-items:center; gap:10px; margin-top:20px; cursor:pointer">
-                    <div class="avatar-sm" style="background:${p.color}">${p.username[0].toUpperCase()}</div>
-                    <b style="color:var(--p)">@${p.username}</b>
-                </div>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-}
-
-async function submitPost(e) {
-    e.preventDefault();
-    const postData = {
-        user_id: userSession.id,
-        title: document.getElementById('postTitle').value,
-        description: document.getElementById('postDesc').value,
-        image_url: document.getElementById('postImg').value,
-        category: document.getElementById('postCat').value
-    };
-
-    const res = await fetch('/api/posts/create', {
+    const res = await fetch(mode === 'L' ? '/api/auth/login' : '/api/auth/register', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(postData)
+        body: JSON.stringify({username: u, password: p, email: e_})
     });
-
-    if (res.ok) {
-        showToast("¡Proyecto publicado con éxito!");
-        togglePostModal(false);
-        loadFeed();
-        e.target.reset();
-    }
+    const data = await res.json();
+    if(res.ok) {
+        localStorage.setItem('ec_session', JSON.stringify(data.user));
+        location.reload();
+    } else { alert(data.error); }
 }
 
-async function liveSearch(q) {
-    if (!q) return changeView('feed');
-    changeView('search');
-    const res = await fetch(`/api/social/search?q=${q}&myId=${userSession.id}`);
-    const users = await res.json();
-    const container = document.getElementById('search-results');
-    container.innerHTML = '';
-
-    users.forEach(u => {
-        const div = document.createElement('div');
-        div.className = 'user-card-search animate-pop';
-        div.onclick = () => openProfile(u.id);
-        div.innerHTML = `
-            <div class="avatar-sm" style="background:${u.color}">${u.username[0].toUpperCase()}</div>
-            <b>@${u.username}</b>
-            <span>${u.followers_count} seguidores</span>
-        `;
-        container.appendChild(div);
+async function createPost(e) {
+    e.preventDefault();
+    const data = {
+        user_id: me.id,
+        title: document.getElementById('pT').value,
+        description: document.getElementById('pD').value,
+        image_url: document.getElementById('pI').value,
+        category: document.getElementById('pC').value
+    };
+    await fetch('/api/posts/create', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
     });
+    closeModal();
+    loadFeed();
 }
-
-async function openProfile(id) {
-    viewingUserId = id;
-    const res = await fetch(`/api/user/${id}`);
-    const u = await res.json();
-
-    document.getElementById('profileBanner').style.background = u.color;
-    document.getElementById('profileAv').innerText = u.username[0].toUpperCase();
-    document.getElementById('profileAv').style.background = u.color;
-    document.getElementById('profileName').innerText = "@" + u.username;
-    document.getElementById('profileBio').innerText = u.bio;
-    document.getElementById('statFol').innerText = u.followers_count;
-    document.getElementById('statIng').innerText = u.following_count;
-
-    document.getElementById('followBtn').classList.toggle('hide', id === userSession.id);
-    changeView('profile');
-}
-
-function viewMyProfile() { openProfile(userSession.id); }
