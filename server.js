@@ -1,8 +1,7 @@
 /**
  * ==============================================================================
- * ECNHACA TITAN SERVER CORE - V80.0
- * DESARROLLADO POR: EMMANUEL (NODE.JS SPECIALIST)
- * STATUS: FULL CODE - NO OMISSIONS
+ * ECNHACA TITAN SERVER - V100.0 (ADMIN OVERRIDE)
+ * DESARROLLADO POR: EMMANUEL | STATUS: MASTER ACCESS
  * ==============================================================================
  */
 
@@ -17,37 +16,33 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// CONFIGURACIÓN DE MIDDLEWARES PRO
+// CONFIGURACIÓN DE SEGURIDAD Y RENDIMIENTO
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '100mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// CONEXIÓN A LA BASE DE DATOS GLOBAL (RENDER)
+// CONEXIÓN A POSTGRESQL
 const pool = new Pool({
     connectionString: 'postgres://base_datos_global_user:mEDJcu2NtduJqv662gaUvOIuPDh1HFi3@dpg-d6u5u3fkijhs73fhh1hg-a.oregon-postgres.render.com/base_datos_global',
     ssl: { rejectUnauthorized: false },
-    max: 100,
-    idleTimeoutMillis: 30000,
 });
 
 /**
- * PROTOCOLO DE PURGA Y RECONSTRUCCIÓN AUTOMÁTICA
- * CADA VEZ QUE EMMANUEL REINICIA EL SERVIDOR, SE LIMPIA TODO
+ * PROTOCOLO DE RECONSTRUCCIÓN CON CUENTA ADMIN PREDEFINIDA
  */
-const initDatabase = async () => {
+const initSystem = async () => {
     const client = await pool.connect();
     try {
-        console.log("[SISTEMA] INICIANDO PURGA DE DATOS EN RENDER...");
+        console.log(">>> [ADMIN SYSTEM] INICIANDO DESPLIEGUE V100.0...");
         await client.query('BEGIN');
         
-        await client.query('DROP TABLE IF EXISTS followers CASCADE');
+        // Limpieza profunda
         await client.query('DROP TABLE IF EXISTS posts CASCADE');
         await client.query('DROP TABLE IF EXISTS users CASCADE');
         
-        // CREACIÓN DE USUARIOS
+        // Tabla de Usuarios
         await client.query(`
             CREATE TABLE users (
                 id SERIAL PRIMARY KEY,
@@ -55,14 +50,12 @@ const initDatabase = async () => {
                 email VARCHAR(100) UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
                 avatar_color VARCHAR(20) DEFAULT '#007aff',
-                bio TEXT DEFAULT 'Developer en Ecnhaca Platform',
-                followers_count INTEGER DEFAULT 0,
-                following_count INTEGER DEFAULT 0,
+                role VARCHAR(20) DEFAULT 'user',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
 
-        // CREACIÓN DE POSTS
+        // Tabla de Posts
         await client.query(`
             CREATE TABLE posts (
                 id SERIAL PRIMARY KEY,
@@ -70,49 +63,52 @@ const initDatabase = async () => {
                 title VARCHAR(255) NOT NULL,
                 content TEXT NOT NULL,
                 category VARCHAR(50) NOT NULL,
-                media_url TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
 
-        // CREACIÓN DE SEGUIDORES
+        // INYECCIÓN DE CUENTA ADMIN (EMMANUEL)
         await client.query(`
-            CREATE TABLE followers (
-                follower_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                following_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                PRIMARY KEY (follower_id, following_id)
-            );
-        `);
+            INSERT INTO users (username, email, password_hash, avatar_color, role) 
+            VALUES ($1, $2, $3, $4, $5)
+        `, ['Dev_Emmanuel', 'emma2013rq@gmail.com', 'emma06E', '#FF3B30', 'admin']);
 
         await client.query('COMMIT');
-        console.log("[SISTEMA] BASE DE DATOS REESTABLECIDA Y LISTA.");
-    } catch (err) {
+        console.log(">>> [ADMIN SYSTEM] CUENTA MAESTRA ACTIVADA.");
+    } catch (e) {
         await client.query('ROLLBACK');
-        console.error("[ERROR] Fallo al purgar base de datos:", err);
-    } finally {
-        client.release();
-    }
+        console.error("Error crítico de inicio:", e);
+    } finally { client.release(); }
 };
+initSystem();
 
-initDatabase();
-
-/**
- * RUTAS DE AUTENTICACIÓN ELITE
+/** * AUTENTICACIÓN CON VALIDACIÓN DE DUPLICADOS
  */
-
 app.post('/api/auth/register', async (req, res) => {
     const { username, email, password } = req.body;
     try {
         const u = username.toLowerCase().trim();
-        const colors = ['#FF3B30', '#34C759', '#007AFF', '#AF52DE', '#FF9500', '#5856D6', '#00C7BE', '#FF2D55'];
+        const e = email.toLowerCase().trim();
+
+        // 1. Verificar si ya existe el nombre o email
+        const check = await pool.query("SELECT * FROM users WHERE username = $1 OR email = $2", [u, e]);
+        if (check.rows.length > 0) {
+            return res.status(409).json({ 
+                success: false, 
+                error: "El nombre de usuario o el correo ya están registrados en el sistema." 
+            });
+        }
+
+        const colors = ['#007aff', '#ff2d55', '#af52de', '#ff9500', '#34c759'];
         const c = colors[Math.floor(Math.random() * colors.length)];
+        
         const result = await pool.query(
-            "INSERT INTO users (username, email, password_hash, avatar_color) VALUES ($1, $2, $3, $4) RETURNING id, username, avatar_color",
-            [u, email.toLowerCase(), password, c]
+            "INSERT INTO users (username, email, password_hash, avatar_color) VALUES ($1, $2, $3, $4) RETURNING id, username, role, avatar_color",
+            [u, e, password, c]
         );
         res.json({ success: true, user: result.rows[0] });
     } catch (e) {
-        res.status(400).json({ success: false, error: "El usuario ya existe o datos inválidos." });
+        res.status(500).json({ success: false, error: "Error en la base de datos." });
     }
 });
 
@@ -122,84 +118,59 @@ app.post('/api/auth/login', async (req, res) => {
         const u = username.toLowerCase().trim();
         const user = await pool.query("SELECT * FROM users WHERE username = $1 OR email = $1", [u]);
         
-        if (user.rows.length === 0) {
-            return res.status(404).json({ success: false, type: 'NOT_FOUND', error: "La cuenta no existe en el sistema." });
-        }
-        
-        if (user.rows[0].password_hash !== password) {
-            return res.status(401).json({ success: false, type: 'WRONG_PASS', error: "La contraseña es incorrecta." });
-        }
-        
-        res.json({ success: true, user: { id: user.rows[0].id, username: user.rows[0].username, color: user.rows[0].avatar_color } });
-    } catch (e) {
-        res.status(500).json({ success: false, error: "Error interno del servidor." });
-    }
-});
-
-/**
- * MOTOR DE BÚSQUEDA PROFUNDA
- */
-app.get('/api/search/deep', async (req, res) => {
-    const { q, type } = req.query;
-    const term = `%${q}%`;
-    try {
-        if (type === 'users') {
-            const data = await pool.query("SELECT id, username, avatar_color, bio, followers_count FROM users WHERE username ILIKE $1 LIMIT 50", [term]);
-            res.json(data.rows);
+        if (user.rows.length > 0 && user.rows[0].password_hash === password) {
+            res.json({ 
+                success: true, 
+                user: { 
+                    id: user.rows[0].id, 
+                    username: user.rows[0].username, 
+                    role: user.rows[0].role, 
+                    color: user.rows[0].avatar_color 
+                } 
+            });
         } else {
-            const data = await pool.query("SELECT p.*, u.username, u.avatar_color FROM posts p JOIN users u ON p.user_id = u.id WHERE p.title ILIKE $1 OR p.content ILIKE $1 LIMIT 50", [term]);
-            res.json(data.rows);
+            res.status(401).json({ success: false, error: "Credenciales incorrectas." });
         }
-    } catch (e) {
-        res.status(500).json({ error: "Error en la búsqueda dinámica." });
-    }
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
 /**
- * GESTIÓN DE CONTENIDO
+ * PANEL ADMIN - GESTIÓN DE USUARIOS
  */
-app.post('/api/posts/create', async (req, res) => {
-    const { user_id, title, content, category, media } = req.body;
-    try {
-        await pool.query("INSERT INTO posts (user_id, title, content, category, media_url) VALUES ($1, $2, $3, $4, $5)", [user_id, title, content, category, media]);
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).send();
-    }
+app.get('/api/admin/users', async (req, res) => {
+    // En producción aquí validaríamos un Token JWT de admin
+    const users = await pool.query("SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC");
+    res.json(users.rows);
 });
 
+app.delete('/api/admin/users/:id', async (req, res) => {
+    const { id } = req.params;
+    await pool.query("DELETE FROM users WHERE id = $1 AND role != 'admin'", [id]);
+    res.json({ success: true });
+});
+
+// RUTAS DE POSTS (FEED Y MIS POSTS)
 app.get('/api/posts/feed', async (req, res) => {
-    const data = await pool.query(`
-        SELECT p.*, u.username, u.avatar_color 
-        FROM posts p 
-        JOIN users u ON p.user_id = u.id 
-        ORDER BY p.created_at DESC 
-        LIMIT 100
-    `);
+    const data = await pool.query("SELECT p.*, u.username, u.avatar_color FROM posts p JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC");
     res.json(data.rows);
 });
 
-app.get('/api/users/profile/:id', async (req, res) => {
-    try {
-        const user = await pool.query("SELECT * FROM users WHERE id = $1", [req.params.id]);
-        const posts = await pool.query("SELECT * FROM posts WHERE user_id = $1 ORDER BY created_at DESC", [req.params.id]);
-        res.json({ user: user.rows[0], posts: posts.rows });
-    } catch (e) {
-        res.status(404).send();
-    }
+app.get('/api/my-posts/:userId', async (req, res) => {
+    const data = await pool.query("SELECT * FROM posts WHERE user_id = $1 ORDER BY created_at DESC", [req.params.userId]);
+    res.json(data.rows);
 });
 
-// LOGS DE OPERACIONES
-app.use((req, res, next) => {
-    console.log(`[ECNHACA LOG] ${new Date().toISOString()} | ${req.method} | ${req.url}`);
-    next();
+app.post('/api/posts/create', async (req, res) => {
+    const { user_id, title, content, category } = req.body;
+    await pool.query("INSERT INTO posts (user_id, title, content, category) VALUES ($1, $2, $3, $4)", [user_id, title, content, category]);
+    res.json({ success: true });
 });
 
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.delete('/api/posts/:id', async (req, res) => {
+    await pool.query("DELETE FROM posts WHERE id = $1", [req.params.id]);
+    res.json({ success: true });
 });
 
-app.listen(PORT, () => {
-    console.log(`\n>>> ECNHACA TITAN v80.0 ACTIVADO EN PUERTO ${PORT}`);
-    console.log(`>>> MODO: EMMANUEL (DESARROLLO COMPLETO)\n`);
-});
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+app.listen(PORT, () => console.log(`>>> ECNHACA ELITE v100 CORRIENDO EN PUERTO ${PORT}`));
