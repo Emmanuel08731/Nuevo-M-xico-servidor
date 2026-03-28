@@ -2,184 +2,86 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ECNHACA | Social Network</title>
-    
+    <title>ECNHACA Social | Minimalist Network</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body class="ecnhaca-os">
+<body>
 
-    <div id="preloader" class="preloader">
-        <div class="loader-brand">ECNHACA</div>
-        <div class="loader-bar"><div class="loader-progress"></div></div>
-    </div>
+    <header class="main-header">
+        <div class="header-container">
+            <div class="logo">ECNHACA</div>
 
-    <section id="view-auth" class="view-auth">
-        <div class="auth-box">
-            <div class="auth-header">
-                <div class="brand-sq-lg"></div>
-                <h1>ECNHACA</h1>
-                <p>Crea tu identidad en la red social minimalista.</p>
+            <div class="search-area">
+                <div class="search-wrapper">
+                    <select id="search-type">
+                        <option value="posts">Publicaciones</option>
+                        <option value="users">Usuarios</option>
+                    </select>
+                    <input type="text" id="main-search" placeholder="Buscar...">
+                    <button onclick="executeSearch()"><i class="fa fa-search"></i></button>
+                </div>
             </div>
 
-            <div class="auth-tabs">
-                <button id="tab-login" class="tab-btn active" onclick="setAuthMode('login')">Ingresar</button>
-                <button id="tab-reg" class="tab-btn" onclick="setAuthMode('register')">Crear Cuenta</button>
+            <div class="user-section">
+                <div class="user-trigger" onclick="toggleMenu()">
+                    <div class="avatar-sm">E</div>
+                    <i class="fa fa-chevron-down"></i>
+                </div>
+                <div id="drop-menu" class="dropdown hide">
+                    <button onclick="showSection('profile')"><i class="fa fa-user"></i> Perfil</button>
+                    <button onclick="showSection('config')"><i class="fa fa-cog"></i> Configuraciones</button>
+                    <button onclick="showSection('my-posts')"><i class="fa fa-paste"></i> Tus Publicaciones</button>
+                    <hr>
+                    <button class="logout" onclick="location.reload()"><i class="fa fa-sign-out"></i> Cerrar Sesión</button>
+                </div>
             </div>
-
-            <form id="form-auth" onsubmit="handleAuth(event)">
-                <div class="input-group">
-                    <label>Usuario</label>
-                    <input type="text" id="auth-user" placeholder="Ej. Emmanuel_Dev" required>
-                </div>
-                <div id="reg-email-group" class="input-group hide">
-                    <label>Correo Electrónico</label>
-                    <input type="email" id="auth-email" placeholder="tu@correo.com">
-                </div>
-                <div class="input-group">
-                    <label>Contraseña</label>
-                    <input type="password" id="auth-pass" placeholder="••••••••" required>
-                </div>
-                <button type="submit" class="btn-main-auth">Empezar ahora</button>
-            </form>
         </div>
-    </section>
+    </header>
 
-    <div id="view-app" class="app-container hide">
-        
-        <header class="main-header">
-            <div class="h-content">
-                <div class="h-left" onclick="showView('feed')">
-                    <div class="brand-sq"></div>
-                    <span class="brand-name">ECNHACA</span>
-                </div>
-
-                <div class="h-center">
-                    <div class="search-box">
-                        <select id="search-type">
-                            <option value="posts">Publicaciones</option>
-                            <option value="users">Usuarios</option>
-                        </select>
-                        <div class="v-line"></div>
-                        <input type="text" id="global-search" placeholder="Explorar...">
-                        <button onclick="executeSearch()"><i class="fa fa-magnifying-glass"></i></button>
-                    </div>
-                </div>
-
-                <div class="h-right">
-                    <div class="user-trigger" onclick="toggleDropdown()">
-                        <div class="u-avatar" id="nav-avatar">E</div>
-                        <i class="fa fa-chevron-down"></i>
-                    </div>
-                    
-                    <div id="user-dropdown" class="dropdown-menu hide">
-                        <div class="dropdown-info">
-                            <b id="drop-username">Emmanuel</b>
-                            <small>En línea</small>
-                        </div>
-                        <hr>
-                        <a href="javascript:void(0)" onclick="showView('profile')"><i class="fa fa-user"></i> Perfil</a>
-                        <a href="javascript:void(0)" onclick="showView('settings')"><i class="fa fa-gear"></i> Configuraciones</a>
-                        <a href="javascript:void(0)" onclick="showView('my-posts')"><i class="fa fa-paste"></i> Tus Publicaciones</a>
-                        <hr>
-                        <a href="javascript:void(0)" class="logout-link" onclick="logout()"><i class="fa fa-power-off"></i> Cerrar Sesión</a>
-                    </div>
-                </div>
+    <main class="app-layout">
+        <aside class="sidebar-left">
+            <div class="create-card">
+                <h3>Crear Publicación</h3>
+                <input type="text" id="post-title" placeholder="Título">
+                <textarea id="post-desc" placeholder="Descripción..."></textarea>
+                <input type="text" id="post-topic" placeholder="Tema (Ej: Web Develop)">
+                <label class="file-btn">
+                    <i class="fa fa-image"></i> Foto (Opcional)
+                    <input type="file" id="post-img" hidden>
+                </label>
+                <button class="btn-post" onclick="addPost()">Publicar</button>
             </div>
-        </header>
+        </aside>
 
-        <main class="main-content">
-            
-            <section id="sec-feed" class="view-sec">
-                <div id="feed-container">
-                    <div class="empty-state">
-                        <i class="fa fa-earth-americas"></i>
-                        <p>Aún no hay publicaciones en tu red.</p>
+        <section class="content-main">
+            <div id="view-feed" class="view">
+                <div id="feed-items"></div>
+            </div>
+
+            <div id="view-profile" class="view hide">
+                <div class="profile-header">
+                    <div class="avatar-lg">E</div>
+                    <h2 id="p-name">Emmanuel</h2>
+                    <div class="stats">
+                        <div><b id="count-followers">0</b><span>Seguidores</span></div>
+                        <div><b id="count-following">0</b><span>Siguiendo</span></div>
+                        <div><b id="count-posts">0</b><span>Posts</span></div>
                     </div>
                 </div>
-            </section>
+                <div id="profile-posts"></div>
+            </div>
 
-            <section id="sec-search-users" class="view-sec hide">
-                <h2 class="view-title">Usuarios encontrados</h2>
-                <div id="users-result-grid" class="users-grid"></div>
-            </section>
-
-            <section id="sec-profile" class="view-sec hide">
-                <div class="profile-card">
-                    <div class="profile-main">
-                        <div class="p-avatar-xl" id="profile-avatar">E</div>
-                        <h2 id="profile-username">Emmanuel</h2>
-                        <p id="profile-bio">Usuario de ECNHACA Social</p>
-                    </div>
-                    <div class="profile-stats">
-                        <div class="p-stat">
-                            <b id="stat-followers">0</b>
-                            <span>Seguidores</span>
-                        </div>
-                        <div class="p-stat">
-                            <b id="stat-following">0</b>
-                            <span>Siguiendo</span>
-                        </div>
-                        <div class="p-stat">
-                            <b id="stat-posts">0</b>
-                            <span>Publicaciones</span>
-                        </div>
-                    </div>
-                </div>
-                <div id="profile-feed" class="m-t-30"></div>
-            </section>
-
-            <section id="sec-settings" class="view-sec hide">
-                <div class="coming-soon-card">
-                    <i class="fa fa-clock-rotate-left"></i>
+            <div id="view-config" class="view hide">
+                <div class="coming-soon">
+                    <i class="fa fa-clock"></i>
                     <h2>Configuraciones</h2>
-                    <p>Próximamente... estamos puliendo los detalles.</p>
-                </div>
-            </section>
-
-        </main>
-
-        <button class="btn-float-add" onclick="togglePublishModal()">
-            <i class="fa fa-plus"></i>
-        </button>
-
-        <div id="publish-overlay" class="publish-overlay hide" onclick="togglePublishModal()">
-            <div class="publish-modal" onclick="event.stopPropagation()">
-                <div class="pm-header">
-                    <h3>Crear Publicación</h3>
-                    <button class="close-pm" onclick="togglePublishModal()"><i class="fa fa-xmark"></i></button>
-                </div>
-                <div class="pm-body">
-                    <div class="pm-input">
-                        <label>Título</label>
-                        <input type="text" id="post-title" placeholder="Dale un nombre a tu post">
-                    </div>
-                    <div class="pm-input">
-                        <label>Contenido</label>
-                        <textarea id="post-content" placeholder="¿Qué quieres compartir hoy?"></textarea>
-                    </div>
-                    <div class="pm-input">
-                        <label>Tema (Ej: Web Develop)</label>
-                        <input type="text" id="post-topic" placeholder="Etiqueta tu tema">
-                    </div>
-                    <div class="pm-input">
-                        <label class="file-custom">
-                            <i class="fa fa-camera"></i> Subir Imagen (Opcional)
-                            <input type="file" id="post-file" hidden>
-                        </label>
-                    </div>
-                    <button class="btn-publish-final" onclick="publishPost()">Publicar en ECNHACA</button>
+                    <p>Próximamente...</p>
                 </div>
             </div>
-        </div>
-
-    </div>
-
-    <div id="toast-box" class="toast-container"></div>
+        </section>
+    </main>
 
     <script src="script.js"></script>
-    <script src="app.js"></script>
 </body>
 </html>
