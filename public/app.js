@@ -1,152 +1,136 @@
 /**
  * ==========================================================
- * ECNHACA SOCIAL DATA ENGINE v500.0
- * CONEXIÓN: RENDER POSTGRESQL API
+ * ECNHACA SOCIAL CORE - APP.JS
+ * CONEXIÓN A BASE DE DATOS (RENDER)
  * DESARROLLADOR: EMMANUEL
  * ==========================================================
  */
 
-const API_BASE = "postgresql://base_datos_global_user:mEDJcu2NtduJqv662gaUvOIuPDh1HFi3@dpg-d6u5u3fkijhs73fhh1hg-a.virginia-postgres.render.com/base_datos_global"; // Cambia esto por tu URL de Render
+// Usamos la URL de tu servicio web (NO la de postgresql directamente)
+const API_BASE = window.location.origin + "/api";
 
-const DB = {
-    
-    // 1. REGISTRO / LOGIN REAL
-    async authUser(userData, isRegister) {
-        const endpoint = isRegister ? '/auth/register' : '/auth/login';
+const App = {
+    // 1. CARGAR DATOS INICIALES DEL PERFIL
+    async loadProfile(username) {
         try {
-            const response = await fetch(`${API_BASE}${endpoint}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(userData)
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || "Error en Auth");
-            return data;
+            const res = await fetch(`${API_BASE}/users/profile/${username}`);
+            const data = await res.json();
+            
+            if (res.ok) {
+                document.getElementById('count-followers').innerText = data.followers;
+                document.getElementById('count-following').innerText = data.following;
+                document.getElementById('count-posts').innerText = data.posts_count;
+                // Actualizamos el objeto global de stats
+                stats.followers = data.followers;
+                stats.posts = data.posts_count;
+            }
         } catch (err) {
-            this.handleError(err);
-            return null;
+            console.error("Error al cargar perfil:", err);
         }
     },
 
-    // 2. ENVIAR POST A POSTGRESQL
-    async savePost(postData) {
+    // 2. GUARDAR POST EN LA NUBE
+    async savePostToDB(postData) {
         try {
-            const response = await fetch(`${API_BASE}/posts`, {
+            const res = await fetch(`${API_BASE}/posts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(postData)
             });
-            return await response.json();
+            return await res.json();
         } catch (err) {
-            this.handleError("Error al guardar post");
+            console.error("Error al guardar post:", err);
+            return null;
         }
     },
 
-    // 3. OBTENER FEED GLOBAL
-    async fetchFeed() {
+    // 3. SISTEMA DE FOLLOW/UNFOLLOW REAL
+    async syncFollow(targetId, action) {
         try {
-            const response = await fetch(`${API_BASE}/posts`);
-            return await response.json();
-        } catch (err) {
-            return [];
-        }
-    },
-
-    // 4. SISTEMA DE SEGUIDORES (FOLLOW)
-    async toggleFollowInDB(targetId, action) {
-        try {
-            const response = await fetch(`${API_BASE}/users/follow`, {
+            const res = await fetch(`${API_BASE}/users/follow`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    followerId: STATE.user.id,
                     targetId: targetId,
-                    type: action // 'follow' o 'unfollow'
+                    action: action // 'follow' o 'unfollow'
                 })
             });
-            return response.ok;
+            return res.ok;
         } catch (err) {
-            this.handleError("Error de conexión con la DB");
+            console.error("Error de seguimiento:", err);
+            return false;
         }
     },
 
-    // 5. BUSCADOR REAL EN TABLA DE USUARIOS
-    async searchUsers(query) {
+    // 4. ELIMINAR POST DE LA DB
+    async deletePostFromDB(postId) {
         try {
-            const response = await fetch(`${API_BASE}/users/search?q=${query}`);
-            return await response.json();
+            const res = await fetch(`${API_BASE}/posts/${postId}`, {
+                method: 'DELETE'
+            });
+            return res.ok;
         } catch (err) {
-            return [];
+            return false;
         }
-    },
-
-    handleError(msg) {
-        console.error("ECNHACA DB ERROR:", msg);
-        if(typeof notify === 'function') notify(msg, "error");
     }
 };
 
 /**
- * SOBREESCRITURA DE FUNCIONES DEL SCRIPT.JS
- * Emmanuel: Aquí conectamos la interfaz con la base de datos.
+ * INTEGRACIÓN CON LAS FUNCIONES DE SCRIPT.JS
+ * Modificamos las funciones para que usen la base de datos
  */
 
-// Modificamos handleAuth para que sea asíncrono
-async function handleAuth(event) {
-    event.preventDefault();
-    const user = document.getElementById('auth-user').value.trim();
-    const pass = document.getElementById('auth-pass').value.trim();
-    const isReg = !document.getElementById('reg-email-group').classList.contains('hide');
-
-    const result = await DB.authUser({ username: user, password: pass }, isReg);
-
-    if (result) {
-        STATE.user = result.user; // Cargamos ID, seguidores y posts reales desde Render
-        localStorage.setItem('ec_session', JSON.stringify(STATE.user));
-        launchApp();
-        loadInitialFeed();
-    }
-}
-
-// Modificamos publishPost para que guarde en la nube
-async function publishPost() {
+// Modificar addPost para que sea asíncrona
+async function addPost() {
     const title = document.getElementById('post-title').value;
-    const content = document.getElementById('post-content').value;
-    const topic = document.getElementById('post-topic').value || "Web Develop";
+    const desc = document.getElementById('post-desc').value;
+    const topic = document.getElementById('post-topic').value || "General";
 
-    if (!title || !content) return;
+    if(!title || !desc) return;
 
     const payload = {
-        userId: STATE.user.id,
         title,
-        content,
-        topic
+        description: desc,
+        topic,
+        username: "Emmanuel" // Esto vendrá de tu sesión
     };
 
-    const saved = await DB.savePost(payload);
+    const result = await App.savePostToDB(payload);
     
-    if (saved) {
-        // En lugar de recargar, podemos insertar el post arriba
-        location.reload(); 
+    if (result) {
+        // Si se guardó en Render, lo mostramos en pantalla
+        renderPost(result); 
+        updatePostCount(1);
+        // Limpiar
+        document.getElementById('post-title').value = "";
+        document.getElementById('post-desc').value = "";
     }
 }
 
-// Cargar posts reales al iniciar
-async function loadInitialFeed() {
-    const posts = await DB.fetchFeed();
-    const container = document.getElementById('feed-container');
-    
-    if (posts.length > 0) {
-        container.innerHTML = "";
-        posts.forEach(post => {
-            // Aquí reusamos la lógica de pintar el HTML del post del script.js
-            renderPostCard(post);
-        });
+// Modificar toggleFollow para que sea asíncrona
+async function toggleFollow(btn, targetUserId) {
+    const isFollowing = btn.innerText === "Dejar de seguir";
+    const action = isFollowing ? 'unfollow' : 'follow';
+
+    const success = await App.syncFollow(targetUserId, action);
+
+    if (success) {
+        if (!isFollowing) {
+            btn.innerText = "Dejar de seguir";
+            btn.style.background = "#e1e1e1";
+            btn.style.color = "black";
+            stats.followers++;
+        } else {
+            btn.innerText = "Seguir";
+            btn.style.background = "black";
+            btn.style.color = "white";
+            stats.followers--;
+        }
+        document.getElementById('count-followers').innerText = stats.followers;
     }
 }
 
-/**
- * FIN DE APP.JS
- * Este archivo es el puente entre tu diseño minimalista 
- * y el servidor de base de datos en Render.
- */
+// Inicialización al cargar la página
+window.addEventListener('load', () => {
+    App.loadProfile("Emmanuel");
+});
