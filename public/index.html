@@ -1,99 +1,127 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>ECNHACA Social | Minimalist</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECNHACA Social | Minimalist Network</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
 
-    <section id="view-auth" class="auth-overlay">
+    <section id="view-auth" class="auth-screen">
         <div class="auth-card">
-            <div class="auth-logo">ECNHACA</div>
-            <h2>Bienvenido a la Red</h2>
-            <p>Introduce tu nombre de usuario para empezar.</p>
-            
-            <input type="text" id="login-user" placeholder="Usuario (Ej: Emmanuel_Dev)">
-            <input type="password" id="login-pass" placeholder="Contraseña">
-            
-            <button class="btn-main" onclick="handleLogin()">Entrar / Registrarse</button>
+            <div class="auth-brand">ECNHACA</div>
+            <h1>Bienvenido</h1>
+            <p>Crea o accede a tu cuenta para continuar.</p>
+            <div class="auth-form">
+                <input type="text" id="login-user" placeholder="Nombre de usuario">
+                <input type="password" id="login-pass" placeholder="Contraseña">
+                <button class="btn-primary" onclick="handleLogin()">Empezar ahora</button>
+            </div>
         </div>
     </section>
 
-    <div id="view-app" class="hide">
+    <div id="view-app" class="app-wrapper hide">
+        
         <header class="main-header">
-            <div class="header-container">
-                <div class="logo">ECNHACA</div>
+            <div class="header-inner">
+                <div class="header-left" onclick="showSection('feed')">
+                    <div class="logo-sq"></div>
+                    <span class="logo-text">ECNHACA</span>
+                </div>
 
-                <div class="search-area">
-                    <div class="search-wrapper">
+                <div class="header-center">
+                    <div class="dual-search">
                         <select id="search-type">
                             <option value="posts">Publicaciones</option>
                             <option value="users">Usuarios</option>
                         </select>
-                        <input type="text" id="main-search" placeholder="Buscar...">
+                        <div class="divider"></div>
+                        <input type="text" id="main-search" placeholder="Explorar la red...">
                         <button onclick="executeSearch()"><i class="fa fa-search"></i></button>
                     </div>
                 </div>
 
-                <div class="user-section">
-                    <div class="user-trigger" onclick="toggleMenu()">
-                        <div class="avatar-sm" id="nav-avatar">?</div>
+                <div class="header-right">
+                    <div class="user-pill" onclick="toggleDropdown()">
+                        <div class="avatar-circle" id="nav-avatar">?</div>
                         <i class="fa fa-chevron-down"></i>
                     </div>
-                    <div id="drop-menu" class="dropdown hide">
+                    
+                    <div id="user-menu" class="dropdown-menu hide">
                         <button onclick="showSection('profile')"><i class="fa fa-user"></i> Perfil</button>
                         <button onclick="showSection('config')"><i class="fa fa-cog"></i> Configuraciones</button>
-                        <button onclick="showSection('my-posts')"><i class="fa fa-paste"></i> Tus Publicaciones</button>
+                        <button onclick="showSection('my-posts')"><i class="fa fa-copy"></i> Tus Publicaciones</button>
                         <hr>
-                        <button class="logout" onclick="logout()"><i class="fa fa-sign-out"></i> Cerrar Sesión</button>
+                        <button class="logout" onclick="logout()"><i class="fa fa-power-off"></i> Cerrar Sesión</button>
                     </div>
                 </div>
             </div>
         </header>
 
-        <main class="app-layout">
-            <aside class="sidebar-left">
-                <div class="create-card">
-                    <h3>Crear Publicación</h3>
-                    <input type="text" id="post-title" placeholder="Título">
-                    <textarea id="post-desc" placeholder="Descripción..."></textarea>
+        <main class="main-layout">
+            
+            <aside class="col-left">
+                <div class="publish-card">
+                    <h3>Nueva Publicación</h3>
+                    <input type="text" id="post-title" placeholder="Título del post">
+                    <textarea id="post-desc" placeholder="¿Qué estás pensando?"></textarea>
                     <input type="text" id="post-topic" placeholder="Tema (Ej: Web Develop)">
-                    <label class="file-btn">
-                        <i class="fa fa-image"></i> Foto (Opcional)
+                    
+                    <div class="file-upload">
+                        <label for="post-img">
+                            <i class="fa fa-camera"></i> Subir Foto (Opcional)
+                        </label>
                         <input type="file" id="post-img" hidden>
-                    </label>
-                    <button class="btn-post" onclick="addPost()">Publicar</button>
+                    </div>
+                    
+                    <button class="btn-post" onclick="addPost()">Publicar en ECNHACA</button>
                 </div>
             </aside>
 
-            <section class="content-main">
-                <div id="view-feed" class="view">
+            <section class="col-center">
+                
+                <div id="sec-feed" class="view-content">
                     <div id="feed-items">
-                        <p class="empty-msg">No hay publicaciones aún. ¡Sé el primero!</p>
-                    </div>
-                </div>
-
-                <div id="view-profile" class="view hide">
-                    <div class="profile-header">
-                        <div class="avatar-lg" id="profile-pic">?</div>
-                        <h2 id="p-name">Cargando...</h2>
-                        <div class="stats">
-                            <div><b id="count-followers">0</b><span>Seguidores</span></div>
-                            <div><b id="count-following">0</b><span>Siguiendo</span></div>
-                            <div><b id="count-posts">0</b><span>Posts</span></div>
+                        <div class="empty-state">
+                            <i class="fa fa-earth-americas"></i>
+                            <p>No hay publicaciones todavía. ¡Sé el primero!</p>
                         </div>
                     </div>
                 </div>
 
-                <div id="view-config" class="view hide">
-                    <div class="coming-soon">
-                        <i class="fa fa-clock"></i>
-                        <h2>Configuraciones</h2>
-                        <p>Próximamente...</p>
+                <div id="sec-profile" class="view-content hide">
+                    <div class="profile-box">
+                        <div class="profile-cover"></div>
+                        <div class="avatar-lg" id="profile-pic">?</div>
+                        <h2 id="profile-name">Usuario</h2>
+                        <div class="profile-stats">
+                            <div class="stat">
+                                <b id="stat-followers">0</b>
+                                <span>Seguidores</span>
+                            </div>
+                            <div class="stat">
+                                <b id="stat-following">0</b>
+                                <span>Siguiendo</span>
+                            </div>
+                            <div class="stat">
+                                <b id="stat-posts">0</b>
+                                <span>Posts</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <div id="sec-config" class="view-content hide">
+                    <div class="placeholder-view">
+                        <i class="fa fa-hourglass-half"></i>
+                        <h2>Configuraciones</h2>
+                        <p>Próximamente... estamos trabajando en ello.</p>
+                    </div>
+                </div>
+
             </section>
         </main>
     </div>
