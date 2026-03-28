@@ -1,59 +1,80 @@
 let stats = { followers: 0, following: 0, posts: 0 };
+let currentUsername = "";
 
-function toggleMenu() {
-    document.getElementById('drop-menu').classList.toggle('hide');
+// 1. LOGIN DUAL
+function handleLogin() {
+    const user = document.getElementById('login-user').value.trim();
+    if(!user) return alert("Ingresa un usuario");
+
+    currentUsername = user;
+    
+    // Ocultar Auth y mostrar App
+    document.getElementById('view-auth').classList.add('hide');
+    document.getElementById('view-app').classList.remove('hide');
+
+    // Inicializar Interfaz
+    document.getElementById('nav-avatar').innerText = user.charAt(0).toUpperCase();
+    document.getElementById('profile-pic').innerText = user.charAt(0).toUpperCase();
+    document.getElementById('profile-name').innerText = user;
+}
+
+// 2. NAVEGACIÓN
+function toggleDropdown() {
+    document.getElementById('user-menu').classList.toggle('hide');
 }
 
 function showSection(section) {
-    document.querySelectorAll('.view').forEach(v => v.classList.add('hide'));
-    document.getElementById(`view-${section === 'profile' || section === 'config' ? section : 'feed'}`).classList.remove('hide');
-    document.getElementById('drop-menu').classList.add('hide');
+    document.querySelectorAll('.view-content').forEach(v => v.classList.add('hide'));
+    document.getElementById(`sec-${section}`).classList.remove('hide');
+    document.getElementById('user-menu').classList.add('hide');
 }
 
+// 3. PUBLICAR
 function addPost() {
     const title = document.getElementById('post-title').value;
     const desc = document.getElementById('post-desc').value;
-    const topic = document.getElementById('post-topic').value;
+    const topic = document.getElementById('post-topic').value || "General";
 
-    if(!title || !desc) return alert("Completa los campos");
+    if(!title || !desc) return alert("Completa título y descripción");
+
+    const feed = document.getElementById('feed-items');
+    if(stats.posts === 0) feed.innerHTML = ""; // Limpiar mensaje vacío
 
     const postHTML = `
         <div class="post-card">
-            <div style="display:flex; justify-content:space-between; align-items:center">
-                <small><b>${topic}</b></small>
-                <button onclick="this.parentElement.parentElement.remove(); updatePostCount(-1)" style="background:none; border:none; color:red; cursor:pointer"><i class="fa fa-trash"></i></button>
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+                <small style="color:gray"><b>${topic}</b> • Ahora mismo</small>
+                <button onclick="this.parentElement.parentElement.remove(); updateStats('posts', -1)" style="border:none; background:none; color:red; cursor:pointer"><i class="fa fa-trash"></i></button>
             </div>
-            <h3>${title}</h3>
+            <h4>${title}</h4>
             <p>${desc}</p>
         </div>
     `;
 
-    document.getElementById('feed-items').insertAdjacentHTML('afterbegin', postHTML);
-    updatePostCount(1);
-    
+    feed.insertAdjacentHTML('afterbegin', postHTML);
+    updateStats('posts', 1);
+
     // Limpiar campos
     document.getElementById('post-title').value = "";
     document.getElementById('post-desc').value = "";
 }
 
-function updatePostCount(val) {
-    stats.posts += val;
-    document.getElementById('count-posts').innerText = stats.posts;
-}
-
+// 4. BUSCAR USUARIOS / POSTS
 function executeSearch() {
     const type = document.getElementById('search-type').value;
-    const query = document.getElementById('main-search').value;
+    const query = document.getElementById('main-search').value.trim();
+
+    if(!query) return;
 
     if(type === 'users') {
-        const userHTML = `
+        const resultHTML = `
             <div class="post-card" style="text-align:center">
-                <div class="avatar-sm" style="margin: 0 auto 10px">U</div>
+                <div class="avatar-circle" style="margin: 0 auto 10px; width: 50px; height: 50px;">${query.charAt(0).toUpperCase()}</div>
                 <h4>${query}</h4>
-                <button class="btn-post" id="btn-follow" onclick="toggleFollow(this)">Seguir</button>
+                <button class="btn-post" style="width:auto; padding: 8px 20px" onclick="toggleFollow(this)">Seguir</button>
             </div>
         `;
-        document.getElementById('feed-items').innerHTML = userHTML;
+        document.getElementById('feed-items').innerHTML = resultHTML;
     }
 }
 
@@ -62,12 +83,22 @@ function toggleFollow(btn) {
         btn.innerText = "Dejar de seguir";
         btn.style.background = "#e1e1e1";
         btn.style.color = "black";
-        stats.followers++;
+        updateStats('followers', 1);
     } else {
         btn.innerText = "Seguir";
         btn.style.background = "black";
         btn.style.color = "white";
-        stats.followers--;
+        updateStats('followers', -1);
     }
-    document.getElementById('count-followers').innerText = stats.followers;
+}
+
+// 5. ACTUALIZAR CONTADORES
+function updateStats(key, val) {
+    stats[key] += val;
+    document.getElementById(`stat-${key}`).innerText = stats[key];
+    if(key === 'posts') document.getElementById('stat-posts').innerText = stats.posts;
+}
+
+function logout() {
+    location.reload();
 }
